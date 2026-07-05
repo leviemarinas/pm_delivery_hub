@@ -320,13 +320,13 @@
       ],
       "type": "User Story",
       "parentId": "FEAT-PAY-BASIC-001",
-      "status": "Active",
+      "status": "New",
       "assignee": "Rhea Santos",
       "sprint": "Sprint 8",
       "storyPoints": 8,
-      "progress": 50,
+      "progress": 0,
       "createdAt": "2026-07-05T16:07:05.767Z",
-      "updatedAt": "2026-07-05T18:37:16.319Z",
+      "updatedAt": "2026-07-05T19:05:47.957Z",
       "phase": "Phase 2",
       "moscow": "Must Have"
     },
@@ -732,13 +732,13 @@
       ],
       "type": "User Story",
       "parentId": "FEAT-PAY-BASIC-001",
-      "status": "New",
+      "status": "Active",
       "assignee": "Mika Reyes",
       "sprint": "Sprint 9",
       "storyPoints": 3,
-      "progress": 0,
+      "progress": 50,
       "createdAt": "2026-07-05T16:07:05.767Z",
-      "updatedAt": "2026-07-05T18:38:25.416Z",
+      "updatedAt": "2026-07-05T19:05:45.676Z",
       "phase": "Phase 2",
       "moscow": "Must Have"
     },
@@ -6849,6 +6849,20 @@
     }
   ],
   "activities": [
+    {
+      "id": "982de594-727f-4aab-9d56-b5e9eccdeecb",
+      "action": "Updated US-BASIC-002",
+      "actor": "Shared User",
+      "itemId": "US-BASIC-002",
+      "at": "2026-07-05T19:05:47.957Z"
+    },
+    {
+      "id": "ff2f8e32-251b-42fc-aefc-648857b8ae49",
+      "action": "Updated US-BASIC-004",
+      "actor": "Shared User",
+      "itemId": "US-BASIC-004",
+      "at": "2026-07-05T19:05:45.678Z"
+    },
     {
       "id": "f53f99f0-94d9-4cf8-8c91-c2aabd91737c",
       "action": "Updated US-BASIC-004",
