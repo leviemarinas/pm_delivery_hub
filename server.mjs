@@ -30,8 +30,95 @@ const featurePlans = {
   "FEAT-PAY-CROSS-001": { scopeStatus: "On Track", targetDate: "2026-08-31" },
 };
 
+function defaultSprintPresentation() {
+  return {
+    id: "atlas-sprint-review",
+    projectId: "atlas-payroll",
+    sprintName: "Sprint 8",
+    dateRange: "July 6 - July 17, 2026",
+    audience: "Atlas Payroll Stakeholders",
+    headline: "Core payroll requirements are moving into implementation-ready shape.",
+    sprintGoal: "Finalize the delivery definition for Basic Pay and Company Loan while progressing Bonus and De Minimis scope.",
+    executiveSummary: "The team has established a traceable delivery baseline across the four priority payroll modules. Basic Pay and Company Loan are furthest along, while Bonus decisions and cross-module dependencies remain the main focus areas.",
+    highlights: [
+      "Basic Pay requirements now include rate derivation, effective dating, retro pay, and audit behavior.",
+      "Company Loan coverage includes amortization, balances, payment priority, and minimum take-home rules.",
+      "All imported stories now have acceptance criteria, delivery tasks, and linked QA scenarios.",
+    ],
+    decisionsNeeded: [
+      "Confirm the final Bonus computation and eligibility rules.",
+      "Confirm how De Minimis effective-date versions apply during payroll processing.",
+      "Agree the priority for cross-module payroll integration work.",
+    ],
+    nextSprintGoals: [
+      "Close remaining Bonus and De Minimis business-rule questions.",
+      "Move Basic Pay stories into development-ready status.",
+      "Begin end-to-end QA design for payroll computation scenarios.",
+    ],
+    clientAsks: [
+      "Provide owners for open business-rule decisions.",
+      "Review and approve the Definition of Ready for development handoff.",
+      "Confirm the next sprint review date and stakeholder group.",
+    ],
+    presenterNotes: "Lead with the overall outcome, explain the evidence behind the status, then close on the decisions needed to protect the next sprint.",
+    confidence: "On Track",
+    updatedAt: now(),
+  };
+}
+
 function now() {
   return new Date().toISOString();
+}
+
+function moscowFromPriority(priority) {
+  if (priority === "Critical" || priority === "High") return "Must Have";
+  if (priority === "Medium") return "Should Have";
+  return "Could Have";
+}
+
+function unplannedScopeItems(createdAt) {
+  return [
+    {
+      id: "EPIC-UNPLANNED",
+      title: "Unplanned and Future Scope",
+      description: "Holding epic for features and user stories that are not committed to an active sprint or delivery phase.",
+      type: "Epic",
+      parentId: null,
+      status: "New",
+      priority: "Low",
+      phase: "Unplanned",
+      assignee: "Product Owner",
+      sprint: "Backlog",
+      storyPoints: 0,
+      progress: 0,
+      acceptanceCriteria: [],
+      qaFocus: [],
+      dependencies: [],
+      createdAt,
+      updatedAt: createdAt,
+    },
+    {
+      id: "FEAT-UNPLANNED",
+      title: "Unplanned Work Item Intake",
+      description: "Container for new user stories that have not yet been prioritized into a sprint.",
+      type: "Feature",
+      parentId: "EPIC-UNPLANNED",
+      status: "New",
+      priority: "Low",
+      moscow: "Could Have",
+      phase: "Unplanned",
+      scopeStatus: "Unplanned",
+      assignee: "Product Owner",
+      sprint: "Backlog",
+      storyPoints: 0,
+      progress: 0,
+      acceptanceCriteria: [],
+      qaFocus: [],
+      dependencies: [],
+      createdAt,
+      updatedAt: createdAt,
+    },
+  ];
 }
 
 function seedState(source) {
@@ -45,6 +132,7 @@ function seedState(source) {
     priority: "High",
     assignee: "Project Team",
     sprint: "Program",
+    phase: "Phase 2",
     storyPoints: 0,
     progress: 42,
     createdAt,
@@ -66,6 +154,8 @@ function seedState(source) {
       priority: "High",
       assignee: "BA Team",
       sprint: feature.id.includes("CROSS") ? "Sprint 10" : "Sprint 8",
+      phase: feature.id.includes("CROSS") ? "Phase 3" : "Phase 2",
+      moscow: feature.id.includes("CROSS") ? "Should Have" : "Must Have",
       storyPoints: featureStories.length * 8,
       progress,
       createdAt,
@@ -82,6 +172,8 @@ function seedState(source) {
         status,
         assignee: storyAssignees[storyIndex % storyAssignees.length],
         sprint: storyIndex < 2 ? "Sprint 8" : "Sprint 9",
+        phase: story.featureId.includes("CROSS") ? "Phase 3" : "Phase 2",
+        moscow: moscowFromPriority(story.priority),
         storyPoints: [5, 8, 5, 3, 5, 8][storyIndex % 6],
         progress: status === "Closed" ? 100 : status === "Active" ? 50 : 0,
         createdAt,
@@ -104,6 +196,7 @@ function seedState(source) {
           status: taskStatus,
           assignee: task.ownerRole,
           sprint: storyIndex < 2 ? "Sprint 8" : "Sprint 9",
+          phase: story.featureId.includes("CROSS") ? "Phase 3" : "Phase 2",
           storyPoints: 1,
           progress: taskStatus === "Closed" ? 100 : taskStatus === "Active" ? 50 : 0,
           createdAt,
@@ -112,6 +205,8 @@ function seedState(source) {
       });
     });
   }
+
+  workItems.push(...unplannedScopeItems(createdAt));
 
   const tests = source.stories.flatMap((story) =>
     story.qaFocus.map((title, index) => ({
@@ -122,6 +217,11 @@ function seedState(source) {
       status: index === 0 && story.id.endsWith("001") ? "Passed" : index === 1 ? "In Progress" : "Not Run",
       priority: story.priority,
       assignee: "QA Team",
+      preconditions: "",
+      steps: [],
+      expectedResult: title,
+      sprint: "Backlog",
+      tags: [],
       updatedAt: createdAt,
     }))
   );
@@ -133,7 +233,7 @@ function seedState(source) {
       id: "atlas-payroll",
       name: "Atlas Payroll",
       description: source.epic.description,
-      phase: "BA / Requirements",
+      phase: "Phase 2 - Payroll Delivery",
       targetMilestone: "Requirements Sign-off",
       targetDate: "2026-08-31",
       createdAt,
@@ -148,6 +248,7 @@ function seedState(source) {
     activities: [
       { id: crypto.randomUUID(), action: "Atlas requirements imported", actor: "System", itemId: source.epic.id, at: createdAt },
     ],
+    presentations: [defaultSprintPresentation()],
     source,
   };
 }
@@ -158,12 +259,48 @@ async function loadState() {
     const existing = JSON.parse(await fs.readFile(dataPath, "utf8"));
     let migrated = false;
     existing.workItems = existing.workItems.map((item) => {
+      let next = item;
       if (item.type === "Feature" && featurePlans[item.id] && (!item.scopeStatus || !item.targetDate)) {
         migrated = true;
-        return { ...item, ...featurePlans[item.id] };
+        next = { ...next, ...featurePlans[item.id] };
       }
-      return item;
+      if (!next.phase) {
+        migrated = true;
+        next = { ...next, phase: next.id?.includes("CROSS") ? "Phase 3" : "Phase 2" };
+      }
+      if ((next.type === "Feature" || next.type === "User Story") && !next.moscow) {
+        migrated = true;
+        next = { ...next, moscow: moscowFromPriority(next.priority) };
+      }
+      return next;
     });
+    const unplannedIds = new Set(existing.workItems.map((item) => item.id));
+    const missingUnplanned = unplannedScopeItems(now()).filter((item) => !unplannedIds.has(item.id));
+    if (missingUnplanned.length) {
+      existing.workItems.push(...missingUnplanned);
+      migrated = true;
+    }
+    existing.tests = (existing.tests || []).map((test) => {
+      const next = {
+        preconditions: "",
+        steps: [],
+        expectedResult: test.title,
+        sprint: "Backlog",
+        tags: [],
+        ...test,
+      };
+      if (!Object.hasOwn(test, "preconditions")) migrated = true;
+      return next;
+    });
+    const atlasProject = existing.projects?.find((project) => project.id === "atlas-payroll");
+    if (atlasProject?.phase === "BA / Requirements") {
+      atlasProject.phase = "Phase 2 - Payroll Delivery";
+      migrated = true;
+    }
+    if (!Array.isArray(existing.presentations) || existing.presentations.length === 0) {
+      existing.presentations = [defaultSprintPresentation()];
+      migrated = true;
+    }
     if (migrated) await saveState(existing);
     return existing;
   } catch {
@@ -264,6 +401,19 @@ async function handleApi(request, response, url) {
     await saveState(state);
     return json(response, 201, project);
   }
+  const presentationMatch = url.pathname.match(/^\/api\/presentations\/([^/]+)$/);
+  if (presentationMatch && request.method === "PUT") {
+    const id = decodeURIComponent(presentationMatch[1]);
+    const index = state.presentations.findIndex((presentation) => presentation.id === id);
+    if (index < 0) return json(response, 404, { error: "Sprint presentation not found." });
+    const input = await body(request);
+    const allowed = ["sprintName", "dateRange", "audience", "headline", "sprintGoal", "executiveSummary", "highlights", "decisionsNeeded", "nextSprintGoals", "clientAsks", "presenterNotes", "confidence"];
+    const updates = Object.fromEntries(allowed.filter((key) => Object.hasOwn(input, key)).map((key) => [key, input[key]]));
+    state.presentations[index] = { ...state.presentations[index], ...updates, id, updatedAt: now() };
+    activity(`Updated ${state.presentations[index].sprintName} client presentation`, id);
+    await saveState(state);
+    return json(response, 200, state.presentations[index]);
+  }
   if (url.pathname === "/api/work-items" && request.method === "POST") {
     const input = await body(request);
     const item = {
@@ -275,6 +425,8 @@ async function handleApi(request, response, url) {
       description: input.description?.trim() || "",
       status: input.status || "New",
       priority: input.priority || "Medium",
+      moscow: input.moscow || ((input.type === "Feature" || input.type === "User Story") ? moscowFromPriority(input.priority || "Medium") : ""),
+      phase: input.phase || "Phase 1",
       complexity: input.complexity || "Medium",
       assignee: input.assignee?.trim() || "Unassigned",
       sprint: input.sprint?.trim() || "Backlog",
@@ -316,6 +468,55 @@ async function handleApi(request, response, url) {
     return json(response, 200, { deleted: true });
   }
   const testMatch = url.pathname.match(/^\/api\/tests\/([^/]+)$/);
+  if (url.pathname === "/api/tests/import" && request.method === "POST") {
+    const input = await body(request);
+    const rows = Array.isArray(input.rows) ? input.rows : [];
+    const errors = [];
+    let created = 0;
+    let updated = 0;
+    for (let rowIndex = 0; rowIndex < rows.length; rowIndex += 1) {
+      const row = rows[rowIndex] || {};
+      const story = state.workItems.find((item) => item.id === row.storyId && item.type === "User Story");
+      if (!row.storyId || !story) {
+        errors.push({ row: rowIndex + 2, message: `User Story ID ${row.storyId || "is blank"} was not found.` });
+        continue;
+      }
+      if (!row.title?.trim()) {
+        errors.push({ row: rowIndex + 2, message: "Test Case Title is required." });
+        continue;
+      }
+      const requestedId = row.id?.trim();
+      const id = requestedId || `TC-IMPORT-${String(state.tests.length + created + 1).padStart(4, "0")}`;
+      const existingIndex = state.tests.findIndex((test) => test.id === id);
+      const testCase = {
+        id,
+        storyId: story.id,
+        featureId: story.parentId,
+        title: row.title.trim(),
+        preconditions: row.preconditions?.trim() || "",
+        steps: Array.isArray(row.steps) ? row.steps : String(row.steps || "").split(/\r?\n|\s*\|\s*/).map((step) => step.trim()).filter(Boolean),
+        expectedResult: row.expectedResult?.trim() || "",
+        priority: row.priority || story.priority || "Medium",
+        status: row.status || "Not Run",
+        assignee: row.assignee?.trim() || "QA Team",
+        sprint: row.sprint?.trim() || story.sprint || "Backlog",
+        tags: Array.isArray(row.tags) ? row.tags : String(row.tags || "").split(",").map((tag) => tag.trim()).filter(Boolean),
+        updatedAt: now(),
+      };
+      if (existingIndex >= 0) {
+        state.tests[existingIndex] = { ...state.tests[existingIndex], ...testCase };
+        updated += 1;
+      } else {
+        state.tests.push(testCase);
+        created += 1;
+      }
+    }
+    if (created || updated) {
+      activity(`Imported ${created} and updated ${updated} Excel test cases`, "QA-IMPORT");
+      await saveState(state);
+    }
+    return json(response, 200, { created, updated, errors, tests: state.tests });
+  }
   if (testMatch && request.method === "PUT") {
     const id = decodeURIComponent(testMatch[1]);
     const index = state.tests.findIndex((test) => test.id === id);
@@ -327,8 +528,8 @@ async function handleApi(request, response, url) {
     return json(response, 200, state.tests[index]);
   }
   if (url.pathname === "/api/export.csv") {
-    const headers = ["ID", "Type", "Parent", "Title", "Status", "Priority", "Assignee", "Sprint", "Story Points", "Progress"];
-    const lines = [headers, ...state.workItems.map((item) => [item.id, item.type, item.parentId, item.title, item.status, item.priority, item.assignee, item.sprint, item.storyPoints, item.progress])];
+    const headers = ["ID", "Type", "Parent", "Title", "Status", "Phase", "MoSCoW", "Priority", "Assignee", "Sprint", "Dependencies", "Story Points", "Progress"];
+    const lines = [headers, ...state.workItems.map((item) => [item.id, item.type, item.parentId, item.title, item.status, item.phase, item.moscow, item.priority, item.assignee, item.sprint, (item.dependencies || []).join(" | "), item.storyPoints, item.progress])];
     response.writeHead(200, { "Content-Type": "text/csv; charset=utf-8", "Content-Disposition": "attachment; filename=atlas-work-items.csv" });
     return response.end(lines.map((line) => line.map(csvEscape).join(",")).join("\n"));
   }

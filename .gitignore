@@ -4,3 +4,5 @@ dist/
 server.out.log
 server.err.log
 data/*.tmp
+.claude/
+

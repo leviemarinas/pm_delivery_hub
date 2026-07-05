@@ -11,6 +11,7 @@ A reusable, Azure DevOps-inspired project delivery system seeded from the Atlas 
 - Expandable backlog hierarchy and Kanban board
 - Acceptance criteria, dependencies, source trace, child tasks, linked QA cases, and audit activity
 - Client Overview, live project status, risks, targets, and QA readiness
+- Editable 10-slide Sprint Presentation with live ADO-style metrics, presenter mode, keyboard navigation, and print/PDF output
 - Complete searchable Atlas source-document view
 - CSV work-item export
 - Responsive desktop and mobile interfaces
@@ -47,4 +48,8 @@ $env:ATLAS_PASSWORD='your-strong-password'
 pnpm start
 ```
 
-Application data persists in `data/atlas-hub.json`. The server listens only on `127.0.0.1` by default.
+Application data persists in `data/atlas-hub.json`. The server binds to `0.0.0.0` by default so trusted-network users can connect; set `HOST=127.0.0.1` to restrict access to the local machine.
+
+## Sprint Presentation workflow
+
+Open **Sprint Presentation** from the sidebar. Use **Edit update** to maintain the client narrative, decisions, next-sprint goals, and client asks. Delivery, progress, QA, risk, and work-item slides calculate directly from the project state. Use **Present** for a distraction-free client review or **Print / PDF** to create a portable deck copy.
