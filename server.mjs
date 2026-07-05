@@ -519,6 +519,16 @@ async function handleApi(request, response, url) {
     await saveState(state);
     return json(response, 200, state.projects[index]);
   }
+  if (url.pathname === "/api/requirements" && request.method === "PUT") {
+    const input = await body(request);
+    state.source.document = input.document;
+    if (input.sourceInfo) {
+      state.source.source = { ...state.source.source, ...input.sourceInfo };
+    }
+    activity("Updated project requirements document map", state.activeProjectId);
+    await saveState(state);
+    return json(response, 200, state.source);
+  }
   const presentationMatch = url.pathname.match(/^\/api\/presentations\/([^/]+)$/);
   if (presentationMatch && request.method === "PUT") {
     const id = decodeURIComponent(presentationMatch[1]);

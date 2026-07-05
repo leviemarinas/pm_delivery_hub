@@ -243,7 +243,7 @@ function AppShell({ state, setState, onLogout }) {
           {page === "backlog" && <Backlog state={state} openItem={openItem} openCreate={openCreate} />}
           {page === "board" && <Board state={state} openItem={openItem} updateItem={updateItem} openCreate={openCreate} />}
           {page === "qa" && <QA state={state} setState={setState} openItem={openItem} showToast={showToast} />}
-          {page === "requirements" && <Requirements state={state} />}
+          {page === "requirements" && <Requirements state={state} setState={setState} showToast={showToast} />}
           {page === "reports" && <Reports state={state} project={project} />}
           {page === "settings" && <Settings state={state} setState={setState} showToast={showToast} />}
         </div>
@@ -823,16 +823,556 @@ function TestCaseImportModal({ state, setState, close, showToast }) {
   return <div className="modal-backdrop" onMouseDown={close}><section className="modal import-modal" onMouseDown={(event) => event.stopPropagation()}><header><div><span className="eyebrow">EXCEL IMPORT</span><h2>Import test cases to User Stories</h2></div><button className="icon-button" onClick={close}><X /></button></header><div className="import-drop"><FileXls size={32} weight="duotone" /><div><strong>{filename || "Choose Darla's Excel file or the Atlas template"}</strong><span>.xlsx, .xls, or .csv · First worksheet will be imported</span></div><input type="file" ref={fileInputRef} accept=".xlsx,.xls,.csv" onChange={chooseFile} style={{ display: "none" }} /><button type="button" className="secondary-button" onClick={() => fileInputRef.current?.click()}>Choose file</button></div><div className="import-summary"><span><strong>{rows.length}</strong> rows found</span><span className={errors.length ? "red" : "green"}><strong>{errors.length}</strong> validation issues</span></div>{errors.length > 0 && <div className="import-errors">{errors.slice(0, 8).map((error, index) => <div key={index}><Warning size={15} /><span>Row {error.row}: {error.message}</span></div>)}</div>}{rows.length > 0 && <div className="table-scroll import-preview"><table><thead><tr><th>Test Case ID</th><th>User Story</th><th>Title</th><th>Status</th><th>Sprint</th></tr></thead><tbody>{rows.slice(0, 8).map((row, index) => <tr key={`${row.id}-${index}`}><td>{row.id || "Auto"}</td><td>{row.storyId}</td><td>{row.title}</td><td>{row.status}</td><td>{row.sprint}</td></tr>)}</tbody></table>{rows.length > 8 && <small>Previewing 8 of {rows.length} rows.</small>}</div>}<footer><button className="secondary-button" onClick={downloadTestTemplate}><DownloadSimple />Download format</button><button className="secondary-button" onClick={close}>Cancel</button><button className="primary-button" disabled={busy || !rows.length || errors.length > 0} onClick={importRows}>{busy ? <SpinnerGap className="spin" /> : <UploadSimple />}Import {rows.length || ""} test cases</button></footer></section></div>;
 }
 
-function Requirements({ state }) {
+function parseMarkdownToBlocks(markdown, sectionName) {
+  const blocks = [];
+  const rawBlocks = markdown.split(/\n\n+/);
+  
+  for (let raw of rawBlocks) {
+    raw = raw.trim();
+    if (!raw) continue;
+    
+    // Check for Heading
+    if (raw.startsWith("#")) {
+      const match = raw.match(/^(#{1,6})\s+(.*)$/);
+      if (match) {
+        const level = match[1].length;
+        const text = match[2];
+        blocks.push({
+          kind: "heading",
+          level,
+          text,
+          path: [sectionName]
+        });
+        continue;
+      }
+    }
+    
+    // Check for List Bullet
+    if (raw.startsWith("- ") || raw.startsWith("* ") || /^\d+\.\s+/.test(raw)) {
+      const lines = raw.split("\n");
+      for (const line of lines) {
+        const text = line.replace(/^(-\s*|\*\s*|\d+\.\s*)/, "").trim();
+        if (text) {
+          blocks.push({
+            kind: "paragraph",
+            style: "List Bullet",
+            text,
+            path: [sectionName]
+          });
+        }
+      }
+      continue;
+    }
+    
+    // Check for Table
+    if (raw.includes("|") && raw.split("\n")[1]?.includes("---")) {
+      const lines = raw.split("\n").map(l => l.trim()).filter(Boolean);
+      const rows = [];
+      for (let i = 0; i < lines.length; i++) {
+        if (lines[i].includes("---")) continue; // skip separator row
+        const cells = lines[i].split("|").map(c => c.trim()).filter((c, idx, arr) => {
+          if (idx === 0 && c === "") return false;
+          if (idx === arr.length - 1 && c === "") return false;
+          return true;
+        });
+        rows.push(cells);
+      }
+      if (rows.length > 0) {
+        blocks.push({
+          kind: "table",
+          rows,
+          path: [sectionName]
+        });
+        continue;
+      }
+    }
+    
+    // Default Paragraph
+    blocks.push({
+      kind: "paragraph",
+      style: "Normal",
+      text: raw,
+      path: [sectionName]
+    });
+  }
+  return blocks;
+}
+
+function parseHtmlToBlocks(html, sectionName) {
+  const parser = new DOMParser();
+  const doc = parser.parseFromString(html, "text/html");
+  const blocks = [];
+  
+  const children = doc.body.childNodes;
+  for (const node of children) {
+    if (node.nodeType === Node.TEXT_NODE && node.textContent.trim()) {
+      blocks.push({
+        kind: "paragraph",
+        style: "Normal",
+        text: node.textContent.trim(),
+        path: [sectionName]
+      });
+    } else if (node.nodeType === Node.ELEMENT_NODE) {
+      const tag = node.tagName.toLowerCase();
+      
+      if (/^h[1-6]$/.test(tag)) {
+        const level = parseInt(tag[1], 10);
+        blocks.push({
+          kind: "heading",
+          level,
+          text: node.textContent.trim(),
+          path: [sectionName]
+        });
+      } else if (tag === "p") {
+        blocks.push({
+          kind: "paragraph",
+          style: "Normal",
+          text: node.textContent.trim(),
+          path: [sectionName]
+        });
+      } else if (tag === "ul" || tag === "ol") {
+        const items = node.querySelectorAll("li");
+        items.forEach(li => {
+          blocks.push({
+            kind: "paragraph",
+            style: "List Bullet",
+            text: li.textContent.trim(),
+            path: [sectionName]
+          });
+        });
+      } else if (tag === "blockquote") {
+        blocks.push({
+          kind: "paragraph",
+          style: "Intense Quote",
+          text: node.textContent.trim(),
+          path: [sectionName]
+        });
+      } else if (tag === "table") {
+        const rows = [];
+        const trs = node.querySelectorAll("tr");
+        trs.forEach(tr => {
+          const cells = [];
+          const tds = tr.querySelectorAll("th, td");
+          tds.forEach(td => cells.push(td.textContent.trim()));
+          if (cells.length > 0) rows.push(cells);
+        });
+        if (rows.length > 0) {
+          blocks.push({
+            kind: "table",
+            rows,
+            path: [sectionName]
+          });
+        }
+      } else {
+        const txt = node.textContent.trim();
+        if (txt) {
+          blocks.push({
+            kind: "paragraph",
+            style: "Normal",
+            text: txt,
+            path: [sectionName]
+          });
+        }
+      }
+    }
+  }
+  return blocks;
+}
+
+function convertSectionBlocksToMarkdown(blocks, sectionName) {
+  let md = "";
+  const sectionBlocks = blocks.filter(b => b.path?.[0] === sectionName && !(b.kind === "heading" && b.level === 1));
+  
+  for (const block of sectionBlocks) {
+    if (block.kind === "heading") {
+      md += "#".repeat(block.level) + " " + block.text + "\n\n";
+    } else if (block.kind === "table") {
+      const rows = block.rows;
+      if (rows && rows.length > 0) {
+        md += "| " + rows[0].join(" | ") + " |\n";
+        md += "| " + rows[0].map(() => "---").join(" | ") + " |\n";
+        for (let i = 1; i < rows.length; i++) {
+          md += "| " + rows[i].join(" | ") + " |\n";
+        }
+        md += "\n";
+      }
+    } else if (block.style === "List Bullet") {
+      md += "- " + block.text + "\n";
+    } else if (block.style === "Intense Quote") {
+      md += "> " + block.text + "\n\n";
+    } else {
+      md += block.text + "\n\n";
+    }
+  }
+  return md.trim();
+}
+
+function exportAllRequirements(documentBlocks) {
+  let markdown = "";
+  for (const block of documentBlocks) {
+    if (block.kind === "heading") {
+      markdown += "\n" + "#".repeat(block.level) + " " + block.text + "\n\n";
+    } else if (block.kind === "table") {
+      const rows = block.rows;
+      if (rows && rows.length > 0) {
+        markdown += "\n";
+        markdown += "| " + rows[0].join(" | ") + " |\n";
+        markdown += "| " + rows[0].map(() => "---").join(" | ") + " |\n";
+        for (let i = 1; i < rows.length; i++) {
+          markdown += "| " + rows[i].join(" | ") + " |\n";
+        }
+        markdown += "\n";
+      }
+    } else if (block.style === "List Bullet") {
+      markdown += "- " + block.text + "\n";
+    } else if (block.style === "Intense Quote") {
+      markdown += "> " + block.text + "\n\n";
+    } else {
+      markdown += block.text + "\n\n";
+    }
+  }
+  
+  const blob = new Blob([markdown.trim()], { type: "text/markdown;charset=utf-8;" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.setAttribute("href", url);
+  link.setAttribute("download", "Atlas_Requirements.md");
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+}
+
+function Requirements({ state, setState, showToast }) {
   const [query, setQuery] = useState("");
   const [section, setSection] = useState("All sections");
+  
+  const [modalOpen, setModalOpen] = useState(false);
+  const [modalMode, setModalMode] = useState("add"); // "add" or "edit"
+  const [editSectionName, setEditSectionName] = useState("");
+  const [form, setForm] = useState({ name: "", content: "", mode: "paste", format: "markdown" });
+  const [fileContent, setFileContent] = useState("");
+  const [filename, setFilename] = useState("");
+
   const headings = state.source.document.filter((block) => block.kind === "heading" && block.level === 1).map((block) => block.text);
+  
   const blocks = state.source.document.filter((block) => {
     const inSection = section === "All sections" || block.path?.[0] === section;
     const text = block.text || block.rows?.flat().join(" ") || "";
     return inSection && (!query || text.toLowerCase().includes(query.toLowerCase()));
   });
-  return <div className="content requirements-page"><div className="page-heading"><div><span className="eyebrow">SOURCE OF TRUTH</span><h1>Atlas requirements</h1><p>Complete searchable content extracted from {state.source.source.filename}.</p></div><div className="source-badge"><FileText size={24} /><div><strong>{state.source.source.paragraphCount} paragraphs</strong><small>{state.source.source.tableCount} source tables</small></div></div></div><div className="toolbar"><div className="inline-search wide"><MagnifyingGlass /><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search requirements, rules, formulas, questions..." /></div><select value={section} onChange={(event) => setSection(event.target.value)}><option>All sections</option>{headings.map((heading) => <option key={heading}>{heading}</option>)}</select></div><div className="document-layout"><aside className="document-toc"><strong>Document map</strong>{headings.map((heading) => <button key={heading} className={section === heading ? "active" : ""} onClick={() => setSection(heading)}>{heading}</button>)}</aside><article className="document-viewer">{blocks.length === 0 ? <Empty title="No matching source content" text="Try a broader search." /> : blocks.slice(0, 180).map((block, index) => <DocumentBlock block={block} key={`${block.kind}-${index}`} />)}{blocks.length > 180 && <div className="document-limit">Showing the first 180 matching blocks. Narrow the section or search to focus the source.</div>}</article></div></div>;
+
+  const handleFileUpload = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setFilename(file.name);
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      setFileContent(event.target.result);
+      const ext = file.name.split(".").pop().toLowerCase();
+      setForm(prev => ({ 
+        ...prev, 
+        format: ext === "html" ? "html" : "markdown" 
+      }));
+    };
+    reader.readAsText(file);
+  };
+
+  const openAddModal = () => {
+    setForm({ name: "", content: "", mode: "paste", format: "markdown" });
+    setFileContent("");
+    setFilename("");
+    setModalMode("add");
+    setModalOpen(true);
+  };
+
+  const openEditModal = (sectionName) => {
+    const mdContent = convertSectionBlocksToMarkdown(state.source.document, sectionName);
+    setForm({ name: sectionName, content: mdContent, mode: "paste", format: "markdown" });
+    setFileContent("");
+    setFilename("");
+    setEditSectionName(sectionName);
+    setModalMode("edit");
+    setModalOpen(true);
+  };
+
+  const handleDeleteSection = async (e, sectionToDelete) => {
+    e.stopPropagation();
+    if (!window.confirm(`Delete the entire section "${sectionToDelete}" and all its content?`)) return;
+    
+    const nextDocument = state.source.document.filter(block => {
+      const isTargetSectionHeading = block.kind === "heading" && block.level === 1 && block.text === sectionToDelete;
+      const isTargetSectionContent = block.path?.[0] === sectionToDelete;
+      return !isTargetSectionHeading && !isTargetSectionContent;
+    });
+    
+    try {
+      const nextSource = await api("/api/requirements", {
+        method: "PUT",
+        body: JSON.stringify({ document: nextDocument })
+      });
+      
+      setState((current) => ({
+        ...current,
+        source: nextSource
+      }));
+      
+      if (section === sectionToDelete) {
+        setSection("All sections");
+      }
+      showToast("Section deleted");
+    } catch (err) {
+      showToast(`Error deleting section: ${err.message}`);
+    }
+  };
+
+  const handleSaveSection = async (e) => {
+    e.preventDefault();
+    const name = form.name.trim();
+    if (!name) {
+      showToast("Section title is required.");
+      return;
+    }
+    
+    const sourceText = form.mode === "paste" ? form.content : fileContent;
+    if (!sourceText && modalMode === "add") {
+      showToast("Content is required.");
+      return;
+    }
+    
+    let newBlocks = [];
+    if (sourceText) {
+      if (form.format === "html") {
+        newBlocks = parseHtmlToBlocks(sourceText, name);
+      } else {
+        newBlocks = parseMarkdownToBlocks(sourceText, name);
+      }
+    }
+    
+    let nextDocument = [...state.source.document];
+    
+    if (modalMode === "add") {
+      const headingBlock = {
+        kind: "heading",
+        level: 1,
+        text: name,
+        path: [name]
+      };
+      nextDocument = [...nextDocument, headingBlock, ...newBlocks];
+    } else {
+      nextDocument = nextDocument.map(block => {
+        if (block.kind === "heading" && block.level === 1 && block.text === editSectionName) {
+          return { ...block, text: name, path: [name] };
+        }
+        return block;
+      });
+      
+      const headingIndex = nextDocument.findIndex(block => block.kind === "heading" && block.level === 1 && block.text === name);
+      
+      const before = nextDocument.slice(0, headingIndex);
+      const after = nextDocument.slice(headingIndex + 1).filter(block => {
+        return block.path?.[0] !== editSectionName && block.path?.[0] !== name;
+      });
+      
+      nextDocument = [...before, nextDocument[headingIndex], ...newBlocks, ...after];
+    }
+    
+    try {
+      const nextSource = await api("/api/requirements", {
+        method: "PUT",
+        body: JSON.stringify({ document: nextDocument })
+      });
+      setState((current) => ({
+        ...current,
+        source: nextSource
+      }));
+      setSection(name);
+      setModalOpen(false);
+      showToast(modalMode === "add" ? "Section created" : "Section updated");
+    } catch (err) {
+      showToast(`Error: ${err.message}`);
+    }
+  };
+
+  const handleExportAll = () => {
+    exportAllRequirements(state.source.document);
+    showToast("Requirements exported as Markdown");
+  };
+
+  return (
+    <div className="content requirements-page">
+      <div className="page-heading">
+        <div>
+          <span className="eyebrow">SOURCE OF TRUTH</span>
+          <h1>Atlas requirements</h1>
+          <p>Complete searchable content extracted from {state.source.source.filename}.</p>
+        </div>
+        <div className="requirements-header-actions" style={{ display: "flex", gap: "10px" }}>
+          <button className="secondary-button" onClick={handleExportAll}>
+            <DownloadSimple />Export all (.md)
+          </button>
+          <button className="primary-button" onClick={openAddModal}>
+            <Plus />Add Section
+          </button>
+        </div>
+      </div>
+
+      <div className="toolbar">
+        <div className="inline-search wide">
+          <MagnifyingGlass />
+          <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search requirements, rules, formulas, questions..." />
+        </div>
+        <select value={section} onChange={(event) => setSection(event.target.value)}>
+          <option>All sections</option>
+          {headings.map((heading) => <option key={heading}>{heading}</option>)}
+        </select>
+      </div>
+
+      <div className="document-layout">
+        <aside className="document-toc">
+          <strong>Document map</strong>
+          <button className={section === "All sections" ? "active" : ""} onClick={() => setSection("All sections")}>
+            All sections
+          </button>
+          {headings.map((heading) => (
+            <div key={heading} className={`toc-item-wrapper ${section === heading ? "active" : ""}`} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", width: "100%", borderRadius: "var(--r-sm)", border: "1px solid transparent", transition: "all 0.15s ease" }}>
+              <button className="toc-select-btn" onClick={() => setSection(heading)} style={{ flex: 1, textAlign: "left", background: "none", border: "none", padding: "10px 12px", fontSize: "13px", color: "var(--ink-2)", fontWeight: section === heading ? "600" : "500", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                {heading}
+              </button>
+              <div className="toc-item-actions" style={{ display: "flex", gap: "4px", paddingRight: "8px" }}>
+                <button onClick={() => openEditModal(heading)} title="Edit section content" style={{ background: "none", border: "none", color: "var(--muted)", padding: "4px", borderRadius: "var(--r-sm)", cursor: "pointer" }}>
+                  <PencilSimple size={13} />
+                </button>
+                <button className="delete" onClick={(e) => handleDeleteSection(e, heading)} title="Delete section" style={{ background: "none", border: "none", color: "var(--muted)", padding: "4px", borderRadius: "var(--r-sm)", cursor: "pointer" }}>
+                  <Trash size={13} />
+                </button>
+              </div>
+            </div>
+          ))}
+        </aside>
+
+        <article className="document-viewer">
+          {blocks.length === 0 ? (
+            <Empty title="No matching source content" text="Try a broader search." />
+          ) : (
+            blocks.slice(0, 180).map((block, index) => <DocumentBlock block={block} key={`${block.kind}-${index}`} />)
+          )}
+          {blocks.length > 180 && (
+            <div className="document-limit">
+              Showing the first 180 matching blocks. Narrow the section or search to focus the source.
+            </div>
+          )}
+        </article>
+      </div>
+
+      {modalOpen && (
+        <div className="modal-backdrop" onMouseDown={() => setModalOpen(false)}>
+          <section className="modal req-import-modal" onMouseDown={(e) => e.stopPropagation()} style={{ maxWidth: "600px" }}>
+            <header>
+              <div>
+                <span className="eyebrow">SOURCE OF TRUTH</span>
+                <h2>{modalMode === "add" ? "Add new document section" : `Edit section: ${editSectionName}`}</h2>
+              </div>
+              <button className="icon-button" onClick={() => setModalOpen(false)}><X /></button>
+            </header>
+            
+            <div className="modal-body" style={{ display: "flex", flexDirection: "column", gap: "15px", padding: "20px" }}>
+              <label style={{ display: "flex", flexDirection: "column", gap: "6px", fontSize: "13px", fontWeight: "600" }}>Section Title
+                <input 
+                  placeholder="e.g. Basic Pay Configuration" 
+                  value={form.name} 
+                  onChange={(e) => setForm({ ...form, name: e.target.value })} 
+                  required 
+                  style={{ padding: "10px", border: "1px solid var(--line-strong)", borderRadius: "var(--r-sm)", background: "var(--surface)", fontSize: "14px", width: "100%" }}
+                />
+              </label>
+              
+              <div className="input-type-tabs" style={{ display: "flex", gap: "10px", borderBottom: "1px solid var(--line)", paddingBottom: "10px" }}>
+                <button 
+                  type="button" 
+                  className={form.mode === "paste" ? "active" : ""} 
+                  onClick={() => setForm({ ...form, mode: "paste" })}
+                  style={{ background: form.mode === "paste" ? "var(--blue)" : "var(--surface-2)", color: form.mode === "paste" ? "white" : "var(--ink-2)", border: "1px solid var(--line-strong)", borderRadius: "16px", padding: "6px 14px", fontSize: "12px", fontWeight: "600", cursor: "pointer" }}
+                >
+                  Paste Text
+                </button>
+                <button 
+                  type="button" 
+                  className={form.mode === "upload" ? "active" : ""} 
+                  onClick={() => setForm({ ...form, mode: "upload" })}
+                  style={{ background: form.mode === "upload" ? "var(--blue)" : "var(--surface-2)", color: form.mode === "upload" ? "white" : "var(--ink-2)", border: "1px solid var(--line-strong)", borderRadius: "16px", padding: "6px 14px", fontSize: "12px", fontWeight: "600", cursor: "pointer" }}
+                >
+                  Upload File
+                </button>
+              </div>
+
+              {form.mode === "paste" ? (
+                <>
+                  <div className="format-selector" style={{ display: "flex", gap: "15px", fontSize: "13px" }}>
+                    <label style={{ display: "flex", alignItems: "center", gap: "6px", cursor: "pointer" }}>
+                      <input 
+                        type="radio" 
+                        name="format" 
+                        value="markdown" 
+                        checked={form.format === "markdown"} 
+                        onChange={() => setForm({ ...form, format: "markdown" })} 
+                      />
+                      Markdown
+                    </label>
+                    <label style={{ display: "flex", alignItems: "center", gap: "6px", cursor: "pointer" }}>
+                      <input 
+                        type="radio" 
+                        name="format" 
+                        value="html" 
+                        checked={form.format === "html"} 
+                        onChange={() => setForm({ ...form, format: "html" })} 
+                      />
+                      HTML
+                    </label>
+                  </div>
+                  <label style={{ display: "flex", flexDirection: "column", gap: "6px", fontSize: "13px", fontWeight: "600" }}>Content
+                    <textarea 
+                      rows="10" 
+                      placeholder={form.format === "markdown" ? "Paste markdown content..." : "Paste HTML content..."} 
+                      value={form.content} 
+                      onChange={(e) => setForm({ ...form, content: e.target.value })} 
+                      required 
+                      style={{ padding: "12px", border: "1px solid var(--line-strong)", borderRadius: "var(--r-sm)", background: "var(--surface)", fontFamily: "monospace", fontSize: "13px", width: "100%", resize: "vertical" }}
+                    />
+                  </label>
+                </>
+              ) : (
+                <div className="file-uploader-box" style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "12px", padding: "30px", border: "2px dashed var(--faint)", borderRadius: "var(--r-md)", background: "var(--surface-2)", cursor: "pointer" }}>
+                  <input 
+                    type="file" 
+                    accept=".txt,.md,.html" 
+                    style={{ display: "none" }} 
+                    id="req-file-picker" 
+                    onChange={handleFileUpload} 
+                  />
+                  <label htmlFor="req-file-picker" className="file-picker-label-box" style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "8px", cursor: "pointer", color: "var(--blue)", fontWeight: "600" }}>
+                    <UploadSimple size={32} />
+                    <span>{filename ? `Selected: ${filename}` : "Choose a text, markdown, or HTML file"}</span>
+                  </label>
+                  {filename && (
+                    <div className="file-format-info" style={{ fontSize: "12px", color: "var(--muted)" }}>
+                      Detected format: <strong>{form.format.toUpperCase()}</strong>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+            
+            <footer>
+              <button className="secondary-button" onClick={() => setModalOpen(false)}>Cancel</button>
+              <button className="primary-button" onClick={handleSaveSection}>
+                {modalMode === "add" ? "Create Section" : "Save Changes"}
+              </button>
+            </footer>
+          </section>
+        </div>
+      )}
+    </div>
+  );
 }
 
 function DocumentBlock({ block }) {
@@ -844,16 +1384,16 @@ function DocumentBlock({ block }) {
 }
 
 const presentationSlides = [
-  ["Client update", "Sprint review"],
-  ["Executive readout", "What changed"],
-  ["Sprint objective", "What we committed to"],
-  ["Delivery status", "Where each module stands"],
-  ["Completed work", "What is now done"],
-  ["Work in progress", "What the team is advancing"],
-  ["Quality snapshot", "How ready the work is"],
-  ["Risks and decisions", "What needs attention"],
-  ["Next sprint", "Where we go next"],
-  ["Client actions", "What we need to keep moving"],
+  { chapter: "OPEN", kicker: "Client update", title: "Sprint review" },
+  { chapter: "01", kicker: "Executive pulse", title: "The story in 60 seconds" },
+  { chapter: "02", kicker: "Sprint commitment", title: "Outcomes and scope" },
+  { chapter: "03", kicker: "Portfolio health", title: "Module delivery radar" },
+  { chapter: "04", kicker: "Delivery flow", title: "How work moved" },
+  { chapter: "05", kicker: "Value delivered", title: "What is now complete" },
+  { chapter: "06", kicker: "In flight", title: "What the team is advancing" },
+  { chapter: "07", kicker: "Quality signal", title: "Evidence and readiness" },
+  { chapter: "08", kicker: "Attention needed", title: "Risks and decisions" },
+  { chapter: "09", kicker: "Forward view", title: "Next sprint and actions" },
 ];
 
 function SprintPresentation({ state, setState, project, showToast }) {
@@ -864,6 +1404,9 @@ function SprintPresentation({ state, setState, project, showToast }) {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [draft, setDraft] = useState(presentation);
+  const [showNotes, setShowNotes] = useState(false);
+  const [presentedAt, setPresentedAt] = useState(null);
+  const [elapsed, setElapsed] = useState(0);
 
   useEffect(() => { if (presentation) setDraft(presentation); }, [presentation?.updatedAt]);
   useEffect(() => {
@@ -876,25 +1419,40 @@ function SprintPresentation({ state, setState, project, showToast }) {
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
   }, [presenting]);
+  useEffect(() => {
+    if (!presenting || !presentedAt) return undefined;
+    const timer = window.setInterval(() => setElapsed(Math.floor((Date.now() - presentedAt) / 1000)), 1000);
+    return () => window.clearInterval(timer);
+  }, [presenting, presentedAt]);
 
   if (!presentation || !draft) return <div className="content"><Empty title="No sprint presentation" text="Restart the server once to create the reusable sprint presentation." /></div>;
 
   const features = state.workItems.filter((item) => item.type === "Feature" && item.phase !== "Unplanned");
-  const stories = state.workItems.filter((item) => item.type === "User Story");
+  const allStories = state.workItems.filter((item) => item.type === "User Story" && item.phase !== "Unplanned");
+  const sprintNames = [...new Set(allStories.map((item) => item.sprint).filter((sprint) => /^Sprint\s+\d+/i.test(sprint)))].sort((a, b) => Number(a.match(/\d+/)?.[0] || 0) - Number(b.match(/\d+/)?.[0] || 0));
+  const sprintStories = allStories.filter((item) => item.sprint === draft.sprintName);
+  const stories = sprintStories.length ? sprintStories : allStories;
   const tasks = state.workItems.filter((item) => item.type === "Task");
+  const storyIds = new Set(stories.map((item) => item.id));
+  const sprintTests = state.tests.filter((test) => storyIds.has(test.storyId));
+  const sprintTasks = tasks.filter((task) => storyIds.has(task.parentId));
   const metrics = {
     features,
     stories,
-    tasks,
+    tasks: sprintTasks,
     closedStories: stories.filter((item) => item.status === "Closed"),
     activeStories: stories.filter((item) => item.status === "Active"),
     newStories: stories.filter((item) => item.status === "New"),
-    passedTests: state.tests.filter((test) => test.status === "Passed"),
-    activeTests: state.tests.filter((test) => test.status === "In Progress"),
-    notRunTests: state.tests.filter((test) => test.status === "Not Run"),
+    tests: sprintTests,
+    passedTests: sprintTests.filter((test) => test.status === "Passed"),
+    failedTests: sprintTests.filter((test) => test.status === "Failed"),
+    activeTests: sprintTests.filter((test) => test.status === "In Progress"),
+    notRunTests: sprintTests.filter((test) => test.status === "Not Run"),
   };
   metrics.completion = stories.length ? Math.round((metrics.closedStories.length + metrics.activeStories.length * .5) / stories.length * 100) : 0;
-  metrics.qaStarted = state.tests.length ? Math.round((state.tests.length - metrics.notRunTests.length) / state.tests.length * 100) : 0;
+  metrics.qaStarted = sprintTests.length ? Math.round((sprintTests.length - metrics.notRunTests.length) / sprintTests.length * 100) : 0;
+  metrics.passRate = sprintTests.length ? Math.round(metrics.passedTests.length / sprintTests.length * 100) : 0;
+  metrics.storyPoints = stories.reduce((total, item) => total + (Number(item.storyPoints) || 0), 0);
 
   const save = async () => {
     setSaving(true); setError("");
@@ -913,22 +1471,24 @@ function SprintPresentation({ state, setState, project, showToast }) {
     setDraft((current) => ({
       ...current,
       headline: `${leading?.title || "The leading module"} is setting the pace while the team closes the next set of delivery decisions.`,
-      executiveSummary: `${metrics.closedStories.length} of ${stories.length} user stories are closed and ${metrics.activeStories.length} are active. ${leading?.title || "Core requirements"} is furthest along at ${leading?.progress || 0}%, while ${trailing?.title || "cross-module work"} needs the most attention at ${trailing?.progress || 0}%. QA execution has started on ${metrics.qaStarted}% of the linked scenarios.`,
+      executiveSummary: `${metrics.closedStories.length} of ${stories.length} ${draft.sprintName} stories are closed and ${metrics.activeStories.length} are active. ${leading?.title || "Core requirements"} is furthest along at ${leading?.progress || 0}%, while ${trailing?.title || "cross-module work"} needs the most attention at ${trailing?.progress || 0}%. QA execution has started on ${metrics.qaStarted}% of this sprint's linked scenarios.`,
       highlights: metrics.closedStories.slice(0, 3).map((item) => `${item.title} is complete and traceable to acceptance criteria and QA coverage.`),
     }));
     showToast("Narrative refreshed from current project data");
   };
 
+  const openPresentation = () => { setPresentedAt(Date.now()); setElapsed(0); setPresenting(true); };
+  const timeLabel = `${String(Math.floor(elapsed / 60)).padStart(2, "0")}:${String(elapsed % 60).padStart(2, "0")}`;
   const slide = <SprintSlide index={slideIndex} presentation={draft} metrics={metrics} state={state} project={project} />;
   return <div className="content presentation-page">
-    <div className="page-heading presentation-heading"><div><span className="eyebrow">CLIENT COMMUNICATION</span><h1>Sprint presentation</h1><p>A live, PowerPoint-style client update generated from the current delivery backlog and QA status.</p></div><div className="presentation-actions"><button className="secondary-button" onClick={() => setEditing(!editing)}><PencilSimple />{editing ? "Close editor" : "Edit update"}</button><button className="secondary-button" onClick={() => window.print()}><Printer />Print / PDF</button><button className="primary-button" onClick={() => setPresenting(true)}><Play weight="fill" />Present</button></div></div>
+    <div className="page-heading presentation-heading"><div><div className="presentation-live"><span /><strong>LIVE CLIENT DECK</strong><i>Auto-built from delivery and QA data</i></div><h1>Sprint presentation</h1><p>A decision-led sprint narrative with live scope, delivery, quality, and risk evidence.</p></div><div className="presentation-actions"><select aria-label="Sprint shown in presentation" value={draft.sprintName} onChange={(event) => setDraft({ ...draft, sprintName: event.target.value })}>{sprintNames.map((sprint) => <option key={sprint}>{sprint}</option>)}</select><button className="secondary-button" onClick={refreshNarrative}><ArrowClockwise />Sync narrative</button><button className="secondary-button" onClick={() => setEditing(!editing)}><PencilSimple />{editing ? "Close editor" : "Edit story"}</button><button className="secondary-button" onClick={() => window.print()}><Printer />Export PDF</button><button className="primary-button" onClick={openPresentation}><Play weight="fill" />Present</button></div></div>
     {error && <div className="form-error"><Warning />{error}</div>}
     <div className={`presentation-workspace ${editing ? "editing" : ""}`}>
-      <aside className="slide-rail">{presentationSlides.map(([kicker, title], index) => <button key={title} className={slideIndex === index ? "active" : ""} onClick={() => setSlideIndex(index)}><span>{index + 1}</span><div className="slide-thumb"><small>{kicker}</small><strong>{title}</strong><i /></div></button>)}</aside>
-      <section className="slide-stage"><div className="slide-toolbar"><div><button className="icon-button" disabled={slideIndex === 0} onClick={() => setSlideIndex((value) => Math.max(0, value - 1))}><ArrowLeft /></button><span>{slideIndex + 1} / {presentationSlides.length}</span><button className="icon-button" disabled={slideIndex === presentationSlides.length - 1} onClick={() => setSlideIndex((value) => Math.min(presentationSlides.length - 1, value + 1))}><ArrowRight /></button></div><span>Updated {new Date(draft.updatedAt).toLocaleString()}</span><button className="tertiary-button" onClick={() => setPresenting(true)}><ArrowsOutSimple />Full screen</button></div>{slide}<div className="presenter-note"><NotePencil size={18} /><div><strong>Presenter note</strong><span>{draft.presenterNotes}</span></div></div></section>
+      <aside className="slide-rail">{presentationSlides.map((item, index) => <button key={item.title} className={slideIndex === index ? "active" : ""} onClick={() => setSlideIndex(index)}><span>{item.chapter}</span><div className={`slide-thumb thumb-${index}`}><small>{item.kicker}</small><strong>{item.title}</strong><i>{String(index + 1).padStart(2, "0")}</i></div></button>)}</aside>
+      <section className="slide-stage"><div className="slide-toolbar"><div><button className="icon-button" disabled={slideIndex === 0} onClick={() => setSlideIndex((value) => Math.max(0, value - 1))}><ArrowLeft /></button><strong>{presentationSlides[slideIndex].chapter} · {presentationSlides[slideIndex].kicker}</strong><button className="icon-button" disabled={slideIndex === presentationSlides.length - 1} onClick={() => setSlideIndex((value) => Math.min(presentationSlides.length - 1, value + 1))}><ArrowRight /></button></div><span className="deck-freshness"><i />Live snapshot · {draft.sprintName}</span><button className="tertiary-button" onClick={openPresentation}><ArrowsOutSimple />Present view</button></div>{slide}<div className="presenter-note"><NotePencil size={18} /><div><strong>Talk track</strong><span>{draft.presenterNotes}</span></div><small>{slideIndex + 1} / {presentationSlides.length}</small></div></section>
       {editing && <PresentationEditor draft={draft} setDraft={setDraft} save={save} saving={saving} refreshNarrative={refreshNarrative} />}
     </div>
-    {presenting && <div className="present-overlay"><button className="present-close" onClick={() => setPresenting(false)}><X /></button><div className="present-canvas">{slide}</div><div className="present-controls"><button disabled={slideIndex === 0} onClick={() => setSlideIndex((value) => Math.max(0, value - 1))}><ArrowLeft />Previous</button><span>{slideIndex + 1} / {presentationSlides.length}</span><button disabled={slideIndex === presentationSlides.length - 1} onClick={() => setSlideIndex((value) => Math.min(presentationSlides.length - 1, value + 1))}>Next<ArrowRight /></button></div></div>}
+    {presenting && <div className="present-overlay"><div className="present-topbar"><div><span className="present-live-dot" />{draft.sprintName}<strong>{timeLabel}</strong></div><div><button onClick={() => setShowNotes(!showNotes)} className={showNotes ? "active" : ""}><NotePencil />Speaker notes</button><button onClick={() => setPresenting(false)}><X />Exit</button></div></div><div className="present-canvas" onClick={() => setSlideIndex((value) => Math.min(presentationSlides.length - 1, value + 1))}>{slide}</div>{showNotes && <div className="present-note-popover"><strong>Presenter note</strong><p>{draft.presenterNotes}</p><small>Use ← and → to navigate · Esc to exit</small></div>}<div className="present-controls"><button disabled={slideIndex === 0} onClick={() => setSlideIndex((value) => Math.max(0, value - 1))}><ArrowLeft />Previous</button><div><span>{presentationSlides[slideIndex].kicker}</span><i style={{ "--deck-progress": `${(slideIndex + 1) / presentationSlides.length * 100}%` }} /></div><strong>{String(slideIndex + 1).padStart(2, "0")} / {presentationSlides.length}</strong><button disabled={slideIndex === presentationSlides.length - 1} onClick={() => setSlideIndex((value) => Math.min(presentationSlides.length - 1, value + 1))}>Next<ArrowRight /></button></div></div>}
     <div className="print-deck">{presentationSlides.map((_, index) => <SprintSlide key={index} index={index} presentation={draft} metrics={metrics} state={state} project={project} />)}</div>
   </div>;
 }
@@ -940,22 +1500,24 @@ function PresentationEditor({ draft, setDraft, save, saving, refreshNarrative })
 
 function SprintSlide({ index, presentation, metrics, state, project }) {
   const slideNumber = String(index + 1).padStart(2, "0");
-  const frame = (children, className = "") => <div className={`sprint-slide ${className}`}><div className="slide-brand"><span>ATLAS DELIVERY HUB</span><strong>{presentation.sprintName}</strong></div>{children}<div className="slide-footer"><span>{project.name} · {presentation.dateRange}</span><strong>{slideNumber}</strong></div></div>;
-  if (index === 0) return frame(<div className="cover-content"><div className="slide-kicker">SPRINT REVIEW · CLIENT UPDATE</div><h2>{project.name}</h2><h3>{presentation.sprintName} Delivery Update</h3><p>{presentation.headline}</p><div className="cover-meta"><span>{presentation.dateRange}</span><span>{presentation.audience}</span></div></div>, "slide-cover");
-  if (index === 1) return frame(<><SlideTitle kicker="EXECUTIVE READOUT" title={presentation.headline} /><div className="executive-layout"><div className="slide-narrative"><p>{presentation.executiveSummary}</p><div className={`confidence confidence-${presentation.confidence.toLowerCase().replaceAll(" ", "-")}`}><CheckCircle weight="fill" />Delivery confidence <strong>{presentation.confidence}</strong></div></div><div className="slide-metrics"><SlideMetric value={`${metrics.completion}%`} label="Overall progress" /><SlideMetric value={`${metrics.closedStories.length}/${metrics.stories.length}`} label="Stories closed" /><SlideMetric value={`${metrics.qaStarted}%`} label="QA started" /></div></div></>);
-  if (index === 2) return frame(<><SlideTitle kicker="SPRINT OBJECTIVE" title="The sprint focuses the team on implementation-ready payroll requirements." /><div className="objective-goal"><span>SPRINT GOAL</span><p>{presentation.sprintGoal}</p></div><div className="objective-stats"><SlideMetric value={metrics.activeStories.length} label="Stories in progress" /><SlideMetric value={metrics.tasks.filter((item) => item.status !== "Closed").length} label="Open delivery tasks" /><SlideMetric value={state.risks.filter((risk) => risk.status !== "Closed").length} label="Open risks" /></div></>);
-  if (index === 3) return frame(<><SlideTitle kicker="DELIVERY STATUS" title="Basic Pay and De Minimis lead current module progress." /><div className="slide-feature-table"><div className="slide-table-head"><span>Module</span><span>Progress</span><span>Scope</span><span>Target</span></div>{metrics.features.map((feature) => <div key={feature.id}><div><strong>{feature.title}</strong><small>{feature.id}</small></div><div className="slide-progress"><strong>{feature.progress}%</strong><ProgressBar value={feature.progress} /></div><span className={feature.scopeStatus === "At Risk" ? "slide-risk" : "slide-track"}>{feature.scopeStatus}</span><span>{new Date(`${feature.targetDate}T00:00:00`).toLocaleDateString(undefined, { month: "short", day: "numeric" })}</span></div>)}</div></>);
-  if (index === 4) return frame(<><SlideTitle kicker="COMPLETED THIS SPRINT" title="Completed stories now have delivery and QA traceability." /><div className="completed-layout"><div className="completed-count"><strong>{metrics.closedStories.length}</strong><span>stories closed</span><small>{metrics.tasks.filter((item) => item.status === "Closed").length} supporting tasks completed</small></div><div className="story-proof-list">{metrics.closedStories.slice(0, 5).map((story) => <div key={story.id}><CheckCircle weight="fill" /><div><strong>{story.title}</strong><span>{story.id} · {story.acceptanceCriteria.length} acceptance criteria</span></div></div>)}</div></div></>);
-  if (index === 5) return frame(<><SlideTitle kicker="WORK IN PROGRESS" title="Active stories are concentrated in the core payroll setup flows." /><div className="active-story-grid">{metrics.activeStories.slice(0, 6).map((story) => <div key={story.id}><div><span>{story.id}</span><strong>{story.progress}%</strong></div><h4>{story.title}</h4><ProgressBar value={story.progress} /><small>{story.assignee} · {story.sprint}</small></div>)}</div></>);
-  if (index === 6) return frame(<><SlideTitle kicker="QUALITY SNAPSHOT" title="Every imported story is linked to QA coverage before development handoff." /><div className="quality-layout"><div className="quality-metrics"><SlideMetric value={state.tests.length} label="Linked test scenarios" /><SlideMetric value={metrics.passedTests.length} label="Passed" /><SlideMetric value={metrics.activeTests.length} label="In progress" /></div><div className="quality-bars"><SlideQualityRow label="Execution started" value={metrics.qaStarted} /><SlideQualityRow label="Passing coverage" value={Math.round(metrics.passedTests.length / state.tests.length * 100)} /><SlideQualityRow label="Story traceability" value={100} /></div></div><div className="quality-callout"><TestTube weight="fill" /><p>The QA center retains {state.source.stories.reduce((total, story) => total + story.qaFocus.length, 0)} source-backed focus statements across Basic Pay, Company Loan, Bonus, De Minimis, and cross-module integration.</p></div></>);
-  if (index === 7) return frame(<><SlideTitle kicker="RISKS AND DECISIONS" title="Three decisions protect the next sprint from avoidable rework." /><div className="decision-layout"><div><h4>Delivery risks</h4>{state.risks.slice(0, 3).map((risk, position) => <div className="slide-risk-row" key={risk.id}><span>{position + 1}</span><div><strong>{risk.title}</strong><small>{risk.impact} impact · {risk.owner}</small></div></div>)}</div><div><h4>Decisions needed</h4>{presentation.decisionsNeeded.slice(0, 4).map((decision, position) => <div className="slide-decision" key={decision}><span>{position + 1}</span><p>{decision}</p></div>)}</div></div></>);
-  if (index === 8) return frame(<><SlideTitle kicker="NEXT SPRINT" title="The next sprint converts clarified requirements into build-ready work." /><div className="next-layout"><div className="next-goals"><h4>Planned outcomes</h4>{presentation.nextSprintGoals.slice(0, 4).map((goal, position) => <div key={goal}><span>{position + 1}</span><p>{goal}</p></div>)}</div><div className="upcoming-work"><h4>Next stories in the queue</h4>{metrics.newStories.slice(0, 4).map((story) => <div key={story.id}><span>{story.id}</span><strong>{story.title}</strong></div>)}</div></div></>);
-  return frame(<><SlideTitle kicker="CLIENT ACTIONS" title="Clear owners and decisions keep the next sprint on track." /><div className="ask-table"><div><strong>Action needed</strong><strong>Owner</strong><strong>When</strong></div>{presentation.clientAsks.slice(0, 4).map((ask) => <div key={ask}><span>{ask}</span><span>Client + Product</span><span>Before next review</span></div>)}</div><div className="closing-line"><span>Delivery confidence</span><strong>{presentation.confidence}</strong><p>Next review · {presentation.dateRange}</p></div></>);
+  const openRisks = state.risks.filter((risk) => risk.status !== "Closed");
+  const frame = (children, className = "") => <div className={`sprint-slide ${className}`}><div className="slide-accent" /><div className="slide-brand"><span><i>A</i> ATLAS DELIVERY HUB</span><strong>{presentation.sprintName} · LIVE SNAPSHOT</strong></div>{children}<div className="slide-footer"><span>{project.name} · {presentation.dateRange}</span><strong>{slideNumber}</strong></div></div>;
+  if (index === 0) return frame(<><div className="cover-content"><div className="slide-kicker">SPRINT REVIEW / CLIENT UPDATE</div><h2>{project.name}</h2><h3>{presentation.sprintName}<br />Delivery Review</h3><p>{presentation.headline}</p><div className="cover-meta"><span>{presentation.dateRange}</span><span>{presentation.audience}</span></div></div><div className="cover-score"><div style={{ "--score": metrics.completion }}><strong>{metrics.completion}%</strong><span>Sprint momentum</span></div><small>{metrics.closedStories.length} outcomes closed · {metrics.qaStarted}% QA started</small></div></>, "slide-cover");
+  if (index === 1) return frame(<><SlideTitle index="01" kicker="EXECUTIVE PULSE" title={presentation.headline} /><div className="pulse-grid"><div className="executive-story"><span>THE STORY</span><p>{presentation.executiveSummary}</p><div className={`confidence confidence-${presentation.confidence.toLowerCase().replaceAll(" ", "-")}`}><i />Delivery confidence <strong>{presentation.confidence}</strong></div></div><div className="pulse-kpis"><SlideMetric value={`${metrics.completion}%`} label="Sprint momentum" note="Weighted completion" /><SlideMetric value={`${metrics.closedStories.length}/${metrics.stories.length}`} label="Outcomes closed" note={`${metrics.activeStories.length} currently active`} /><SlideMetric value={`${metrics.qaStarted}%`} label="QA execution" note={`${metrics.tests.length} linked scenarios`} /><SlideMetric value={openRisks.length} label="Open risks" note={`${openRisks.filter((risk) => risk.impact === "High").length} high impact`} /></div></div></>);
+  if (index === 2) return frame(<><SlideTitle index="02" kicker="SPRINT COMMITMENT" title="A focused commitment to make priority payroll flows implementation-ready." /><div className="commitment-layout"><div className="commitment-goal"><span>SPRINT GOAL</span><p>{presentation.sprintGoal}</p><div><strong>{metrics.stories.length}</strong><small>committed stories</small><strong>{metrics.storyPoints}</strong><small>story points</small></div></div><div className="commitment-breakdown"><span>COMMITMENT SHAPE</span><SlideStatusRow label="Complete" value={metrics.closedStories.length} total={metrics.stories.length} tone="green" /><SlideStatusRow label="In progress" value={metrics.activeStories.length} total={metrics.stories.length} tone="purple" /><SlideStatusRow label="Ready next" value={metrics.newStories.length} total={metrics.stories.length} tone="blue" /><div className="commitment-foot"><CheckCircle weight="fill" />Scope is traceable from story to acceptance criteria and QA.</div></div></div></>);
+  if (index === 3) return frame(<><SlideTitle index="03" kicker="PORTFOLIO HEALTH" title="Module delivery is progressing, with Bonus requiring the clearest decision path." /><div className="module-grid">{metrics.features.slice(0, 5).map((feature, position) => <div className={feature.scopeStatus === "At Risk" ? "module-card at-risk" : "module-card"} key={feature.id}><div><span>0{position + 1}</span><i className={feature.scopeStatus === "At Risk" ? "risk" : "track"}>{feature.scopeStatus}</i></div><h4>{feature.title}</h4><div className="module-score"><strong>{feature.progress}%</strong><ProgressBar value={feature.progress} /></div><small>{feature.phase} · Target {feature.targetDate ? new Date(`${feature.targetDate}T00:00:00`).toLocaleDateString(undefined, { month: "short", day: "numeric" }) : "TBD"}</small></div>)}</div></>);
+  if (index === 4) return frame(<><SlideTitle index="04" kicker="DELIVERY FLOW" title={`${metrics.closedStories.length} outcomes are closed; the sprint now concentrates on ${metrics.activeStories.length} active stories.`} /><div className="flow-layout"><div className="flow-waterfall">{[["New", metrics.newStories.length, "blue"], ["Active", metrics.activeStories.length, "purple"], ["Closed", metrics.closedStories.length, "green"]].map(([label, value, tone]) => <div key={label}><span>{label}</span><strong>{value}</strong><i className={tone} style={{ height: `${Math.max(18, value / Math.max(1, metrics.stories.length) * 100)}%` }} /><small>{Math.round(value / Math.max(1, metrics.stories.length) * 100)}%</small></div>)}</div><div className="flow-insight"><span>SPRINT SIGNAL</span><strong>{metrics.completion >= 65 ? "Momentum is healthy" : metrics.completion >= 40 ? "Momentum is building" : "Momentum needs attention"}</strong><p>{metrics.activeStories.length} stories are carrying the current delivery load. {metrics.tasks.filter((task) => task.status !== "Closed").length} supporting tasks remain open.</p><div><TrendUp weight="bold" />{metrics.completion}% weighted completion</div></div></div></>);
+  if (index === 5) return frame(<><SlideTitle index="05" kicker="VALUE DELIVERED" title="Completed outcomes are backed by acceptance criteria and delivery evidence." /><div className="value-layout"><div className="value-score"><span>DELIVERED</span><strong>{metrics.closedStories.length}</strong><p>stories closed in {presentation.sprintName}</p><small>{metrics.tasks.filter((item) => item.status === "Closed").length} supporting tasks complete</small></div><div className="story-proof-list">{metrics.closedStories.slice(0, 5).map((story) => <div key={story.id}><CheckCircle weight="fill" /><div><span>{story.id}</span><strong>{story.title}</strong><small>{story.acceptanceCriteria?.length || 0} acceptance criteria · {metrics.tests.filter((test) => test.storyId === story.id).length} tests</small></div></div>)}{metrics.closedStories.length === 0 && <div className="slide-empty"><Clock /><strong>No stories closed yet</strong><span>Completion evidence will appear here automatically.</span></div>}</div></div></>);
+  if (index === 6) return frame(<><SlideTitle index="06" kicker="IN FLIGHT" title="The active sprint workload is clear, owned, and measurable." /><div className="inflight-table"><div><span>Work item</span><span>Owner</span><span>Progress</span><span>Priority</span></div>{metrics.activeStories.slice(0, 6).map((story) => <div key={story.id}><div><small>{story.id}</small><strong>{story.title}</strong></div><span>{story.assignee}</span><div className="inflight-progress"><ProgressBar value={story.progress} /><strong>{story.progress}%</strong></div><i className={`priority-${story.priority?.toLowerCase()}`}>{story.moscow || story.priority}</i></div>)}</div></>);
+  if (index === 7) return frame(<><SlideTitle index="07" kicker="QUALITY SIGNAL" title="Quality readiness is visible through execution, pass rate, and story traceability." /><div className="quality-command"><div className="quality-score"><div style={{ "--qa-score": `${metrics.qaStarted * 3.6}deg` }}><strong>{metrics.qaStarted}%</strong><span>executed</span></div><p>{metrics.tests.length} sprint-linked test scenarios</p></div><div className="quality-breakdown"><SlideQualityRow label="Passed" value={metrics.passedTests.length} total={metrics.tests.length} tone="green" /><SlideQualityRow label="In progress" value={metrics.activeTests.length} total={metrics.tests.length} tone="purple" /><SlideQualityRow label="Not run" value={metrics.notRunTests.length} total={metrics.tests.length} tone="gray" /><SlideQualityRow label="Failed" value={metrics.failedTests.length} total={metrics.tests.length} tone="red" /></div><div className="quality-proof"><span>READINESS PROOF</span><strong>{metrics.passRate}%</strong><p>pass rate across all linked sprint scenarios</p><div><CheckCircle weight="fill" />Traceability maintained</div></div></div></>);
+  if (index === 8) return frame(<><SlideTitle index="08" kicker="ATTENTION NEEDED" title="Focused decisions now will prevent avoidable rework next sprint." /><div className="attention-grid"><div><div className="attention-head"><span>DELIVERY RISKS</span><strong>{openRisks.length} open</strong></div>{openRisks.slice(0, 3).map((risk) => <div className="risk-card" key={risk.id}><i className={`impact-${risk.impact.toLowerCase()}`}>{risk.impact}</i><div><strong>{risk.title}</strong><small>{risk.status} · Owner: {risk.owner}</small></div></div>)}</div><div><div className="attention-head"><span>DECISIONS REQUIRED</span><strong>Client + Product</strong></div>{presentation.decisionsNeeded.slice(0, 3).map((decision, position) => <div className="decision-card" key={decision}><span>0{position + 1}</span><p>{decision}</p></div>)}</div></div></>);
+  return frame(<><SlideTitle index="09" kicker="FORWARD VIEW" title="The next sprint is ready to move—with three clear actions to protect momentum." /><div className="forward-grid"><div className="next-outcomes"><span>NEXT SPRINT OUTCOMES</span>{presentation.nextSprintGoals.slice(0, 3).map((goal, position) => <div key={goal}><strong>0{position + 1}</strong><p>{goal}</p></div>)}</div><div className="client-actions"><span>CLIENT ACTIONS</span>{presentation.clientAsks.slice(0, 3).map((ask) => <div key={ask}><CheckCircle /><p>{ask}</p></div>)}</div></div><div className="closing-ribbon"><div><span>DELIVERY CONFIDENCE</span><strong>{presentation.confidence}</strong></div><p>Thank you</p><small>Next review · {presentation.dateRange}</small></div></>);
 }
 
-function SlideTitle({ kicker, title }) { return <div className="sprint-slide-title"><span>{kicker}</span><h2>{title}</h2></div>; }
-function SlideMetric({ value, label }) { return <div className="slide-metric"><strong>{value}</strong><span>{label}</span></div>; }
-function SlideQualityRow({ label, value }) { return <div><div><span>{label}</span><strong>{value}%</strong></div><ProgressBar value={value} /></div>; }
+function SlideTitle({ index, kicker, title }) { return <div className="sprint-slide-title"><div><strong>{index}</strong><span>{kicker}</span></div><h2>{title}</h2></div>; }
+function SlideMetric({ value, label, note }) { return <div className="slide-metric"><strong>{value}</strong><div><span>{label}</span>{note && <small>{note}</small>}</div></div>; }
+function SlideStatusRow({ label, value, total, tone }) { const percentage = Math.round(value / Math.max(1, total) * 100); return <div className="slide-status-row"><div><span>{label}</span><strong>{value} · {percentage}%</strong></div><i><b className={tone} style={{ width: `${percentage}%` }} /></i></div>; }
+function SlideQualityRow({ label, value, total, tone }) { const percentage = Math.round(value / Math.max(1, total) * 100); return <div className="quality-row"><div><span><i className={tone} />{label}</span><strong>{value}</strong></div><ProgressBar value={percentage} /></div>; }
 
 function Reports({ state, project }) {
   const features = state.workItems.filter((item) => item.type === "Feature" && item.phase !== "Unplanned");
