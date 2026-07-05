@@ -236,11 +236,12 @@ function seedState(source) {
       phase: "Phase 2 - Payroll Delivery",
       targetMilestone: "Requirements Sign-off",
       targetDate: "2026-08-31",
+      linkGroups: ["General", "Worksheets", "Presentations", "External Sites"],
       links: [
-        { id: "link-1", name: "Bug Inventory Summary", url: "https://docs.google.com/spreadsheets/d/10SCnCAbwqQB4Llix_gQllwygaCk5k-yWKv76_yxQi_k/edit" },
-        { id: "link-2", name: "Payroll Timeline Sheet", url: "https://docs.google.com/spreadsheets/d/1FopPinrWpPNFCJ3mfAVBHh2gZ-EB9VACgOqJwo8LNMQ/edit" },
-        { id: "link-3", name: "Client Kickoff Slides", url: "https://docs.google.com/presentation/d/1K-G0Z9y2PzS8x56wF7p7i4qQp37sN_sC-oD7j9l-8zE/edit" },
-        { id: "link-4", name: "System Architecture Design", url: "https://mermaid.live/" }
+        { id: "link-1", name: "Bug Inventory Summary", url: "https://docs.google.com/spreadsheets/d/10SCnCAbwqQB4Llix_gQllwygaCk5k-yWKv76_yxQi_k/edit", group: "Worksheets" },
+        { id: "link-2", name: "Payroll Timeline Sheet", url: "https://docs.google.com/spreadsheets/d/1FopPinrWpPNFCJ3mfAVBHh2gZ-EB9VACgOqJwo8LNMQ/edit", group: "Worksheets" },
+        { id: "link-3", name: "Client Kickoff Slides", url: "https://docs.google.com/presentation/d/1K-G0Z9y2PzS8x56wF7p7i4qQp37sN_sC-oD7j9l-8zE/edit", group: "Presentations" },
+        { id: "link-4", name: "System Architecture Design", url: "https://mermaid.live/", group: "External Sites" }
       ],
       createdAt,
     }],
@@ -336,14 +337,32 @@ async function loadState() {
       migrated = true;
     }
     existing.projects = (existing.projects || []).map((proj) => {
+      if (!proj.linkGroups) {
+        proj.linkGroups = ["General", "Worksheets", "Presentations", "External Sites"];
+        migrated = true;
+      }
       if (!proj.links || proj.links.length < 3) {
         proj.links = [
-          { id: "link-1", name: "Bug Inventory Summary", url: "https://docs.google.com/spreadsheets/d/10SCnCAbwqQB4Llix_gQllwygaCk5k-yWKv76_yxQi_k/edit" },
-          { id: "link-2", name: "Payroll Timeline Sheet", url: "https://docs.google.com/spreadsheets/d/1FopPinrWpPNFCJ3mfAVBHh2gZ-EB9VACgOqJwo8LNMQ/edit" },
-          { id: "link-3", name: "Client Kickoff Slides", url: "https://docs.google.com/presentation/d/1K-G0Z9y2PzS8x56wF7p7i4qQp37sN_sC-oD7j9l-8zE/edit" },
-          { id: "link-4", name: "System Architecture Design", url: "https://mermaid.live/" }
+          { id: "link-1", name: "Bug Inventory Summary", url: "https://docs.google.com/spreadsheets/d/10SCnCAbwqQB4Llix_gQllwygaCk5k-yWKv76_yxQi_k/edit", group: "Worksheets" },
+          { id: "link-2", name: "Payroll Timeline Sheet", url: "https://docs.google.com/spreadsheets/d/1FopPinrWpPNFCJ3mfAVBHh2gZ-EB9VACgOqJwo8LNMQ/edit", group: "Worksheets" },
+          { id: "link-3", name: "Client Kickoff Slides", url: "https://docs.google.com/presentation/d/1K-G0Z9y2PzS8x56wF7p7i4qQp37sN_sC-oD7j9l-8zE/edit", group: "Presentations" },
+          { id: "link-4", name: "System Architecture Design", url: "https://mermaid.live/", group: "External Sites" }
         ];
         migrated = true;
+      } else {
+        let updatedLinks = false;
+        proj.links = proj.links.map((link) => {
+          if (!link.group) {
+            let g = "General";
+            if (link.id === "link-1" || link.id === "link-2") g = "Worksheets";
+            else if (link.id === "link-3") g = "Presentations";
+            else if (link.id === "link-4") g = "External Sites";
+            updatedLinks = true;
+            return { ...link, group: g };
+          }
+          return link;
+        });
+        if (updatedLinks) migrated = true;
       }
       return proj;
     });

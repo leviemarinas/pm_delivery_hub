@@ -14,23 +14,33 @@
         {
           "id": "link-1",
           "name": "Bug Inventory Summary",
-          "url": "https://docs.google.com/spreadsheets/d/10SCnCAbwqQB4Llix_gQllwygaCk5k-yWKv76_yxQi_k/edit"
+          "url": "https://docs.google.com/spreadsheets/d/10SCnCAbwqQB4Llix_gQllwygaCk5k-yWKv76_yxQi_k/edit",
+          "group": "Worksheets"
         },
         {
           "id": "link-2",
           "name": "Payroll Timeline Sheet",
-          "url": "https://docs.google.com/spreadsheets/d/1FopPinrWpPNFCJ3mfAVBHh2gZ-EB9VACgOqJwo8LNMQ/edit"
+          "url": "https://docs.google.com/spreadsheets/d/1FopPinrWpPNFCJ3mfAVBHh2gZ-EB9VACgOqJwo8LNMQ/edit",
+          "group": "Worksheets"
         },
         {
           "id": "link-3",
           "name": "Client Kickoff Slides",
-          "url": "https://docs.google.com/presentation/d/1K-G0Z9y2PzS8x56wF7p7i4qQp37sN_sC-oD7j9l-8zE/edit"
+          "url": "https://docs.google.com/presentation/d/1K-G0Z9y2PzS8x56wF7p7i4qQp37sN_sC-oD7j9l-8zE/edit",
+          "group": "Presentations"
         },
         {
           "id": "link-4",
           "name": "System Architecture Design",
-          "url": "https://mermaid.live/"
+          "url": "https://mermaid.live/",
+          "group": "External Sites"
         }
+      ],
+      "linkGroups": [
+        "General",
+        "Worksheets",
+        "Presentations",
+        "External Sites"
       ]
     }
   ],
@@ -6871,6 +6881,20 @@
     }
   ],
   "activities": [
+    {
+      "id": "330efac3-db05-4c79-b65e-c297af08a794",
+      "action": "Updated project details for Atlas Payroll",
+      "actor": "Shared User",
+      "itemId": "atlas-payroll",
+      "at": "2026-07-05T19:30:28.398Z"
+    },
+    {
+      "id": "00485842-20fa-46d0-9458-075bfa413ca5",
+      "action": "Updated project details for Atlas Payroll",
+      "actor": "Shared User",
+      "itemId": "atlas-payroll",
+      "at": "2026-07-05T19:30:22.195Z"
+    },
     {
       "id": "3c1bbe33-d2ba-4d1d-9257-c0483f0c639a",
       "action": "Updated US-BASIC-003",

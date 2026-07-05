@@ -254,16 +254,32 @@ function TypeIcon({ type, size = 18 }) {
 
 function ProjectLinksPage({ state, project, setState, showToast }) {
   const links = project.links || [];
-  const [selectedLinkId, setSelectedLinkId] = useState(links[0]?.id || null);
+  const groups = project.linkGroups || ["General"];
+  
+  const [activeGroup, setActiveGroup] = useState(groups[0] || "General");
+  const [selectedLinkId, setSelectedLinkId] = useState(null);
+  
   const [editingId, setEditingId] = useState(null);
-  const [form, setForm] = useState({ name: "", url: "" });
+  const [form, setForm] = useState({ name: "", url: "", group: "General" });
   const [adding, setAdding] = useState(false);
+  
+  const [addingGroup, setAddingGroup] = useState(false);
+  const [newGroupForm, setNewGroupForm] = useState("");
+  const [renamingGroup, setRenamingGroup] = useState(false);
+  const [renameGroupForm, setRenameGroupForm] = useState("");
 
+  const filteredLinks = links.filter((l) => (l.group || "General") === activeGroup);
+  
   useEffect(() => {
-    if (links.length > 0 && !selectedLinkId) {
-      setSelectedLinkId(links[0].id);
+    if (filteredLinks.length > 0) {
+      const stillValid = filteredLinks.some((l) => l.id === selectedLinkId);
+      if (!stillValid) {
+        setSelectedLinkId(filteredLinks[0].id);
+      }
+    } else {
+      setSelectedLinkId(null);
     }
-  }, [links, selectedLinkId]);
+  }, [activeGroup, links, selectedLinkId]);
 
   const selectedLink = links.find((l) => l.id === selectedLinkId);
 
@@ -271,10 +287,16 @@ function ProjectLinksPage({ state, project, setState, showToast }) {
     e.preventDefault();
     if (!form.name || !form.url) return;
     try {
-      const newLink = { id: `link-${Date.now()}`, name: form.name.trim(), url: form.url.trim() };
+      const targetGroup = form.group || activeGroup || "General";
+      const newLink = { 
+        id: `link-${Date.now()}`, 
+        name: form.name.trim(), 
+        url: form.url.trim(),
+        group: targetGroup
+      };
       const nextLinks = [...links, newLink];
-      await updateProjectLinks(nextLinks);
-      setForm({ name: "", url: "" });
+      await updateProjectData(nextLinks, groups);
+      setForm({ name: "", url: "", group: activeGroup });
       setAdding(false);
       setSelectedLinkId(newLink.id);
       showToast("Link added successfully");
@@ -287,9 +309,13 @@ function ProjectLinksPage({ state, project, setState, showToast }) {
     e.preventDefault();
     if (!form.name || !form.url) return;
     try {
-      const nextLinks = links.map((l) => (l.id === editingId ? { ...l, name: form.name.trim(), url: form.url.trim() } : l));
-      await updateProjectLinks(nextLinks);
-      setForm({ name: "", url: "" });
+      const nextLinks = links.map((l) => 
+        l.id === editingId 
+          ? { ...l, name: form.name.trim(), url: form.url.trim(), group: form.group || l.group || "General" } 
+          : l
+      );
+      await updateProjectData(nextLinks, groups);
+      setForm({ name: "", url: "", group: activeGroup });
       setEditingId(null);
       showToast("Link updated");
     } catch (err) {
@@ -301,9 +327,10 @@ function ProjectLinksPage({ state, project, setState, showToast }) {
     if (!window.confirm("Delete this link?")) return;
     try {
       const nextLinks = links.filter((l) => l.id !== id);
-      await updateProjectLinks(nextLinks);
+      await updateProjectData(nextLinks, groups);
       if (selectedLinkId === id) {
-        setSelectedLinkId(nextLinks[0]?.id || null);
+        const remainingFiltered = nextLinks.filter((l) => (l.group || "General") === activeGroup);
+        setSelectedLinkId(remainingFiltered[0]?.id || null);
       }
       showToast("Link deleted");
     } catch (err) {
@@ -311,10 +338,69 @@ function ProjectLinksPage({ state, project, setState, showToast }) {
     }
   };
 
-  const updateProjectLinks = async (nextLinks) => {
+  const handleCreateGroup = async (e) => {
+    e.preventDefault();
+    const groupName = newGroupForm.trim();
+    if (!groupName) return;
+    if (groups.includes(groupName)) {
+      showToast("Group tab already exists.");
+      return;
+    }
+    try {
+      const nextGroups = [...groups, groupName];
+      await updateProjectData(links, nextGroups);
+      setNewGroupForm("");
+      setAddingGroup(false);
+      setActiveGroup(groupName);
+      showToast("Tab group created");
+    } catch (err) {
+      showToast(`Error creating tab group: ${err.message}`);
+    }
+  };
+
+  const handleRenameGroup = async (e) => {
+    e.preventDefault();
+    const newName = renameGroupForm.trim();
+    if (!newName || newName === activeGroup) {
+      setRenamingGroup(false);
+      return;
+    }
+    if (groups.includes(newName)) {
+      showToast("A tab group with this name already exists.");
+      return;
+    }
+    try {
+      const nextGroups = groups.map((g) => (g === activeGroup ? newName : g));
+      const nextLinks = links.map((l) => ((l.group || "General") === activeGroup ? { ...l, group: newName } : l));
+      
+      await updateProjectData(nextLinks, nextGroups);
+      setActiveGroup(newName);
+      setRenamingGroup(false);
+      showToast("Tab group renamed");
+    } catch (err) {
+      showToast(`Error renaming tab group: ${err.message}`);
+    }
+  };
+
+  const handleDeleteGroup = async () => {
+    if (activeGroup === "General") return;
+    if (!window.confirm(`Delete the tab group "${activeGroup}"? All links in this group will be moved to General.`)) return;
+    try {
+      const nextGroups = groups.filter((g) => g !== activeGroup);
+      const nextLinks = links.map((l) => ((l.group || "General") === activeGroup ? { ...l, group: "General" } : l));
+      
+      await updateProjectData(nextLinks, nextGroups);
+      setActiveGroup("General");
+      showToast("Tab group deleted");
+    } catch (err) {
+      showToast(`Error deleting tab group: ${err.message}`);
+    }
+  };
+
+  const updateProjectData = async (nextLinks, nextGroups) => {
     const updated = await api(`/api/projects/${project.id}`, {
       method: "PUT",
-      body: JSON.stringify({ ...project, links: nextLinks }),
+      body: JSON.stringify({ ...project, links: nextLinks, linkGroups: nextGroups }),
     });
     setState((current) => ({
       ...current,
@@ -352,15 +438,58 @@ function ProjectLinksPage({ state, project, setState, showToast }) {
           <p>Attach worksheets, reference documents, slide presentations, and open them inline or in same/new tabs.</p>
         </div>
         {!adding && !editingId && (
-          <button className="primary-button" onClick={() => { setAdding(true); setForm({ name: "", url: "" }); }}>
+          <button className="primary-button" onClick={() => { setAdding(true); setForm({ name: "", url: "", group: activeGroup }); }}>
             <Plus />Add project link
           </button>
         )}
       </div>
 
+      <div className="links-tab-bar-container">
+        <div className="links-tab-bar-scrollable">
+          {groups.map((g) => (
+            <button key={g} className={`links-tab-pill ${activeGroup === g ? "active" : ""}`} onClick={() => setActiveGroup(g)}>
+              <span>{g}</span>
+            </button>
+          ))}
+          
+          {addingGroup ? (
+            <form onSubmit={handleCreateGroup} className="new-tab-inline-form">
+              <input autoFocus placeholder="New tab name..." value={newGroupForm} onChange={(e) => setNewGroupForm(e.target.value)} required />
+              <button type="submit" className="tab-form-btn-submit">Add</button>
+              <button type="button" className="tab-form-btn-cancel" onClick={() => setAddingGroup(false)}>✕</button>
+            </form>
+          ) : (
+            <button className="links-tab-pill add-tab-btn" onClick={() => { setAddingGroup(true); setNewGroupForm(""); }}>
+              <Plus size={13} /> <span>New Tab</span>
+            </button>
+          )}
+        </div>
+
+        {activeGroup !== "General" && (
+          <div className="active-tab-controls">
+            {renamingGroup ? (
+              <form onSubmit={handleRenameGroup} className="rename-tab-inline-form">
+                <input autoFocus value={renameGroupForm} onChange={(e) => setRenameGroupForm(e.target.value)} required />
+                <button type="submit" className="save">Save</button>
+                <button type="button" className="cancel" onClick={() => setRenamingGroup(false)}>Cancel</button>
+              </form>
+            ) : (
+              <div className="tab-options-row">
+                <button onClick={() => { setRenamingGroup(true); setRenameGroupForm(activeGroup); }} title="Rename this tab group">
+                  <PencilSimple size={13} /> Rename tab
+                </button>
+                <button onClick={handleDeleteGroup} className="delete" title="Delete this tab group">
+                  <Trash size={13} /> Delete tab
+                </button>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+
       <div className="links-page-layout">
         <aside className="links-sidebar-panel panel">
-          <PanelHeader title="Attachments" />
+          <PanelHeader title={`Attachments (${activeGroup})`} />
           
           {adding && (
             <form onSubmit={handleAdd} className="link-sidebar-form">
@@ -370,6 +499,11 @@ function ProjectLinksPage({ state, project, setState, showToast }) {
               </label>
               <label>Resource URL
                 <input placeholder="https://docs.google.com/..." type="url" value={form.url} onChange={(e) => setForm({ ...form, url: e.target.value })} required />
+              </label>
+              <label>Tab Group
+                <select value={form.group} onChange={(e) => setForm({ ...form, group: e.target.value })}>
+                  {groups.map((g) => <option key={g} value={g}>{g}</option>)}
+                </select>
               </label>
               <div className="form-actions">
                 <button type="button" className="secondary-button" onClick={() => setAdding(false)}>Cancel</button>
@@ -387,6 +521,11 @@ function ProjectLinksPage({ state, project, setState, showToast }) {
               <label>Resource URL
                 <input type="url" value={form.url} onChange={(e) => setForm({ ...form, url: e.target.value })} required />
               </label>
+              <label>Tab Group
+                <select value={form.group} onChange={(e) => setForm({ ...form, group: e.target.value })}>
+                  {groups.map((g) => <option key={g} value={g}>{g}</option>)}
+                </select>
+              </label>
               <div className="form-actions">
                 <button type="button" className="secondary-button" onClick={() => setEditingId(null)}>Cancel</button>
                 <button type="submit" className="primary-button">Save</button>
@@ -396,17 +535,17 @@ function ProjectLinksPage({ state, project, setState, showToast }) {
 
           {!adding && !editingId && (
             <div className="links-list-group">
-              {links.length === 0 ? (
-                <p className="empty-text">No project links attached.</p>
+              {filteredLinks.length === 0 ? (
+                <p className="empty-text">No links in this tab group.</p>
               ) : (
-                links.map((link) => (
+                filteredLinks.map((link) => (
                   <div key={link.id} className={`links-list-item-wrapper ${selectedLinkId === link.id ? "active" : ""}`}>
                     <button className="link-select-btn" onClick={() => setSelectedLinkId(link.id)}>
                       <LinkSimple size={18} />
                       <span>{link.name}</span>
                     </button>
                     <div className="link-actions">
-                      <button onClick={() => { setEditingId(link.id); setForm({ name: link.name, url: link.url }); }} title="Rename/Edit">
+                      <button onClick={() => { setEditingId(link.id); setForm({ name: link.name, url: link.url, group: link.group || "General" }); }} title="Rename/Edit">
                         <PencilSimple size={14} />
                       </button>
                       <button onClick={() => handleDelete(link.id)} className="delete" title="Delete">
