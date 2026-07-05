@@ -270,33 +270,45 @@ function ProjectLinksPage({ state, project, setState, showToast }) {
   const handleAdd = async (e) => {
     e.preventDefault();
     if (!form.name || !form.url) return;
-    const newLink = { id: `link-${Date.now()}`, name: form.name.trim(), url: form.url.trim() };
-    const nextLinks = [...links, newLink];
-    await updateProjectLinks(nextLinks);
-    setForm({ name: "", url: "" });
-    setAdding(false);
-    setSelectedLinkId(newLink.id);
-    showToast("Link added successfully");
+    try {
+      const newLink = { id: `link-${Date.now()}`, name: form.name.trim(), url: form.url.trim() };
+      const nextLinks = [...links, newLink];
+      await updateProjectLinks(nextLinks);
+      setForm({ name: "", url: "" });
+      setAdding(false);
+      setSelectedLinkId(newLink.id);
+      showToast("Link added successfully");
+    } catch (err) {
+      showToast(`Error adding link: ${err.message}`);
+    }
   };
 
   const handleSaveEdit = async (e) => {
     e.preventDefault();
     if (!form.name || !form.url) return;
-    const nextLinks = links.map((l) => (l.id === editingId ? { ...l, name: form.name.trim(), url: form.url.trim() } : l));
-    await updateProjectLinks(nextLinks);
-    setForm({ name: "", url: "" });
-    setEditingId(null);
-    showToast("Link updated");
+    try {
+      const nextLinks = links.map((l) => (l.id === editingId ? { ...l, name: form.name.trim(), url: form.url.trim() } : l));
+      await updateProjectLinks(nextLinks);
+      setForm({ name: "", url: "" });
+      setEditingId(null);
+      showToast("Link updated");
+    } catch (err) {
+      showToast(`Error updating link: ${err.message}`);
+    }
   };
 
   const handleDelete = async (id) => {
     if (!window.confirm("Delete this link?")) return;
-    const nextLinks = links.filter((l) => l.id !== id);
-    await updateProjectLinks(nextLinks);
-    if (selectedLinkId === id) {
-      setSelectedLinkId(nextLinks[0]?.id || null);
+    try {
+      const nextLinks = links.filter((l) => l.id !== id);
+      await updateProjectLinks(nextLinks);
+      if (selectedLinkId === id) {
+        setSelectedLinkId(nextLinks[0]?.id || null);
+      }
+      showToast("Link deleted");
+    } catch (err) {
+      showToast(`Error deleting link: ${err.message}`);
     }
-    showToast("Link deleted");
   };
 
   const updateProjectLinks = async (nextLinks) => {

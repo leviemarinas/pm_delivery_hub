@@ -9,7 +9,29 @@
       "phase": "Phase 2 - Payroll Delivery",
       "targetMilestone": "Requirements Sign-off",
       "targetDate": "2026-08-31",
-      "createdAt": "2026-07-05T16:07:05.767Z"
+      "createdAt": "2026-07-05T16:07:05.767Z",
+      "links": [
+        {
+          "id": "link-1",
+          "name": "Bug Inventory Summary",
+          "url": "https://docs.google.com/spreadsheets/d/10SCnCAbwqQB4Llix_gQllwygaCk5k-yWKv76_yxQi_k/edit"
+        },
+        {
+          "id": "link-2",
+          "name": "Payroll Timeline Sheet",
+          "url": "https://docs.google.com/spreadsheets/d/1FopPinrWpPNFCJ3mfAVBHh2gZ-EB9VACgOqJwo8LNMQ/edit"
+        },
+        {
+          "id": "link-3",
+          "name": "Client Kickoff Slides",
+          "url": "https://docs.google.com/presentation/d/1K-G0Z9y2PzS8x56wF7p7i4qQp37sN_sC-oD7j9l-8zE/edit"
+        },
+        {
+          "id": "link-4",
+          "name": "System Architecture Design",
+          "url": "https://mermaid.live/"
+        }
+      ]
     }
   ],
   "workItems": [
@@ -16264,5 +16286,48 @@
       "confidence": "On Track",
       "updatedAt": "2026-07-05T17:43:51.819Z"
     }
-  ]
+  ],
+  "users": [
+    {
+      "id": "user-1",
+      "name": "Alex Dela Cruz",
+      "email": "alex.delacruz@example.com"
+    },
+    {
+      "id": "user-2",
+      "name": "Rhea Santos",
+      "email": "rhea.santos@example.com"
+    },
+    {
+      "id": "user-3",
+      "name": "Marco Reyes",
+      "email": "marco.reyes@example.com"
+    },
+    {
+      "id": "user-4",
+      "name": "Mika Reyes",
+      "email": "mika.reyes@example.com"
+    },
+    {
+      "id": "user-5",
+      "name": "BA Team",
+      "email": "ba.team@example.com"
+    },
+    {
+      "id": "user-6",
+      "name": "QA Team",
+      "email": "qa.team@example.com"
+    },
+    {
+      "id": "user-7",
+      "name": "Project Team",
+      "email": "project.team@example.com"
+    },
+    {
+      "id": "user-8",
+      "name": "Tech Lead",
+      "email": "tech.lead@example.com"
+    }
+  ],
+  "emails": []
 }
