@@ -50,6 +50,23 @@ final result: passed
 
 ---
 
+## Feedback Enhancement QA
+
+Implementation evidence:
+
+- Backlog: `qa-artifacts/feedback-backlog.png`
+- Sprint board: `qa-artifacts/feedback-board.png`
+- QA import: `qa-artifacts/feedback-qa-import.png`
+- Excel template: `qa-artifacts/test-case-template-preview.png`
+
+Validated scope: phase and MoSCoW filtering, sprint board filtering, unplanned work visibility, dependency tracing, editable acceptance criteria and QA focus, inline linked-test editing, Excel import/export, and live sprint-presentation population.
+
+Runtime: production build passes; API import validation and persistent state migration pass.
+
+final result: passed
+
+---
+
 ## Sprint Presentation Extension
 
 Reference format: `C:/Users/josrp/Downloads/Payroll_App_Requirements_Gathering_4.pptx`
