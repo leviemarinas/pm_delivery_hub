@@ -166,7 +166,7 @@ function seedState(source) {
 
     featureStories.forEach((story, storyIndex) => {
       const status = statuses[storyIndex] || "New";
-      const storyAssignees = ["Alex Dela Cruz", "Rhea Santos", "Marco Reyes", "Mika Reyes"];
+      const storyAssignees = ["BA Team", "BA Team", "Dev Team", "QA Team"];
       workItems.push({
         ...story,
         type: "User Story",
@@ -260,14 +260,11 @@ function seedState(source) {
     presentations: [defaultSprintPresentation()],
     source,
     users: [
-      { id: "user-1", name: "Alex Dela Cruz", email: "alex.delacruz@example.com" },
-      { id: "user-2", name: "Rhea Santos", email: "rhea.santos@example.com" },
-      { id: "user-3", name: "Marco Reyes", email: "marco.reyes@example.com" },
-      { id: "user-4", name: "Mika Reyes", email: "mika.reyes@example.com" },
-      { id: "user-5", name: "BA Team", email: "ba.team@example.com" },
-      { id: "user-6", name: "QA Team", email: "qa.team@example.com" },
-      { id: "user-7", name: "Project Team", email: "project.team@example.com" },
-      { id: "user-8", name: "Tech Lead", email: "tech.lead@example.com" }
+      { id: "user-1", name: "Project Team", email: "project.team@example.com" },
+      { id: "user-2", name: "BA Team", email: "ba.team@example.com" },
+      { id: "user-3", name: "Dev Team", email: "dev.team@example.com" },
+      { id: "user-4", name: "QA Team", email: "qa.team@example.com" },
+      { id: "user-5", name: "Tech Lead", email: "tech.lead@example.com" }
     ],
     emails: []
   };
@@ -342,14 +339,11 @@ async function loadState() {
     });
     if (!existing.users) {
       existing.users = [
-        { id: "user-1", name: "Alex Dela Cruz", email: "alex.delacruz@example.com" },
-        { id: "user-2", name: "Rhea Santos", email: "rhea.santos@example.com" },
-        { id: "user-3", name: "Marco Reyes", email: "marco.reyes@example.com" },
-        { id: "user-4", name: "Mika Reyes", email: "mika.reyes@example.com" },
-        { id: "user-5", name: "BA Team", email: "ba.team@example.com" },
-        { id: "user-6", name: "QA Team", email: "qa.team@example.com" },
-        { id: "user-7", name: "Project Team", email: "project.team@example.com" },
-        { id: "user-8", name: "Tech Lead", email: "tech.lead@example.com" }
+        { id: "user-1", name: "Project Team", email: "project.team@example.com" },
+        { id: "user-2", name: "BA Team", email: "ba.team@example.com" },
+        { id: "user-3", name: "Dev Team", email: "dev.team@example.com" },
+        { id: "user-4", name: "QA Team", email: "qa.team@example.com" },
+        { id: "user-5", name: "Tech Lead", email: "tech.lead@example.com" }
       ];
       migrated = true;
     }
