@@ -15,11 +15,11 @@ const password = process.env.ATLAS_PASSWORD || "atlas2026";
 const sessions = new Map();
 
 const statusSets = {
-  "FEAT-PAY-BASIC-001": ["Closed", "Active", "Active", "New", "New"],
-  "FEAT-PAY-LOAN-001": ["Closed", "Active", "Active", "New", "New", "New"],
-  "FEAT-PAY-BONUS-001": ["Active", "Active", "New", "New", "New"],
-  "FEAT-PAY-DEMIN-001": ["Closed", "Active", "Active", "New", "New"],
-  "FEAT-PAY-CROSS-001": ["Active", "New", "New"],
+  "FEAT-PAY-BASIC-001": ["New", "New", "New", "New", "New"],
+  "FEAT-PAY-LOAN-001": ["New", "New", "New", "New", "New", "New"],
+  "FEAT-PAY-BONUS-001": ["New", "New", "New", "New", "New"],
+  "FEAT-PAY-DEMIN-001": ["New", "New", "New", "New", "New"],
+  "FEAT-PAY-CROSS-001": ["New", "New", "New"],
 };
 
 const featurePlans = {
@@ -136,7 +136,7 @@ function seedState(source) {
     sprint: "Program",
     phase: "Phase 2",
     storyPoints: 0,
-    progress: 42,
+    progress: 0,
     createdAt,
     updatedAt: createdAt,
   });
