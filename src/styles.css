@@ -1614,4 +1614,36 @@ tbody tr:last-child td { border-bottom: 0; }
   background: var(--line-strong);
 }
 
+/* ================================================================
+   Project Links Maximized View Styling
+   ================================================================ */
 
+.links-page-container.maximized {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  background: var(--bg);
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+}
+
+.links-page-container.maximized .page-heading,
+.links-page-container.maximized .links-tab-bar-container {
+  display: none !important;
+}
+
+.links-page-container.maximized .links-page-layout {
+  grid-template-columns: 1fr;
+  gap: 0;
+  margin-top: 0;
+  flex: 1;
+}
+
+.links-page-container.maximized .links-sidebar-panel {
+  display: none !important;
+}
+
+.links-page-container.maximized .links-viewer-panel {
+  height: 100%;
+}

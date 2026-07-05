@@ -7,6 +7,8 @@ import {
   ArrowRight,
   ArrowsOutSimple,
   Bell,
+  ArrowsIn,
+  ArrowsOut,
   BookOpenText,
   Briefcase,
   Bug,
@@ -262,8 +264,9 @@ function ProjectLinksPage({ state, project, setState, showToast }) {
   const [editingId, setEditingId] = useState(null);
   const [form, setForm] = useState({ name: "", url: "", group: "General" });
   const [adding, setAdding] = useState(false);
-  
   const [addingGroup, setAddingGroup] = useState(false);
+  const [isMaximized, setIsMaximized] = useState(false);
+
   const [newGroupForm, setNewGroupForm] = useState("");
   const [renamingGroup, setRenamingGroup] = useState(false);
   const [renameGroupForm, setRenameGroupForm] = useState("");
@@ -430,7 +433,7 @@ function ProjectLinksPage({ state, project, setState, showToast }) {
   };
 
   return (
-    <div className="content links-page-container">
+    <div className={`content links-page-container ${isMaximized ? "maximized" : ""}`}>
       <div className="page-heading">
         <div>
           <span className="eyebrow">WORKSPACE RESOURCE HUBS</span>
@@ -574,6 +577,14 @@ function ProjectLinksPage({ state, project, setState, showToast }) {
                   <a href={selectedLink.url} target="_blank" rel="noopener noreferrer" className="primary-button">
                     Open in new tab
                   </a>
+                  <button 
+                    onClick={() => setIsMaximized(!isMaximized)} 
+                    className="secondary-button maximize-btn"
+                    title={isMaximized ? "Restore view" : "Maximize view"}
+                    style={{ padding: '0 10px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                  >
+                    {isMaximized ? <ArrowsIn size={18} /> : <ArrowsOut size={18} />}
+                  </button>
                 </div>
               </div>
               
