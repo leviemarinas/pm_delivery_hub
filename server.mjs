@@ -238,7 +238,9 @@ function seedState(source) {
       targetDate: "2026-08-31",
       links: [
         { id: "link-1", name: "Bug Inventory Summary", url: "https://docs.google.com/spreadsheets/d/10SCnCAbwqQB4Llix_gQllwygaCk5k-yWKv76_yxQi_k/edit" },
-        { id: "link-2", name: "Payroll Timeline Sheet", url: "https://docs.google.com/spreadsheets/d/1FopPinrWpPNFCJ3mfAVBHh2gZ-EB9VACgOqJwo8LNMQ/edit" }
+        { id: "link-2", name: "Payroll Timeline Sheet", url: "https://docs.google.com/spreadsheets/d/1FopPinrWpPNFCJ3mfAVBHh2gZ-EB9VACgOqJwo8LNMQ/edit" },
+        { id: "link-3", name: "Client Kickoff Slides", url: "https://docs.google.com/presentation/d/1K-G0Z9y2PzS8x56wF7p7i4qQp37sN_sC-oD7j9l-8zE/edit" },
+        { id: "link-4", name: "System Architecture Design", url: "https://mermaid.live/" }
       ],
       createdAt,
     }],
@@ -334,10 +336,12 @@ async function loadState() {
       migrated = true;
     }
     existing.projects = (existing.projects || []).map((proj) => {
-      if (!proj.links) {
+      if (!proj.links || proj.links.length < 3) {
         proj.links = [
           { id: "link-1", name: "Bug Inventory Summary", url: "https://docs.google.com/spreadsheets/d/10SCnCAbwqQB4Llix_gQllwygaCk5k-yWKv76_yxQi_k/edit" },
-          { id: "link-2", name: "Payroll Timeline Sheet", url: "https://docs.google.com/spreadsheets/d/1FopPinrWpPNFCJ3mfAVBHh2gZ-EB9VACgOqJwo8LNMQ/edit" }
+          { id: "link-2", name: "Payroll Timeline Sheet", url: "https://docs.google.com/spreadsheets/d/1FopPinrWpPNFCJ3mfAVBHh2gZ-EB9VACgOqJwo8LNMQ/edit" },
+          { id: "link-3", name: "Client Kickoff Slides", url: "https://docs.google.com/presentation/d/1K-G0Z9y2PzS8x56wF7p7i4qQp37sN_sC-oD7j9l-8zE/edit" },
+          { id: "link-4", name: "System Architecture Design", url: "https://mermaid.live/" }
         ];
         migrated = true;
       }

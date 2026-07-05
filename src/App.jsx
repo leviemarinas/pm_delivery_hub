@@ -63,6 +63,7 @@ const api = async (path, options = {}) => {
 
 const navItems = [
   ["overview", "Overview", House],
+  ["links", "Project Links", LinkSimple],
   ["presentation", "Sprint Presentation", PresentationChart],
   ["backlog", "Backlog", Rows],
   ["board", "Boards", Kanban],
@@ -229,6 +230,7 @@ function AppShell({ state, setState, onLogout }) {
         </header>
         <div className={`page ${selected ? "with-detail" : ""}`}>
           {page === "overview" && <Overview state={state} project={project} openItem={openItem} navigate={navigate} setState={setState} />}
+          {page === "links" && <ProjectLinksPage state={state} setState={setState} project={project} showToast={showToast} />}
           {page === "presentation" && <SprintPresentation state={state} setState={setState} project={project} showToast={showToast} />}
           {page === "backlog" && <Backlog state={state} openItem={openItem} openCreate={openCreate} />}
           {page === "board" && <Board state={state} openItem={openItem} updateItem={updateItem} openCreate={openCreate} />}
@@ -250,11 +252,20 @@ function TypeIcon({ type, size = 18 }) {
   return <span className={`type-icon ${typeClass(type)}`}><Icon size={size} weight="fill" /></span>;
 }
 
-function ProjectLinksPanel({ project, setState }) {
+function ProjectLinksPage({ state, project, setState, showToast }) {
+  const links = project.links || [];
+  const [selectedLinkId, setSelectedLinkId] = useState(links[0]?.id || null);
   const [editingId, setEditingId] = useState(null);
   const [form, setForm] = useState({ name: "", url: "" });
   const [adding, setAdding] = useState(false);
-  const links = project.links || [];
+
+  useEffect(() => {
+    if (links.length > 0 && !selectedLinkId) {
+      setSelectedLinkId(links[0].id);
+    }
+  }, [links, selectedLinkId]);
+
+  const selectedLink = links.find((l) => l.id === selectedLinkId);
 
   const handleAdd = async (e) => {
     e.preventDefault();
@@ -264,6 +275,8 @@ function ProjectLinksPanel({ project, setState }) {
     await updateProjectLinks(nextLinks);
     setForm({ name: "", url: "" });
     setAdding(false);
+    setSelectedLinkId(newLink.id);
+    showToast("Link added successfully");
   };
 
   const handleSaveEdit = async (e) => {
@@ -273,12 +286,17 @@ function ProjectLinksPanel({ project, setState }) {
     await updateProjectLinks(nextLinks);
     setForm({ name: "", url: "" });
     setEditingId(null);
+    showToast("Link updated");
   };
 
   const handleDelete = async (id) => {
     if (!window.confirm("Delete this link?")) return;
     const nextLinks = links.filter((l) => l.id !== id);
     await updateProjectLinks(nextLinks);
+    if (selectedLinkId === id) {
+      setSelectedLinkId(nextLinks[0]?.id || null);
+    }
+    showToast("Link deleted");
   };
 
   const updateProjectLinks = async (nextLinks) => {
@@ -292,64 +310,146 @@ function ProjectLinksPanel({ project, setState }) {
     }));
   };
 
+  const getEmbedUrl = (url) => {
+    if (!url) return "";
+    try {
+      const parsed = new URL(url);
+      if (parsed.hostname.includes("docs.google.com")) {
+        if (parsed.pathname.includes("/edit")) {
+          return url.replace(/\/edit(\?.*)?$/, "/preview");
+        }
+        if (parsed.pathname.includes("/d/")) {
+          return url.split("/edit")[0] + "/preview";
+        }
+      }
+      if (url.endsWith(".pdf") || url.endsWith(".xlsx") || url.endsWith(".docx") || url.endsWith(".pptx")) {
+        return `https://view.officeapps.live.com/op/embed.aspx?src=${encodeURIComponent(url)}`;
+      }
+    } catch (e) {
+      // ignore
+    }
+    return url;
+  };
+
   return (
-    <section className="panel project-links-panel">
-      <div className="panel-header">
-        <h2>Project links</h2>
+    <div className="content links-page-container">
+      <div className="page-heading">
+        <div>
+          <span className="eyebrow">WORKSPACE RESOURCE HUBS</span>
+          <h1>Project links & attachments</h1>
+          <p>Attach worksheets, reference documents, slide presentations, and open them inline or in same/new tabs.</p>
+        </div>
         {!adding && !editingId && (
-          <button className="text-button text-button-add" onClick={() => setAdding(true)}>
-            <Plus size={14} />Add link
+          <button className="primary-button" onClick={() => { setAdding(true); setForm({ name: "", url: "" }); }}>
+            <Plus />Add project link
           </button>
         )}
       </div>
-      
-      {adding && (
-        <form onSubmit={handleAdd} className="link-inline-form">
-          <input placeholder="Label (e.g. Figma)" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} required />
-          <input placeholder="URL" type="url" value={form.url} onChange={(e) => setForm({ ...form, url: e.target.value })} required />
-          <div className="form-actions">
-            <button type="button" className="secondary-button" onClick={() => setAdding(false)}>Cancel</button>
-            <button type="submit" className="primary-button">Save</button>
-          </div>
-        </form>
-      )}
 
-      {editingId && (
-        <form onSubmit={handleSaveEdit} className="link-inline-form">
-          <input placeholder="Label" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} required />
-          <input placeholder="URL" type="url" value={form.url} onChange={(e) => setForm({ ...form, url: e.target.value })} required />
-          <div className="form-actions">
-            <button type="button" className="secondary-button" onClick={() => setEditingId(null)}>Cancel</button>
-            <button type="submit" className="primary-button">Save</button>
-          </div>
-        </form>
-      )}
+      <div className="links-page-layout">
+        <aside className="links-sidebar-panel panel">
+          <PanelHeader title="Attachments" />
+          
+          {adding && (
+            <form onSubmit={handleAdd} className="link-sidebar-form">
+              <h3>New resource link</h3>
+              <label>Name / Label
+                <input placeholder="e.g. Payroll Spreadsheet" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} required />
+              </label>
+              <label>Resource URL
+                <input placeholder="https://docs.google.com/..." type="url" value={form.url} onChange={(e) => setForm({ ...form, url: e.target.value })} required />
+              </label>
+              <div className="form-actions">
+                <button type="button" className="secondary-button" onClick={() => setAdding(false)}>Cancel</button>
+                <button type="submit" className="primary-button">Add</button>
+              </div>
+            </form>
+          )}
 
-      {!adding && !editingId && (
-        <div className="project-links-list">
-          {links.length === 0 ? (
-            <p className="empty-text">No project links attached.</p>
-          ) : (
-            links.map((link) => (
-              <div key={link.id} className="project-link-item">
-                <a href={link.url} target="_blank" rel="noopener noreferrer">
-                  <LinkSimple size={16} />
-                  <span>{link.name}</span>
-                </a>
-                <div className="link-actions">
-                  <button onClick={() => { setEditingId(link.id); setForm({ name: link.name, url: link.url }); }} title="Rename/Edit">
-                    <PencilSimple size={14} />
-                  </button>
-                  <button onClick={() => handleDelete(link.id)} className="delete" title="Delete">
-                    <Trash size={14} />
-                  </button>
+          {editingId && (
+            <form onSubmit={handleSaveEdit} className="link-sidebar-form">
+              <h3>Rename / Edit resource</h3>
+              <label>Name / Label
+                <input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} required />
+              </label>
+              <label>Resource URL
+                <input type="url" value={form.url} onChange={(e) => setForm({ ...form, url: e.target.value })} required />
+              </label>
+              <div className="form-actions">
+                <button type="button" className="secondary-button" onClick={() => setEditingId(null)}>Cancel</button>
+                <button type="submit" className="primary-button">Save</button>
+              </div>
+            </form>
+          )}
+
+          {!adding && !editingId && (
+            <div className="links-list-group">
+              {links.length === 0 ? (
+                <p className="empty-text">No project links attached.</p>
+              ) : (
+                links.map((link) => (
+                  <div key={link.id} className={`links-list-item-wrapper ${selectedLinkId === link.id ? "active" : ""}`}>
+                    <button className="link-select-btn" onClick={() => setSelectedLinkId(link.id)}>
+                      <LinkSimple size={18} />
+                      <span>{link.name}</span>
+                    </button>
+                    <div className="link-actions">
+                      <button onClick={() => { setEditingId(link.id); setForm({ name: link.name, url: link.url }); }} title="Rename/Edit">
+                        <PencilSimple size={14} />
+                      </button>
+                      <button onClick={() => handleDelete(link.id)} className="delete" title="Delete">
+                        <Trash size={14} />
+                      </button>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          )}
+        </aside>
+
+        <main className="links-viewer-panel panel">
+          {selectedLink ? (
+            <div className="links-viewer-content">
+              <div className="viewer-header">
+                <div>
+                  <h2>{selectedLink.name}</h2>
+                  <span className="link-raw-url">{selectedLink.url}</span>
+                </div>
+                <div className="viewer-actions">
+                  <a href={selectedLink.url} target="_self" className="secondary-button" title="Open in this window (same tab)">
+                    Open directly (same tab)
+                  </a>
+                  <a href={selectedLink.url} target="_blank" rel="noopener noreferrer" className="primary-button">
+                    Open in new tab
+                  </a>
                 </div>
               </div>
-            ))
+              
+              <div className="viewer-frame-container">
+                <iframe
+                  key={selectedLink.id}
+                  src={getEmbedUrl(selectedLink.url)}
+                  title={selectedLink.name}
+                  className="embed-iframe"
+                  sandbox="allow-scripts allow-same-origin allow-forms allow-popups"
+                />
+                
+                <div className="embed-info-banner">
+                  <Warning size={16} />
+                  <span>
+                    Direct embeds of complex apps (e.g. Google Sheets or slides) may show warning messages or require sign-in.
+                    If the frame remains blank, use the <strong>Open directly (same tab)</strong> or <strong>Open in new tab</strong> buttons above.
+                  </span>
+                </div>
+              </div>
+            </div>
+          ) : (
+            <Empty title="No link selected" text="Click on a resource link from the sidebar list to open and view it." />
           )}
-        </div>
-      )}
-    </section>
+        </main>
+      </div>
+    </div>
   );
 }
 
@@ -375,7 +475,19 @@ function Overview({ state, project, openItem, navigate, setState }) {
       <section className="panel"><PanelHeader title="Top risks" action="Source questions" onAction={() => navigate("requirements")} /><div className="risk-list">{state.risks.map((risk, index) => <div className="risk" key={risk.id}><span className={`risk-number ${index === 0 ? "red" : "amber"}`}>{index + 1}</span><div><strong>{risk.title}</strong><small>Impact: {risk.impact} · Likelihood: {risk.likelihood} · {risk.owner}</small></div></div>)}</div></section>
       <section className="panel qa-readiness"><PanelHeader title="QA readiness" action="Open QA" onAction={() => navigate("qa")} /><div className="donut" style={{ "--value": `${state.tests.length ? Math.round(qaRun / state.tests.length * 100) : 0}%` }}><div><strong>{state.tests.length ? Math.round(qaRun / state.tests.length * 100) : 0}%</strong><span>started</span></div></div><div className="legend"><span><i className="green" />Passed {qaPassed}</span><span><i className="blue" />In progress {state.tests.filter((test) => test.status === "In Progress").length}</span><span><i />Not run {state.tests.filter((test) => test.status === "Not Run").length}</span></div></section>
       <section className="panel"><PanelHeader title="Recent activity" /><div className="activity-list">{state.activities.slice(0, 5).map((entry) => <div key={entry.id}><div className="avatar small">{entry.actor.slice(0, 2).toUpperCase()}</div><div><strong>{entry.actor}</strong><span>{entry.action}</span><small>{new Date(entry.at).toLocaleString()}</small></div></div>)}</div></section>
-      <ProjectLinksPanel project={project} setState={setState} />
+      
+      <section className="panel project-links-card">
+        <PanelHeader title="Project links" action="Open page" onAction={() => navigate("links")} />
+        <div className="project-links-list-mini" style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '12px' }}>
+          {(project.links || []).slice(0, 4).map((link) => (
+            <button key={link.id} onClick={() => navigate("links")} className="project-link-mini-btn" style={{ display: 'flex', alignItems: 'center', gap: '8px', background: 'var(--surface-2)', border: '1px solid var(--line)', borderRadius: 'var(--r-sm)', padding: '8px 12px', textAlign: 'left', cursor: 'pointer', width: '100%' }}>
+              <LinkSimple size={14} />
+              <strong style={{ fontSize: '13.5px', fontWeight: '500', color: 'var(--ink)' }}>{link.name}</strong>
+            </button>
+          ))}
+          {(!project.links || project.links.length === 0) && <p className="empty-text">No project links attached.</p>}
+        </div>
+      </section>
     </div>
   </div>;
 }
