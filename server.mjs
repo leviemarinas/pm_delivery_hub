@@ -30,10 +30,10 @@ const featurePlans = {
   "FEAT-PAY-CROSS-001": { scopeStatus: "On Track", targetDate: "2026-08-31" },
 };
 
-function defaultSprintPresentation() {
+function defaultSprintPresentation(projectId = "atlas-payroll") {
   return {
-    id: "atlas-sprint-review",
-    projectId: "atlas-payroll",
+    id: projectId === "atlas-payroll" ? "atlas-sprint-review" : `${projectId}-sprint-review`,
+    projectId,
     sprintName: "Sprint 8",
     dateRange: "July 6 - July 17, 2026",
     audience: "Atlas Payroll Stakeholders",
@@ -76,10 +76,11 @@ function moscowFromPriority(priority) {
   return "Could Have";
 }
 
-function unplannedScopeItems(createdAt) {
+function unplannedScopeItems(createdAt, projectId = "atlas-payroll") {
   return [
     {
       id: "EPIC-UNPLANNED",
+      projectId,
       title: "Unplanned and Future Scope",
       description: "Holding epic for features and user stories that are not committed to an active sprint or delivery phase.",
       type: "Epic",
@@ -99,6 +100,7 @@ function unplannedScopeItems(createdAt) {
     },
     {
       id: "FEAT-UNPLANNED",
+      projectId,
       title: "Unplanned Work Item Intake",
       description: "Container for new user stories that have not yet been prioritized into a sprint.",
       type: "Feature",
@@ -245,12 +247,12 @@ function seedState(source) {
       ],
       createdAt,
     }],
-    workItems,
-    tests,
+    workItems: workItems.map((item) => ({ ...item, projectId: "atlas-payroll" })),
+    tests: tests.map((test) => ({ ...test, projectId: "atlas-payroll" })),
     risks: [
-      { id: "RISK-001", title: "Bonus computation rules need final business confirmation", impact: "High", likelihood: "Medium", status: "Open", owner: "BA Team" },
-      { id: "RISK-002", title: "Cross-module payroll dependencies may affect delivery order", impact: "High", likelihood: "Medium", status: "Mitigating", owner: "Tech Lead" },
-      { id: "RISK-003", title: "De Minimis effective-date handling needs implementation decision", impact: "Medium", likelihood: "Low", status: "Open", owner: "BA Team" },
+      { id: "RISK-001", projectId: "atlas-payroll", title: "Bonus computation rules need final business confirmation", impact: "High", likelihood: "Medium", status: "Open", owner: "BA Team" },
+      { id: "RISK-002", projectId: "atlas-payroll", title: "Cross-module payroll dependencies may affect delivery order", impact: "High", likelihood: "Medium", status: "Mitigating", owner: "Tech Lead" },
+      { id: "RISK-003", projectId: "atlas-payroll", title: "De Minimis effective-date handling needs implementation decision", impact: "Medium", likelihood: "Low", status: "Open", owner: "BA Team" },
     ],
     activities: [
       { id: crypto.randomUUID(), action: "Atlas requirements imported", actor: "System", itemId: source.epic.id, at: createdAt },
@@ -278,6 +280,10 @@ async function loadState() {
     let migrated = false;
     existing.workItems = existing.workItems.map((item) => {
       let next = item;
+      if (!next.projectId) {
+        migrated = true;
+        next = { ...next, projectId: "atlas-payroll" };
+      }
       if (item.type === "Feature" && featurePlans[item.id] && (!item.scopeStatus || !item.targetDate)) {
         migrated = true;
         next = { ...next, ...featurePlans[item.id] };
@@ -293,7 +299,7 @@ async function loadState() {
       return next;
     });
     const unplannedIds = new Set(existing.workItems.map((item) => item.id));
-    const missingUnplanned = unplannedScopeItems(now()).filter((item) => !unplannedIds.has(item.id));
+    const missingUnplanned = unplannedScopeItems(now(), "atlas-payroll").filter((item) => !unplannedIds.has(item.id));
     if (missingUnplanned.length) {
       existing.workItems.push(...missingUnplanned);
       migrated = true;
@@ -307,6 +313,11 @@ async function loadState() {
         tags: [],
         ...test,
       };
+      if (!next.projectId) {
+        const story = existing.workItems.find((item) => item.id === next.storyId);
+        next.projectId = story?.projectId || "atlas-payroll";
+        migrated = true;
+      }
       if (!Object.hasOwn(test, "preconditions")) migrated = true;
       return next;
     });
@@ -319,6 +330,16 @@ async function loadState() {
       existing.presentations = [defaultSprintPresentation()];
       migrated = true;
     }
+    existing.presentations = existing.presentations.map((presentation) => {
+      if (presentation.projectId) return presentation;
+      migrated = true;
+      return { ...presentation, projectId: "atlas-payroll" };
+    });
+    existing.risks = (existing.risks || []).map((risk) => {
+      if (risk.projectId) return risk;
+      migrated = true;
+      return { ...risk, projectId: "atlas-payroll" };
+    });
     if (!existing.users) {
       existing.users = [
         { id: "user-1", name: "Alex Dela Cruz", email: "alex.delacruz@example.com" },
@@ -341,7 +362,7 @@ async function loadState() {
         proj.linkGroups = ["General", "Worksheets", "Presentations", "External Sites"];
         migrated = true;
       }
-      if (!proj.links || proj.links.length < 3) {
+      if (proj.id === "atlas-payroll" && (!proj.links || proj.links.length < 3)) {
         proj.links = [
           { id: "link-1", name: "Bug Inventory Summary", url: "https://docs.google.com/spreadsheets/d/10SCnCAbwqQB4Llix_gQllwygaCk5k-yWKv76_yxQi_k/edit", group: "Worksheets" },
           { id: "link-2", name: "Payroll Timeline Sheet", url: "https://docs.google.com/spreadsheets/d/1FopPinrWpPNFCJ3mfAVBHh2gZ-EB9VACgOqJwo8LNMQ/edit", group: "Worksheets" },
@@ -350,6 +371,12 @@ async function loadState() {
         ];
         migrated = true;
       } else {
+        proj.links = proj.links || [];
+        const inheritedAtlasLinks = proj.id !== "atlas-payroll" && proj.links.length === 4 && proj.links.every((link) => ["link-1", "link-2", "link-3", "link-4"].includes(link.id));
+        if (inheritedAtlasLinks) {
+          proj.links = [];
+          migrated = true;
+        }
         let updatedLinks = false;
         proj.links = proj.links.map((link) => {
           if (!link.group) {
@@ -366,6 +393,12 @@ async function loadState() {
       }
       return proj;
     });
+    for (const project of existing.projects) {
+      if (!existing.presentations.some((presentation) => presentation.projectId === project.id)) {
+        existing.presentations.push(defaultSprintPresentation(project.id));
+        migrated = true;
+      }
+    }
     if (migrated) await saveState(existing);
     return existing;
   } catch {
@@ -489,9 +522,10 @@ async function handleApi(request, response, url) {
   if (url.pathname === "/api/state" && request.method === "GET") return json(response, 200, state);
   if (url.pathname === "/api/projects" && request.method === "POST") {
     const input = await body(request);
-    const project = { id: `project-${crypto.randomUUID().slice(0, 8)}`, name: input.name?.trim(), description: input.description?.trim() || "", phase: input.phase || "Discovery", targetMilestone: input.targetMilestone || "Scope approval", targetDate: input.targetDate || "", links: input.links || [], createdAt: now() };
+    const project = { id: `project-${crypto.randomUUID().slice(0, 8)}`, name: input.name?.trim(), description: input.description?.trim() || "", phase: input.phase || "Discovery", targetMilestone: input.targetMilestone || "Scope approval", targetDate: input.targetDate || "", linkGroups: ["General", "Worksheets", "Presentations", "External Sites"], links: input.links || [], createdAt: now() };
     if (!project.name) return json(response, 400, { error: "Project name is required." });
     state.projects.push(project);
+    state.presentations.push(defaultSprintPresentation(project.id));
     state.activeProjectId = project.id;
     activity(`Created project ${project.name}`, project.id);
     await saveState(state);
@@ -518,6 +552,21 @@ async function handleApi(request, response, url) {
     activity(`Updated project details for ${state.projects[index].name}`, id);
     await saveState(state);
     return json(response, 200, state.projects[index]);
+  }
+  if (projectMatch && request.method === "DELETE") {
+    const id = decodeURIComponent(projectMatch[1]);
+    const index = state.projects.findIndex((p) => p.id === id);
+    if (index < 0) return json(response, 404, { error: "Project not found." });
+    if (state.projects.length <= 1) return json(response, 409, { error: "At least one workspace must remain." });
+    const [deleted] = state.projects.splice(index, 1);
+    state.workItems = state.workItems.filter((item) => item.projectId !== id);
+    state.tests = state.tests.filter((test) => test.projectId !== id);
+    state.risks = state.risks.filter((risk) => risk.projectId !== id);
+    state.presentations = state.presentations.filter((presentation) => presentation.projectId !== id);
+    if (state.activeProjectId === id) state.activeProjectId = state.projects[0].id;
+    activity(`Deleted project workspace ${deleted.name}`, id);
+    await saveState(state);
+    return json(response, 200, state);
   }
   if (url.pathname === "/api/requirements" && request.method === "PUT") {
     const input = await body(request);
@@ -632,6 +681,7 @@ async function handleApi(request, response, url) {
       const existingIndex = state.tests.findIndex((test) => test.id === id);
       const testCase = {
         id,
+        projectId: story.projectId || state.activeProjectId,
         storyId: story.id,
         featureId: story.parentId,
         title: row.title.trim(),
@@ -669,9 +719,38 @@ async function handleApi(request, response, url) {
     await saveState(state);
     return json(response, 200, state.tests[index]);
   }
+  if (url.pathname === "/api/risks" && request.method === "POST") {
+    const input = await body(request);
+    const title = input.title?.trim();
+    if (!title) return json(response, 400, { error: "Risk title is required." });
+    const risk = {
+      id: `RISK-${crypto.randomUUID().slice(0, 6).toUpperCase()}`,
+      projectId: input.projectId || state.activeProjectId,
+      title,
+      impact: input.impact || "Medium",
+      likelihood: input.likelihood || "Medium",
+      status: input.status || "Open",
+      owner: input.owner?.trim() || "Unassigned",
+    };
+    state.risks.push(risk);
+    activity(`Added risk: ${risk.title}`, risk.id);
+    await saveState(state);
+    return json(response, 201, risk);
+  }
+  const riskMatch = url.pathname.match(/^\/api\/risks\/([^/]+)$/);
+  if (riskMatch && request.method === "DELETE") {
+    const id = decodeURIComponent(riskMatch[1]);
+    const index = state.risks.findIndex((risk) => risk.id === id);
+    if (index < 0) return json(response, 404, { error: "Risk not found." });
+    const [risk] = state.risks.splice(index, 1);
+    activity(`Removed risk: ${risk.title}`, id);
+    await saveState(state);
+    return json(response, 200, { deleted: true });
+  }
   if (url.pathname === "/api/export.csv") {
     const headers = ["ID", "Type", "Parent", "Title", "Status", "Phase", "MoSCoW", "Priority", "Assignee", "Sprint", "Dependencies", "Story Points", "Progress"];
-    const lines = [headers, ...state.workItems.map((item) => [item.id, item.type, item.parentId, item.title, item.status, item.phase, item.moscow, item.priority, item.assignee, item.sprint, (item.dependencies || []).join(" | "), item.storyPoints, item.progress])];
+    const activeItems = state.workItems.filter((item) => item.projectId === state.activeProjectId);
+    const lines = [headers, ...activeItems.map((item) => [item.id, item.type, item.parentId, item.title, item.status, item.phase, item.moscow, item.priority, item.assignee, item.sprint, (item.dependencies || []).join(" | "), item.storyPoints, item.progress])];
     response.writeHead(200, { "Content-Type": "text/csv; charset=utf-8", "Content-Disposition": "attachment; filename=atlas-work-items.csv" });
     return response.end(lines.map((line) => line.map(csvEscape).join(",")).join("\n"));
   }
@@ -699,9 +778,21 @@ async function handleApi(request, response, url) {
     if (index < 0) return json(response, 404, { error: "User not found." });
     const userName = state.users[index].name;
     state.users.splice(index, 1);
+    let unassignedWorkItems = 0;
+    let unassignedTests = 0;
+    state.workItems = state.workItems.map((item) => {
+      if (item.assignee !== userName) return item;
+      unassignedWorkItems += 1;
+      return { ...item, assignee: "Unassigned", updatedAt: now() };
+    });
+    state.tests = state.tests.map((test) => {
+      if (test.assignee !== userName) return test;
+      unassignedTests += 1;
+      return { ...test, assignee: "Unassigned", updatedAt: now() };
+    });
     activity(`Deleted user ${userName}`, id);
     await saveState(state);
-    return json(response, 200, { deleted: true });
+    return json(response, 200, { deleted: true, unassignedWorkItems, unassignedTests });
   }
   return json(response, 404, { error: "API route not found." });
 }

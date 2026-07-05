@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, useRef } from "react";
+import { useEffect, useMemo, useState, useRef, useCallback } from "react";
 import {
   Pulse,
   Archive,
@@ -54,6 +54,10 @@ import {
   User,
   Users,
   Warning,
+  ArrowUp,
+  Quotes,
+  Table,
+  TreeStructure,
   X,
 } from "@phosphor-icons/react";
 
@@ -167,6 +171,7 @@ function AppShell({ state, setState, onLogout }) {
   const [query, setQuery] = useState("");
   const [toast, setToast] = useState("");
   const [notifOpen, setNotifOpen] = useState(false);
+  const [projectMenuOpen, setProjectMenuOpen] = useState(false);
   const [notifSeen, setNotifSeen] = useState(() => Number(window.localStorage.getItem("atlas-notif-seen") || 0));
 
   useEffect(() => {
@@ -179,18 +184,40 @@ function AppShell({ state, setState, onLogout }) {
       if (event.key === "Escape" && !inField) {
         setSelectedId(null);
         setNotifOpen(false);
+        setProjectMenuOpen(false);
       }
     };
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
   }, []);
 
-  const selected = state.workItems.find((item) => item.id === selectedId);
   const project = state.projects.find((entry) => entry.id === state.activeProjectId) || state.projects[0];
+  const projectWorkItems = state.workItems.filter((item) => item.projectId === state.activeProjectId);
+  const projectItemIds = new Set(projectWorkItems.map((item) => item.id));
+  const projectStoryIds = new Set(projectWorkItems.filter((item) => item.type === "User Story").map((item) => item.id));
+  const projectState = {
+    ...state,
+    workItems: projectWorkItems,
+    tests: state.tests.filter((test) => test.projectId === state.activeProjectId || (!test.projectId && projectStoryIds.has(test.storyId))),
+    risks: state.risks.filter((risk) => risk.projectId === state.activeProjectId),
+    presentations: state.presentations.filter((presentation) => presentation.projectId === state.activeProjectId),
+    activities: state.activities.filter((entry) => entry.itemId === state.activeProjectId || projectItemIds.has(entry.itemId)),
+  };
+  const selected = projectState.workItems.find((item) => item.id === selectedId);
   const showToast = (message) => { setToast(message); window.setTimeout(() => setToast(""), 2600); };
   const refresh = async () => setState(await api("/api/state"));
   const openCreate = (defaults = {}) => { setCreateDefaults(defaults); setCreateOpen(true); };
-  const openItem = (id) => { setSelectedId(id); };
+  const openItem = (id) => { setSelectedId((current) => current === id ? null : id); };
+  const switchProject = async (projectId) => {
+    if (projectId === state.activeProjectId) { setProjectMenuOpen(false); return; }
+    try {
+      const next = await api("/api/projects/active", { method: "PUT", body: JSON.stringify({ activeProjectId: projectId }) });
+      setState(next);
+      setSelectedId(null);
+      setProjectMenuOpen(false);
+      showToast(`Switched to ${next.projects.find((entry) => entry.id === projectId)?.name || "workspace"}`);
+    } catch (error) { showToast(error.message); }
+  };
   const navigate = (next) => { setPage(next); setMobileNav(false); setSelectedId(null); setNotifOpen(false); window.localStorage.setItem("atlas-page", next); };
   const unseenCount = state.activities.filter((entry) => new Date(entry.at).getTime() > notifSeen).length;
   const toggleNotifications = () => {
@@ -199,7 +226,7 @@ function AppShell({ state, setState, onLogout }) {
       return !open;
     });
   };
-  const searchMatches = query.trim().length > 1 ? state.workItems.filter((item) => `${item.id} ${item.title}`.toLowerCase().includes(query.toLowerCase())).slice(0, 7) : [];
+  const searchMatches = query.trim().length > 1 ? projectState.workItems.filter((item) => `${item.id} ${item.title}`.toLowerCase().includes(query.toLowerCase())).slice(0, 7) : [];
 
   const updateItem = async (id, updates, message = "Work item updated") => {
     const item = await api(`/api/work-items/${encodeURIComponent(id)}`, { method: "PUT", body: JSON.stringify(updates) });
@@ -212,7 +239,7 @@ function AppShell({ state, setState, onLogout }) {
     <div className="app-shell">
       <aside className={`sidebar ${mobileNav ? "open" : ""}`}>
         <div className="sidebar-brand"><div className="brand-mark">A</div><span>Atlas <strong>Delivery Hub</strong></span><button className="icon-button mobile-only" onClick={() => setMobileNav(false)}><X /></button></div>
-        <div className="project-switch"><div><small>PROJECT</small><strong>{project.name}</strong></div><CaretDown size={14} /></div>
+        <div className="project-switch-wrap"><button className={`project-switch ${projectMenuOpen ? "open" : ""}`} onClick={() => setProjectMenuOpen((open) => !open)}><div><small>PROJECT</small><strong>{project.name}</strong></div><CaretDown size={14} /></button>{projectMenuOpen && <div className="project-switch-menu"><span>Switch workspace</span>{state.projects.map((entry) => <button key={entry.id} className={entry.id === state.activeProjectId ? "active" : ""} onClick={() => switchProject(entry.id)}><div className="project-avatar">{entry.name.slice(0, 1)}</div><div><strong>{entry.name}</strong><small>{entry.phase}</small></div>{entry.id === state.activeProjectId && <CheckCircle weight="fill" />}</button>)}</div>}</div>
         <nav>{navItems.map(([key, label, Icon]) => <button key={key} className={page === key ? "active" : ""} onClick={() => navigate(key)}><Icon size={20} weight={page === key ? "fill" : "regular"} /><span>{label}</span></button>)}</nav>
         <div className="sidebar-bottom"><div className="sidebar-mini"><User size={17} /><div><strong>Shared User</strong><small>Full access</small></div></div><button className="icon-button inverse" title="Sign out" onClick={onLogout}><SignOut /></button></div>
       </aside>
@@ -237,19 +264,19 @@ function AppShell({ state, setState, onLogout }) {
           <div className="avatar">SU</div>
         </header>
         <div className={`page ${selected ? "with-detail" : ""}`}>
-          {page === "overview" && <Overview state={state} project={project} openItem={openItem} navigate={navigate} setState={setState} />}
-          {page === "links" && <ProjectLinksPage state={state} setState={setState} project={project} showToast={showToast} />}
-          {page === "presentation" && <SprintPresentation state={state} setState={setState} project={project} showToast={showToast} />}
-          {page === "backlog" && <Backlog state={state} openItem={openItem} openCreate={openCreate} />}
-          {page === "board" && <Board state={state} openItem={openItem} updateItem={updateItem} openCreate={openCreate} />}
-          {page === "qa" && <QA state={state} setState={setState} openItem={openItem} showToast={showToast} />}
-          {page === "requirements" && <Requirements state={state} setState={setState} showToast={showToast} project={project} />}
-          {page === "reports" && <Reports state={state} project={project} />}
+          {page === "overview" && <Overview state={projectState} project={project} openItem={openItem} navigate={navigate} setState={setState} showToast={showToast} />}
+          {page === "links" && <ProjectLinksPage state={projectState} setState={setState} project={project} showToast={showToast} />}
+          {page === "presentation" && <SprintPresentation state={projectState} setState={setState} project={project} showToast={showToast} />}
+          {page === "backlog" && <Backlog state={projectState} openItem={openItem} openCreate={openCreate} />}
+          {page === "board" && <Board state={projectState} openItem={openItem} updateItem={updateItem} openCreate={openCreate} />}
+          {page === "qa" && <QA state={projectState} setState={setState} openItem={openItem} showToast={showToast} />}
+          {page === "requirements" && <Requirements state={projectState} setState={setState} showToast={showToast} project={project} />}
+          {page === "reports" && <Reports state={projectState} project={project} />}
           {page === "settings" && <Settings state={state} setState={setState} showToast={showToast} />}
         </div>
       </main>
-      {selected && <DetailPanel item={selected} state={state} close={() => setSelectedId(null)} updateItem={updateItem} refresh={refresh} openItem={openItem} openCreate={openCreate} showToast={showToast} />}
-      {createOpen && <CreateModal state={state} defaults={createDefaults} close={() => setCreateOpen(false)} onCreated={async (item) => { await refresh(); setCreateOpen(false); setSelectedId(item.id); showToast(`${item.type} created`); }} />}
+      {selected && <DetailPanel item={selected} state={projectState} close={() => setSelectedId(null)} updateItem={updateItem} refresh={refresh} openItem={openItem} openCreate={openCreate} showToast={showToast} />}
+      {createOpen && <CreateModal state={projectState} defaults={createDefaults} close={() => setCreateOpen(false)} onCreated={async (item) => { await refresh(); setCreateOpen(false); setSelectedId(item.id); showToast(`${item.type} created`); }} />}
       {toast && <div className="toast"><Check size={18} weight="bold" />{toast}</div>}
     </div>
   );
@@ -632,7 +659,7 @@ function ProjectLinksPage({ state, project, setState, showToast }) {
   );
 }
 
-function Overview({ state, project, openItem, navigate, setState }) {
+function Overview({ state, project, openItem, navigate, setState, showToast }) {
   const features = state.workItems.filter((item) => item.type === "Feature" && item.phase !== "Unplanned");
   const stories = state.workItems.filter((item) => item.type === "User Story");
   const tasks = state.workItems.filter((item) => item.type === "Task");
@@ -651,7 +678,7 @@ function Overview({ state, project, openItem, navigate, setState }) {
     </div>
     <div className="health-grid">
       <section className="panel"><PanelHeader title="Delivery health" /><div className="health-list"><HealthRow label="Scope" value="On track" tone="green" detail={`${features.length} features in focused scope`} /><HealthRow label="Schedule" value="Watch" tone="amber" detail="Business-rule clarification items remain" /><HealthRow label="Quality" value={`${qaPassed}/${state.tests.length} passed`} tone="blue" detail={`${qaRun} tests started`} /><HealthRow label="Workload" value={`${tasks.filter((item) => item.status !== "Closed").length} open tasks`} tone="blue" detail={`${stories.length} user stories`} /></div></section>
-      <section className="panel"><PanelHeader title="Top risks" action="Source questions" onAction={() => navigate("requirements")} /><div className="risk-list">{state.risks.map((risk, index) => <div className="risk" key={risk.id}><span className={`risk-number ${index === 0 ? "red" : "amber"}`}>{index + 1}</span><div><strong>{risk.title}</strong><small>Impact: {risk.impact} · Likelihood: {risk.likelihood} · {risk.owner}</small></div></div>)}</div></section>
+      <TopRisks risks={state.risks} users={state.users || []} projectId={project.id} setState={setState} showToast={showToast} />
       <section className="panel qa-readiness"><PanelHeader title="QA readiness" action="Open QA" onAction={() => navigate("qa")} /><div className="donut" style={{ "--value": `${state.tests.length ? Math.round(qaRun / state.tests.length * 100) : 0}%` }}><div><strong>{state.tests.length ? Math.round(qaRun / state.tests.length * 100) : 0}%</strong><span>started</span></div></div><div className="legend"><span><i className="green" />Passed {qaPassed}</span><span><i className="blue" />In progress {state.tests.filter((test) => test.status === "In Progress").length}</span><span><i />Not run {state.tests.filter((test) => test.status === "Not Run").length}</span></div></section>
       <section className="panel"><PanelHeader title="Recent activity" /><div className="activity-list">{state.activities.slice(0, 5).map((entry) => <div key={entry.id}><div className="avatar small">{entry.actor.slice(0, 2).toUpperCase()}</div><div><strong>{entry.actor}</strong><span>{entry.action}</span><small>{new Date(entry.at).toLocaleString()}</small></div></div>)}</div></section>
       
@@ -677,8 +704,40 @@ function PanelHeader({ title, action, onAction }) { return <div className="panel
 function Status({ value }) { return <span className={`status status-${(value || "new").toLowerCase().replaceAll(" ", "-")}`}><i />{value}</span>; }
 function HealthRow({ label, value, detail, tone }) { return <div><span className={`health-icon ${tone}`}><Pulse size={18} /></span><div><strong>{label}<em className={tone}>{value}</em></strong><small>{detail}</small></div></div>; }
 
+function TopRisks({ risks, users, projectId, setState, showToast }) {
+  const [adding, setAdding] = useState(false);
+  const [form, setForm] = useState({ title: "", impact: "Medium", likelihood: "Medium", owner: "Unassigned" });
+  const [busy, setBusy] = useState(false);
+  const addRisk = async (event) => {
+    event.preventDefault();
+    if (!form.title.trim()) return;
+    setBusy(true);
+    try {
+      const risk = await api("/api/risks", { method: "POST", body: JSON.stringify({ ...form, projectId }) });
+      setState((current) => ({ ...current, risks: [...current.risks, risk] }));
+      setForm({ title: "", impact: "Medium", likelihood: "Medium", owner: "Unassigned" });
+      setAdding(false);
+      showToast("Risk added to this workspace");
+    } catch (error) { showToast(error.message); }
+    finally { setBusy(false); }
+  };
+  const removeRisk = async (risk) => {
+    if (!window.confirm(`Remove risk “${risk.title}”?`)) return;
+    try {
+      await api(`/api/risks/${encodeURIComponent(risk.id)}`, { method: "DELETE" });
+      setState((current) => ({ ...current, risks: current.risks.filter((entry) => entry.id !== risk.id) }));
+      showToast("Risk removed");
+    } catch (error) { showToast(error.message); }
+  };
+  return <section className="panel top-risks-panel"><PanelHeader title="Top risks" action={adding ? "Cancel" : "Add risk"} onAction={() => setAdding((value) => !value)} />
+    {adding && <form className="risk-create-form" onSubmit={addRisk}><input value={form.title} onChange={(event) => setForm({ ...form, title: event.target.value })} placeholder="Describe the delivery risk" autoFocus /><select value={form.impact} onChange={(event) => setForm({ ...form, impact: event.target.value })}><option>High</option><option>Medium</option><option>Low</option></select><select value={form.likelihood} onChange={(event) => setForm({ ...form, likelihood: event.target.value })}><option>High</option><option>Medium</option><option>Low</option></select><select value={form.owner} onChange={(event) => setForm({ ...form, owner: event.target.value })}><option>Unassigned</option>{users.map((user) => <option key={user.id}>{user.name}</option>)}</select><button className="primary-button" disabled={busy}>{busy ? <SpinnerGap className="spin" /> : <Plus />}Add</button></form>}
+    <div className="risk-list">{risks.map((risk, index) => <div className="risk" key={risk.id}><span className={`risk-number ${risk.impact === "High" ? "red" : "amber"}`}>{index + 1}</span><div><strong>{risk.title}</strong><small>Impact: {risk.impact} · Likelihood: {risk.likelihood} · {risk.owner}</small></div><button className="icon-button delete" onClick={() => removeRisk(risk)} title="Remove risk"><Trash size={14} /></button></div>)}{risks.length === 0 && <p className="empty-text">No risks recorded for this workspace.</p>}</div>
+  </section>;
+}
+
 function HierarchySummary({ state, openItem }) {
   const epic = state.workItems.find((item) => item.type === "Epic");
+  if (!epic) return <Empty title="No hierarchy yet" text="Create an Epic to start this workspace backlog." />;
   const features = state.workItems.filter((item) => item.type === "Feature" && item.parentId === epic.id);
   return <div className="hierarchy-list"><button onClick={() => openItem(epic.id)}><CaretDown /><TypeIcon type="Epic" /><strong>{epic.id}</strong><span>{epic.title}</span></button>{features.map((item) => <button key={item.id} onClick={() => openItem(item.id)}><CaretRight /><TypeIcon type="Feature" /><strong>{item.id}</strong><span>{item.title}</span><em>{item.progress}%</em></button>)}</div>;
 }
@@ -758,14 +817,33 @@ async function exportTestCases(tests) {
 }
 
 function QA({ state, setState, openItem, showToast }) {
-  const [filter, setFilter] = useState("All");
   const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState("All statuses");
+  const [storyFilter, setStoryFilter] = useState("All stories");
+  const [sprintFilter, setSprintFilter] = useState("All sprints");
+  const [assigneeFilter, setAssigneeFilter] = useState("All assignees");
+  const [priorityFilter, setPriorityFilter] = useState("All priorities");
   const [importOpen, setImportOpen] = useState(false);
-  const tests = state.tests.filter((test) => (filter === "All" || test.status === filter) && (!search || `${test.id} ${test.title} ${test.storyId}`.toLowerCase().includes(search.toLowerCase())));
+  const stories = state.workItems.filter((item) => item.type === "User Story");
+  const storyNames = Object.fromEntries(stories.map((story) => [story.id, story.title]));
+  const sprints = [...new Set(state.tests.map((test) => test.sprint || "Backlog"))].sort();
+  const assignees = [...new Set(state.tests.map((test) => test.assignee || "Unassigned"))].sort();
+  const tests = state.tests.filter((test) => (statusFilter === "All statuses" || test.status === statusFilter)
+    && (storyFilter === "All stories" || test.storyId === storyFilter)
+    && (sprintFilter === "All sprints" || (test.sprint || "Backlog") === sprintFilter)
+    && (assigneeFilter === "All assignees" || (test.assignee || "Unassigned") === assigneeFilter)
+    && (priorityFilter === "All priorities" || test.priority === priorityFilter)
+    && (!search || `${test.id} ${test.title} ${test.storyId} ${storyNames[test.storyId] || ""}`.toLowerCase().includes(search.toLowerCase())));
+  const hasFilters = search || statusFilter !== "All statuses" || storyFilter !== "All stories" || sprintFilter !== "All sprints" || assigneeFilter !== "All assignees" || priorityFilter !== "All priorities";
+  const clearFilters = () => { setSearch(""); setStatusFilter("All statuses"); setStoryFilter("All stories"); setSprintFilter("All sprints"); setAssigneeFilter("All assignees"); setPriorityFilter("All priorities"); };
   const update = async (id, status) => { const test = await api(`/api/tests/${encodeURIComponent(id)}`, { method: "PUT", body: JSON.stringify({ status }) }); setState((current) => ({ ...current, tests: current.tests.map((entry) => entry.id === id ? test : entry) })); showToast(`${id} marked ${status}`); };
   const passed = state.tests.filter((test) => test.status === "Passed").length;
   const started = state.tests.filter((test) => test.status !== "Not Run").length;
-  return <div className="content"><div className="page-heading"><div><span className="eyebrow">QUALITY ASSURANCE</span><h1>QA & test center</h1><p>Import Excel test cases against a User Story, update execution, and export the complete QA pack.</p></div><div className="page-actions"><button className="secondary-button" onClick={downloadTestTemplate}><FileXls />Excel template</button><button className="secondary-button" onClick={() => exportTestCases(state.tests)}><DownloadSimple />Export Excel</button><button className="primary-button" onClick={() => setImportOpen(true)}><UploadSimple />Import test cases</button></div></div><div className="metrics-row"><Metric label="Total tests" value={state.tests.length} detail="Source and imported cases" icon={TestTube} /><Metric label="Execution started" value={`${Math.round(started / state.tests.length * 100)}%`} detail={`${started} tests`} tone="amber" icon={Clock} /><Metric label="Passed" value={passed} detail={`${Math.round(passed / state.tests.length * 100)}% coverage`} tone="green" icon={CheckCircle} /><Metric label="User stories" value={state.workItems.filter((item) => item.type === "User Story").length} detail="Import target coverage" tone="purple" icon={BookOpenText} /></div><div className="toolbar"><div className="inline-search"><MagnifyingGlass /><input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search test cases" /></div><select value={filter} onChange={(event) => setFilter(event.target.value)}><option>All</option><option>Not Run</option><option>In Progress</option><option>Passed</option><option>Failed</option></select><span className="toolbar-count">{tests.length} test cases</span></div><div className="panel table-scroll qa-table"><table><thead><tr><th>Test case</th><th>Scenario</th><th>User story</th><th>Sprint</th><th>Priority</th><th>Assignee</th><th>Status</th></tr></thead><tbody>{tests.map((test) => <tr key={test.id}><td><strong className="link" onClick={() => openItem(test.storyId)}>{test.id}</strong></td><td><strong>{test.title}</strong>{test.expectedResult && <small className="test-expected">Expected: {test.expectedResult}</small>}</td><td><button className="text-button" onClick={() => openItem(test.storyId)}>{test.storyId}</button></td><td>{test.sprint || "Backlog"}</td><td><span className={`priority priority-${test.priority.toLowerCase()}`}>{test.priority}</span></td><td>{test.assignee}</td><td><select className={`test-status test-${test.status.toLowerCase().replaceAll(" ", "-")}`} value={test.status} onChange={(event) => update(test.id, event.target.value)}><option>Not Run</option><option>In Progress</option><option>Passed</option><option>Failed</option></select></td></tr>)}</tbody></table></div>{importOpen && <TestCaseImportModal state={state} setState={setState} close={() => setImportOpen(false)} showToast={showToast} />}</div>;
+  const total = state.tests.length;
+  return <div className="content qa-page"><div className="page-heading"><div><span className="eyebrow">QUALITY ASSURANCE</span><h1>QA & test center</h1><p>Import Excel test cases against a User Story, update execution, and export the complete QA pack.</p></div><div className="page-actions"><button className="secondary-button" onClick={downloadTestTemplate}><FileXls />Excel template</button><button className="secondary-button" onClick={() => exportTestCases(state.tests)}><DownloadSimple />Export Excel</button><button className="primary-button" onClick={() => setImportOpen(true)}><UploadSimple />Import test cases</button></div></div>
+    <div className="metrics-row"><Metric label="Total tests" value={total} detail="This workspace" icon={TestTube} /><Metric label="Execution started" value={`${total ? Math.round(started / total * 100) : 0}%`} detail={`${started} tests`} tone="amber" icon={Clock} /><Metric label="Passed" value={passed} detail={`${total ? Math.round(passed / total * 100) : 0}% coverage`} tone="green" icon={CheckCircle} /><Metric label="User stories" value={stories.length} detail="Import target coverage" tone="purple" icon={BookOpenText} /></div>
+    <div className="toolbar qa-filterbar"><div className="inline-search"><MagnifyingGlass /><input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search test case or story" /></div><select value={storyFilter} onChange={(event) => setStoryFilter(event.target.value)}><option>All stories</option>{stories.map((story) => <option key={story.id} value={story.id}>{story.id} · {story.title}</option>)}</select><select value={sprintFilter} onChange={(event) => setSprintFilter(event.target.value)}><option>All sprints</option>{sprints.map((sprint) => <option key={sprint}>{sprint}</option>)}</select><select value={assigneeFilter} onChange={(event) => setAssigneeFilter(event.target.value)}><option>All assignees</option>{assignees.map((assignee) => <option key={assignee}>{assignee}</option>)}</select><select value={statusFilter} onChange={(event) => setStatusFilter(event.target.value)}><option>All statuses</option><option>Not Run</option><option>In Progress</option><option>Passed</option><option>Failed</option></select><select value={priorityFilter} onChange={(event) => setPriorityFilter(event.target.value)}><option>All priorities</option><option>Critical</option><option>High</option><option>Medium</option><option>Low</option></select>{hasFilters && <button className="tertiary-button" onClick={clearFilters}><X />Clear</button>}<span className="toolbar-count">{tests.length} of {total} test cases</span></div>
+    <div className="panel table-scroll qa-table"><table><thead><tr><th>Test case</th><th>Scenario</th><th>User story</th><th>Sprint</th><th>Priority</th><th>Assignee</th><th>Status</th></tr></thead><tbody>{tests.map((test) => <tr key={test.id}><td><button className="text-button test-case-link" onClick={() => openItem(test.storyId)}>{test.id}</button></td><td><strong>{test.title}</strong>{test.expectedResult && <small className="test-expected">Expected: {test.expectedResult}</small>}</td><td><button className="text-button" onClick={() => openItem(test.storyId)}>{test.storyId}</button><small className="story-name">{storyNames[test.storyId]}</small></td><td>{test.sprint || "Backlog"}</td><td><span className={`priority priority-${(test.priority || "medium").toLowerCase()}`}>{test.priority || "Medium"}</span></td><td>{test.assignee || "Unassigned"}</td><td><select className={`test-status test-${test.status.toLowerCase().replaceAll(" ", "-")}`} value={test.status} onChange={(event) => update(test.id, event.target.value)}><option>Not Run</option><option>In Progress</option><option>Passed</option><option>Failed</option></select></td></tr>)}</tbody></table>{tests.length === 0 && <Empty title="No test cases match" text="Clear filters or import tests for this workspace." />}</div>{importOpen && <TestCaseImportModal state={state} setState={setState} close={() => setImportOpen(false)} showToast={showToast} />}</div>;
 }
 
 function TestCaseImportModal({ state, setState, close, showToast }) {
@@ -1045,7 +1123,12 @@ function exportAllRequirements(documentBlocks) {
 function Requirements({ state, setState, showToast, project }) {
   const [query, setQuery] = useState("");
   const [section, setSection] = useState("All sections");
-  
+  const [typeFilter, setTypeFilter] = useState("all"); // all | text | table | list
+  const [collapsedSections, setCollapsedSections] = useState({});
+  const [showBackToTop, setShowBackToTop] = useState(false);
+  const searchRef = useRef(null);
+  const viewerRef = useRef(null);
+
   const [modalOpen, setModalOpen] = useState(false);
   const [modalMode, setModalMode] = useState("add"); // "add" or "edit"
   const [editSectionName, setEditSectionName] = useState("");
@@ -1054,12 +1137,96 @@ function Requirements({ state, setState, showToast, project }) {
   const [filename, setFilename] = useState("");
 
   const headings = state.source.document.filter((block) => block.kind === "heading" && block.level === 1).map((block) => block.text);
-  
-  const blocks = state.source.document.filter((block) => {
-    const inSection = section === "All sections" || block.path?.[0] === section;
-    const text = block.text || block.rows?.flat().join(" ") || "";
-    return inSection && (!query || text.toLowerCase().includes(query.toLowerCase()));
-  });
+
+  // Get sub-headings per section
+  const subHeadingsMap = useMemo(() => {
+    const map = {};
+    for (const block of state.source.document) {
+      if (block.kind === "heading" && block.level === 2 && block.path?.[0]) {
+        if (!map[block.path[0]]) map[block.path[0]] = [];
+        map[block.path[0]].push(block.text);
+      }
+    }
+    return map;
+  }, [state.source.document]);
+
+  // Block counts per section
+  const sectionBlockCounts = useMemo(() => {
+    const counts = {};
+    for (const block of state.source.document) {
+      const sec = block.path?.[0];
+      if (sec) counts[sec] = (counts[sec] || 0) + 1;
+    }
+    return counts;
+  }, [state.source.document]);
+
+  // Content type counts
+  const typeCounts = useMemo(() => {
+    const sectionBlocks = state.source.document.filter((block) => {
+      return section === "All sections" || block.path?.[0] === section;
+    });
+    return {
+      all: sectionBlocks.length,
+      text: sectionBlocks.filter(b => b.kind !== "table" && b.kind !== "heading" && b.style !== "List Bullet").length,
+      table: sectionBlocks.filter(b => b.kind === "table").length,
+      list: sectionBlocks.filter(b => b.style === "List Bullet").length,
+    };
+  }, [state.source.document, section]);
+
+  // Filtered blocks
+  const blocks = useMemo(() => {
+    return state.source.document.filter((block) => {
+      const inSection = section === "All sections" || block.path?.[0] === section;
+      const text = block.text || block.rows?.flat().join(" ") || "";
+      const matchesQuery = !query || text.toLowerCase().includes(query.toLowerCase());
+      let matchesType = true;
+      if (typeFilter === "text") matchesType = block.kind !== "table" && block.kind !== "heading" && block.style !== "List Bullet";
+      else if (typeFilter === "table") matchesType = block.kind === "table";
+      else if (typeFilter === "list") matchesType = block.style === "List Bullet";
+      return inSection && matchesQuery && matchesType;
+    });
+  }, [state.source.document, section, query, typeFilter]);
+
+  // Document stats
+  const stats = useMemo(() => ({
+    sections: headings.length,
+    paragraphs: state.source.document.filter(b => b.kind !== "heading" && b.kind !== "table").length,
+    tables: state.source.document.filter(b => b.kind === "table").length,
+  }), [state.source.document, headings.length]);
+
+  // Keyboard shortcuts
+  useEffect(() => {
+    const handler = (e) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === "k") {
+        e.preventDefault();
+        searchRef.current?.focus();
+      }
+      if (e.key === "Escape" && document.activeElement === searchRef.current) {
+        setQuery("");
+        searchRef.current?.blur();
+      }
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, []);
+
+  // Back to top scroll listener
+  useEffect(() => {
+    const handleScroll = () => setShowBackToTop(window.scrollY > 400);
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
+
+  const scrollToTop = () => window.scrollTo({ top: 0, behavior: "smooth" });
+
+  const scrollToHeading = useCallback((headingText) => {
+    const el = viewerRef.current?.querySelector(`[data-heading-id="${CSS.escape(headingText)}"]`);
+    if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
+  }, []);
+
+  const toggleSectionCollapse = useCallback((headingText) => {
+    setCollapsedSections(prev => ({ ...prev, [headingText]: !prev[headingText] }));
+  }, []);
 
   const handleFileUpload = (e) => {
     const file = e.target.files?.[0];
@@ -1198,70 +1365,156 @@ function Requirements({ state, setState, showToast, project }) {
     showToast("Requirements exported as Markdown");
   };
 
+  if (project?.id !== "atlas-payroll") return <div className="content requirements-page"><div className="page-heading"><div><span className="eyebrow">SOURCE OF TRUTH</span><h1>{project.name} requirements</h1><p>Requirements are isolated by workspace.</p></div></div><div className="panel"><Empty title="No requirements imported" text="This workspace does not use the Atlas Payroll requirements library." /></div></div>;
+
   return (
     <div className="content requirements-page">
-      <div className="page-heading">
+      {/* Hero banner */}
+      <div className="req-hero">
         <div>
-          <span className="eyebrow">SOURCE OF TRUTH</span>
-          <h1>{project?.name || "Atlas"} requirements</h1>
+          <span className="req-hero-eyebrow">SOURCE OF TRUTH</span>
+          <h1>{project?.name || "Atlas"} Payroll Requirements</h1>
+          <p className="req-hero-sub">
+            {state.source?.source?.filename || "Searchable source document — rules, formulas, acceptance criteria, and open questions"}
+          </p>
+          <div className="req-hero-stats">
+            <div className="req-hero-stat">
+              <strong>{stats.sections}</strong>
+              <span>Sections</span>
+            </div>
+            <div className="req-hero-stat">
+              <strong>{stats.paragraphs}</strong>
+              <span>Paragraphs</span>
+            </div>
+            <div className="req-hero-stat">
+              <strong>{stats.tables}</strong>
+              <span>Tables</span>
+            </div>
+          </div>
         </div>
-        <div className="requirements-header-actions" style={{ display: "flex", gap: "10px" }}>
+        <div className="req-hero-actions">
           <button className="secondary-button" onClick={handleExportAll}>
-            <DownloadSimple />Export all (.md)
+            <DownloadSimple size={15} />Export .md
           </button>
           <button className="primary-button" onClick={openAddModal}>
-            <Plus />Add Section
+            <Plus size={15} />Add Section
           </button>
         </div>
       </div>
 
-      <div className="toolbar">
-        <div className="inline-search wide">
+      {/* Enhanced toolbar */}
+      <div className="req-toolbar">
+        <div className="inline-search" style={{ position: "relative" }}>
           <MagnifyingGlass />
-          <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search requirements, rules, formulas, questions..." />
+          <input ref={searchRef} value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search requirements, rules, formulas, questions..." />
+          {!query && <kbd className="req-search-kbd">⌘K</kbd>}
         </div>
-        <select value={section} onChange={(event) => setSection(event.target.value)}>
+        <select value={section} onChange={(event) => { setSection(event.target.value); setTypeFilter("all"); }}>
           <option>All sections</option>
           {headings.map((heading) => <option key={heading}>{heading}</option>)}
         </select>
+        <div className="req-type-filters">
+          {[
+            ["all", "All"],
+            ["text", "Text"],
+            ["table", "Tables"],
+            ["list", "Lists"],
+          ].map(([key, label]) => (
+            <button key={key} className={`req-type-pill${typeFilter === key ? " active" : ""}`} onClick={() => setTypeFilter(key)}>
+              {label}
+              <span className="pill-count">{typeCounts[key]}</span>
+            </button>
+          ))}
+        </div>
+        {query && (
+          <div className="req-match-count">
+            <strong>{blocks.length}</strong> results
+          </div>
+        )}
       </div>
 
       <div className="document-layout">
+        {/* Enhanced TOC sidebar */}
         <aside className="document-toc">
-          <strong>Document map</strong>
-          <button className={section === "All sections" ? "active" : ""} onClick={() => setSection("All sections")}>
+          <div className="document-toc-header">
+            <TreeStructure size={15} weight="bold" />
+            <strong>Document map</strong>
+          </div>
+          <button className={`toc-all-btn${section === "All sections" ? " active" : ""}`} onClick={() => setSection("All sections")}>
             All sections
+            <span className="toc-block-count">{state.source.document.length}</span>
           </button>
-          {headings.map((heading) => (
-            <div key={heading} className={`toc-item-wrapper ${section === heading ? "active" : ""}`} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", width: "100%", borderRadius: "var(--r-sm)", border: "1px solid transparent", transition: "all 0.15s ease" }}>
-              <button className="toc-select-btn" onClick={() => setSection(heading)} style={{ flex: 1, textAlign: "left", background: "none", border: "none", padding: "10px 12px", fontSize: "13px", color: "var(--ink-2)", fontWeight: section === heading ? "600" : "500", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                {heading}
-              </button>
-              <div className="toc-item-actions" style={{ display: "flex", gap: "4px", paddingRight: "8px" }}>
-                <button onClick={() => openEditModal(heading)} title="Edit section content" style={{ background: "none", border: "none", color: "var(--muted)", padding: "4px", borderRadius: "var(--r-sm)", cursor: "pointer" }}>
-                  <PencilSimple size={13} />
-                </button>
-                <button className="delete" onClick={(e) => handleDeleteSection(e, heading)} title="Delete section" style={{ background: "none", border: "none", color: "var(--muted)", padding: "4px", borderRadius: "var(--r-sm)", cursor: "pointer" }}>
-                  <Trash size={13} />
-                </button>
+          {headings.map((heading, index) => {
+            const subs = subHeadingsMap[heading] || [];
+            const isActive = section === heading;
+            return (
+              <div className="toc-section" key={heading}>
+                <div className={`toc-section-header${isActive ? " active" : ""}`}>
+                  <span className="toc-section-number">{index + 1}</span>
+                  <button className="toc-select-btn" onClick={() => setSection(heading)} title={heading}>
+                    {heading}
+                  </button>
+                  <span className="toc-block-count">{sectionBlockCounts[heading] || 0}</span>
+                  <div className="toc-item-actions">
+                    <button onClick={() => openEditModal(heading)} title="Edit section content">
+                      <PencilSimple size={13} />
+                    </button>
+                    <button className="delete" onClick={(e) => handleDeleteSection(e, heading)} title="Delete section">
+                      <Trash size={13} />
+                    </button>
+                  </div>
+                </div>
+                {subs.length > 0 && (
+                  <div className={`toc-sub-nav${isActive ? " open" : ""}`}>
+                    {subs.map((sub) => (
+                      <button
+                        key={sub}
+                        className="toc-sub-btn"
+                        title={sub}
+                        onClick={() => {
+                          setSection(heading);
+                          setTimeout(() => scrollToHeading(sub), 60);
+                        }}
+                      >
+                        {sub}
+                      </button>
+                    ))}
+                  </div>
+                )}
               </div>
-            </div>
-          ))}
+            );
+          })}
         </aside>
 
-        <article className="document-viewer">
+        {/* Enhanced document viewer */}
+        <article className="document-viewer" ref={viewerRef}>
           {blocks.length === 0 ? (
-            <Empty title="No matching source content" text="Try a broader search." />
+            <Empty title="No matching source content" text="Try a broader search or clear the filters." />
           ) : (
-            blocks.slice(0, 180).map((block, index) => <DocumentBlock block={block} key={`${block.kind}-${index}`} />)
+            blocks.slice(0, 180).map((block, index) => (
+              <DocumentBlock
+                block={block}
+                key={`${block.kind}-${index}`}
+                query={query}
+                index={index}
+                collapsed={collapsedSections[block.text]}
+                onToggleCollapse={toggleSectionCollapse}
+              />
+            ))
           )}
           {blocks.length > 180 && (
             <div className="document-limit">
+              <Warning size={16} />
               Showing the first 180 matching blocks. Narrow the section or search to focus the source.
             </div>
           )}
         </article>
       </div>
+
+      {/* Back to top button */}
+      <button className={`req-back-to-top${showBackToTop ? " visible" : ""}`} onClick={scrollToTop} title="Back to top">
+        <ArrowUp size={18} weight="bold" />
+      </button>
 
       {modalOpen && (
         <div className="modal-backdrop" onMouseDown={() => setModalOpen(false)}>
@@ -1374,12 +1627,92 @@ function Requirements({ state, setState, showToast, project }) {
   );
 }
 
-function DocumentBlock({ block }) {
-  if (block.kind === "heading") { const Tag = `h${Math.min(block.level + 1, 6)}`; return <Tag>{block.text}</Tag>; }
-  if (block.kind === "table") return <div className="source-table table-scroll"><table><tbody>{block.rows.map((row, index) => <tr key={index}>{row.map((cell, cellIndex) => index === 0 ? <th key={cellIndex}>{cell}</th> : <td key={cellIndex}>{cell}</td>)}</tr>)}</tbody></table></div>;
-  if (block.style === "List Bullet") return <div className="source-bullet"><span />{block.text}</div>;
-  if (block.style === "Intense Quote") return <h5>{block.text}</h5>;
-  return <p>{block.text}</p>;
+/* Search highlight helper */
+function HighlightedText({ text, query }) {
+  if (!query || !text) return text || null;
+  const parts = text.split(new RegExp(`(${query.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")})`, "gi"));
+  return parts.map((part, i) =>
+    part.toLowerCase() === query.toLowerCase()
+      ? <mark key={i} className="search-highlight">{part}</mark>
+      : part
+  );
+}
+
+function DocumentBlock({ block, query, index, collapsed, onToggleCollapse }) {
+  const animDelay = Math.min(index * 20, 300);
+
+  if (block.kind === "heading") {
+    const Tag = `h${Math.min(block.level + 1, 6)}`;
+    const isCollapsible = block.level === 2;
+    return (
+      <Tag
+        data-heading-id={block.text}
+        className="doc-block-animated"
+        style={{ animationDelay: `${animDelay}ms` }}
+      >
+        {isCollapsible && (
+          <button
+            className={`doc-section-toggle${collapsed ? " collapsed" : ""}`}
+            onClick={() => onToggleCollapse(block.text)}
+            title={collapsed ? "Expand section" : "Collapse section"}
+          >
+            <CaretDown size={12} weight="bold" />
+          </button>
+        )}
+        <HighlightedText text={block.text} query={query} />
+      </Tag>
+    );
+  }
+
+  if (block.kind === "table") {
+    return (
+      <div className="source-table table-scroll doc-block-animated" style={{ animationDelay: `${animDelay}ms` }}>
+        <table>
+          <thead>
+            {block.rows.length > 0 && (
+              <tr>
+                {block.rows[0].map((cell, cellIndex) => (
+                  <th key={cellIndex}><HighlightedText text={cell} query={query} /></th>
+                ))}
+              </tr>
+            )}
+          </thead>
+          <tbody>
+            {block.rows.slice(1).map((row, rowIndex) => (
+              <tr key={rowIndex}>
+                {row.map((cell, cellIndex) => (
+                  <td key={cellIndex}><HighlightedText text={cell} query={query} /></td>
+                ))}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    );
+  }
+
+  if (block.style === "List Bullet") {
+    return (
+      <div className="source-bullet doc-block-animated" style={{ animationDelay: `${animDelay}ms` }}>
+        <span />
+        <HighlightedText text={block.text} query={query} />
+      </div>
+    );
+  }
+
+  if (block.style === "Intense Quote") {
+    return (
+      <h5 className="doc-block-animated" style={{ animationDelay: `${animDelay}ms` }}>
+        <HighlightedText text={block.text} query={query} />
+      </h5>
+    );
+  }
+
+  return (
+    <p className="doc-block-animated" style={{ animationDelay: `${animDelay}ms` }}>
+      <HighlightedText text={block.text} query={query} />
+    </p>
+  );
 }
 
 const presentationSlides = [
@@ -1522,7 +1855,9 @@ function Reports({ state, project }) {
   const features = state.workItems.filter((item) => item.type === "Feature" && item.phase !== "Unplanned");
   const stories = state.workItems.filter((item) => item.type === "User Story");
   const byStatus = Object.fromEntries(statuses.map((status) => [status, stories.filter((item) => item.status === status).length]));
-  return <div className="content reports-page"><div className="page-heading"><div><span className="eyebrow">REPORTING</span><h1>Project status report</h1><p>A client-ready summary with live delivery and QA data.</p></div><a className="primary-button" href="/api/export.csv"><DownloadSimple />Export work items</a></div><section className="report-cover"><div><span>ATLAS DELIVERY STATUS</span><h2>{project.name}</h2><p>{project.phase} · Updated {new Date().toLocaleDateString()}</p></div><div className="report-mark">A</div></section><div className="metrics-row"><Metric label="Epics" value={state.workItems.filter((item) => item.type === "Epic").length} icon={Briefcase} /><Metric label="Features" value={features.length} tone="purple" icon={Flag} /><Metric label="User stories" value={stories.length} tone="green" icon={BookOpenText} /><Metric label="Tasks" value={state.workItems.filter((item) => item.type === "Task").length} tone="amber" icon={CheckCircle} /></div><div className="report-grid"><section className="panel"><PanelHeader title="Story status" /><div className="status-chart">{statuses.map((status) => <div key={status}><span>{status}</span><div><i className={`chart-${status.toLowerCase()}`} style={{ width: `${stories.length ? byStatus[status] / stories.length * 100 : 0}%` }} /></div><strong>{byStatus[status]}</strong></div>)}</div></section><section className="panel"><PanelHeader title="Feature delivery" /><div className="feature-progress-list">{features.map((feature) => <div key={feature.id}><div><strong>{feature.title}</strong><span>{feature.progress}%</span></div><ProgressBar value={feature.progress} /></div>)}</div></section><section className="panel"><PanelHeader title="Current risk posture" /><div className="risk-list">{state.risks.map((risk, index) => <div className="risk" key={risk.id}><span className={`risk-number ${index === 0 ? "red" : "amber"}`}>{index + 1}</span><div><strong>{risk.title}</strong><small>{risk.status} · {risk.owner}</small></div></div>)}</div></section><section className="panel"><PanelHeader title="Readiness coverage" /><div className="coverage-list"><div><span>Acceptance criteria</span><strong>{state.source.stories.reduce((total, story) => total + story.acceptanceCriteria.length, 0)}</strong></div><div><span>Dev / QA tasks</span><strong>{state.source.stories.reduce((total, story) => total + story.tasks.length, 0)}</strong></div><div><span>QA scenarios</span><strong>{state.tests.length}</strong></div><div><span>Source blocks retained</span><strong>{state.source.document.length}</strong></div></div></section></div></div>;
+  const taskCount = state.workItems.filter((item) => item.type === "Task").length;
+  const acceptanceCount = stories.reduce((total, story) => total + (story.acceptanceCriteria?.length || 0), 0);
+  return <div className="content reports-page"><div className="page-heading"><div><span className="eyebrow">REPORTING</span><h1>Project status report</h1><p>A client-ready summary with live delivery and QA data.</p></div><a className="primary-button" href="/api/export.csv"><DownloadSimple />Export work items</a></div><section className="report-cover"><div><span>DELIVERY STATUS</span><h2>{project.name}</h2><p>{project.phase} · Updated {new Date().toLocaleDateString()}</p></div><div className="report-mark">{project.name.slice(0, 1)}</div></section><div className="metrics-row"><Metric label="Epics" value={state.workItems.filter((item) => item.type === "Epic").length} icon={Briefcase} /><Metric label="Features" value={features.length} tone="purple" icon={Flag} /><Metric label="User stories" value={stories.length} tone="green" icon={BookOpenText} /><Metric label="Tasks" value={taskCount} tone="amber" icon={CheckCircle} /></div><div className="report-grid"><section className="panel"><PanelHeader title="Story status" /><div className="status-chart">{statuses.map((status) => <div key={status}><span>{status}</span><div><i className={`chart-${status.toLowerCase()}`} style={{ width: `${stories.length ? byStatus[status] / stories.length * 100 : 0}%` }} /></div><strong>{byStatus[status]}</strong></div>)}</div></section><section className="panel"><PanelHeader title="Feature delivery" /><div className="feature-progress-list">{features.map((feature) => <div key={feature.id}><div><strong>{feature.title}</strong><span>{feature.progress}%</span></div><ProgressBar value={feature.progress} /></div>)}</div></section><section className="panel"><PanelHeader title="Current risk posture" /><div className="risk-list">{state.risks.map((risk, index) => <div className="risk" key={risk.id}><span className={`risk-number ${risk.impact === "High" ? "red" : "amber"}`}>{index + 1}</span><div><strong>{risk.title}</strong><small>{risk.status} · {risk.owner}</small></div></div>)}</div></section><section className="panel"><PanelHeader title="Readiness coverage" /><div className="coverage-list"><div><span>Acceptance criteria</span><strong>{acceptanceCount}</strong></div><div><span>Delivery tasks</span><strong>{taskCount}</strong></div><div><span>QA scenarios</span><strong>{state.tests.length}</strong></div><div><span>Dependencies</span><strong>{state.workItems.reduce((total, item) => total + (item.dependencies?.length || 0), 0)}</strong></div></div></section></div></div>;
 }
 
 const settingsTabs = [
@@ -1594,6 +1929,15 @@ function Settings({ state, setState, showToast }) {
     }
   };
 
+  const deleteWorkspace = async (workspace) => {
+    if (!window.confirm(`Delete workspace “${workspace.name}”? Its work items, tests, risks, and sprint presentation will also be removed.`)) return;
+    try {
+      const next = await api(`/api/projects/${encodeURIComponent(workspace.id)}`, { method: "DELETE" });
+      setState(next);
+      showToast(`Workspace ${workspace.name} deleted`);
+    } catch (requestError) { showToast(requestError.message); }
+  };
+
   const createUser = async (event) => {
     event.preventDefault();
     setUserError("");
@@ -1612,14 +1956,16 @@ function Settings({ state, setState, showToast }) {
   };
 
   const deleteUser = async (id, name) => {
-    if (!window.confirm(`Delete user ${name}?`)) return;
+    if (!window.confirm(`Delete user ${name}? Their assigned work items and test cases will become Unassigned.`)) return;
     try {
-      await api(`/api/users/${id}`, { method: "DELETE" });
+      const result = await api(`/api/users/${id}`, { method: "DELETE" });
       setState((current) => ({
         ...current,
-        users: current.users.filter((u) => u.id !== id)
+        users: current.users.filter((u) => u.id !== id),
+        workItems: current.workItems.map((item) => item.assignee === name ? { ...item, assignee: "Unassigned" } : item),
+        tests: current.tests.map((test) => test.assignee === name ? { ...test, assignee: "Unassigned" } : test),
       }));
-      showToast(`User deleted`);
+      showToast(`User deleted · ${result.unassignedWorkItems + result.unassignedTests} assignments cleared`);
     } catch (requestError) {
       showToast(requestError.message);
     }
@@ -1653,15 +1999,7 @@ function Settings({ state, setState, showToast }) {
             <p>Click a workspace to make it active. Work items, boards, and presentations adapt automatically.</p>
             <div className="project-list">
               {state.projects.map((p) => (
-                <button type="button" key={p.id} className={p.id === state.activeProjectId ? "active" : ""} onClick={() => switchWorkspace(p.id)}>
-                  <div className="project-avatar">{p.name.slice(0, 1)}</div>
-                  <div>
-                    <strong>{p.name}</strong>
-                    <small>{p.targetMilestone}{p.targetDate ? ` · ${new Date(`${p.targetDate}T00:00:00`).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" })}` : ""}</small>
-                  </div>
-                  <span className="phase-pill">{p.phase}</span>
-                  {p.id === state.activeProjectId ? <span className="workspace-active-pill"><CheckCircle size={13} weight="fill" />Active</span> : <span className="workspace-switch-hint">Switch</span>}
-                </button>
+                <div key={p.id} className={`project-list-item ${p.id === state.activeProjectId ? "active" : ""}`}><button type="button" onClick={() => switchWorkspace(p.id)}><div className="project-avatar">{p.name.slice(0, 1)}</div><div><strong>{p.name}</strong><small>{p.targetMilestone}{p.targetDate ? ` · ${new Date(`${p.targetDate}T00:00:00`).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" })}` : ""}</small></div><span className="phase-pill">{p.phase}</span>{p.id === state.activeProjectId ? <span className="workspace-active-pill"><CheckCircle size={13} weight="fill" />Active</span> : <span className="workspace-switch-hint">Switch</span>}</button><button className="icon-button delete workspace-delete" type="button" onClick={() => deleteWorkspace(p)} title={`Delete ${p.name}`} disabled={state.projects.length <= 1}><Trash size={15} /></button></div>
               ))}
             </div>
           </section>

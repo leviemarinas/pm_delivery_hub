@@ -50,32 +50,7 @@
       "phase": "Phase 1",
       "targetMilestone": "Scope approval",
       "targetDate": "2027-11-10",
-      "links": [
-        {
-          "id": "link-1",
-          "name": "Bug Inventory Summary",
-          "url": "https://docs.google.com/spreadsheets/d/10SCnCAbwqQB4Llix_gQllwygaCk5k-yWKv76_yxQi_k/edit",
-          "group": "Worksheets"
-        },
-        {
-          "id": "link-2",
-          "name": "Payroll Timeline Sheet",
-          "url": "https://docs.google.com/spreadsheets/d/1FopPinrWpPNFCJ3mfAVBHh2gZ-EB9VACgOqJwo8LNMQ/edit",
-          "group": "Worksheets"
-        },
-        {
-          "id": "link-3",
-          "name": "Client Kickoff Slides",
-          "url": "https://docs.google.com/presentation/d/1K-G0Z9y2PzS8x56wF7p7i4qQp37sN_sC-oD7j9l-8zE/edit",
-          "group": "Presentations"
-        },
-        {
-          "id": "link-4",
-          "name": "System Architecture Design",
-          "url": "https://mermaid.live/",
-          "group": "External Sites"
-        }
-      ],
+      "links": [],
       "createdAt": "2026-07-05T19:40:41.522Z",
       "linkGroups": [
         "General",
@@ -100,7 +75,8 @@
       "progress": 42,
       "createdAt": "2026-07-05T16:07:05.767Z",
       "updatedAt": "2026-07-05T16:07:05.767Z",
-      "phase": "Phase 2"
+      "phase": "Phase 2",
+      "projectId": "atlas-payroll"
     },
     {
       "id": "FEAT-PAY-BASIC-001",
@@ -120,7 +96,8 @@
       "scopeStatus": "On Track",
       "targetDate": "2026-07-31",
       "phase": "Phase 2",
-      "moscow": "Must Have"
+      "moscow": "Must Have",
+      "projectId": "atlas-payroll"
     },
     {
       "id": "US-BASIC-001",
@@ -195,7 +172,8 @@
       "createdAt": "2026-07-05T16:07:05.767Z",
       "updatedAt": "2026-07-05T16:07:05.767Z",
       "phase": "Phase 2",
-      "moscow": "Must Have"
+      "moscow": "Must Have",
+      "projectId": "atlas-payroll"
     },
     {
       "id": "US-BASIC-001-T01",
@@ -217,7 +195,8 @@
       "progress": 100,
       "createdAt": "2026-07-05T16:07:05.767Z",
       "updatedAt": "2026-07-05T16:07:05.767Z",
-      "phase": "Phase 2"
+      "phase": "Phase 2",
+      "projectId": "atlas-payroll"
     },
     {
       "id": "US-BASIC-001-T02",
@@ -239,7 +218,8 @@
       "progress": 100,
       "createdAt": "2026-07-05T16:07:05.767Z",
       "updatedAt": "2026-07-05T16:07:05.767Z",
-      "phase": "Phase 2"
+      "phase": "Phase 2",
+      "projectId": "atlas-payroll"
     },
     {
       "id": "US-BASIC-001-T03",
@@ -261,7 +241,8 @@
       "progress": 100,
       "createdAt": "2026-07-05T16:07:05.767Z",
       "updatedAt": "2026-07-05T16:07:05.767Z",
-      "phase": "Phase 2"
+      "phase": "Phase 2",
+      "projectId": "atlas-payroll"
     },
     {
       "id": "US-BASIC-001-T04",
@@ -283,7 +264,8 @@
       "progress": 100,
       "createdAt": "2026-07-05T16:07:05.767Z",
       "updatedAt": "2026-07-05T16:07:05.767Z",
-      "phase": "Phase 2"
+      "phase": "Phase 2",
+      "projectId": "atlas-payroll"
     },
     {
       "id": "US-BASIC-001-T05",
@@ -305,7 +287,8 @@
       "progress": 100,
       "createdAt": "2026-07-05T16:07:05.767Z",
       "updatedAt": "2026-07-05T16:07:05.767Z",
-      "phase": "Phase 2"
+      "phase": "Phase 2",
+      "projectId": "atlas-payroll"
     },
     {
       "id": "US-BASIC-001-T06",
@@ -327,7 +310,8 @@
       "progress": 100,
       "createdAt": "2026-07-05T16:07:05.767Z",
       "updatedAt": "2026-07-05T16:07:05.767Z",
-      "phase": "Phase 2"
+      "phase": "Phase 2",
+      "projectId": "atlas-payroll"
     },
     {
       "id": "US-BASIC-002",
@@ -399,9 +383,10 @@
       "storyPoints": 8,
       "progress": 50,
       "createdAt": "2026-07-05T16:07:05.767Z",
-      "updatedAt": "2026-07-05T19:39:19.489Z",
+      "updatedAt": "2026-07-05T20:27:54.681Z",
       "phase": "Phase 2",
-      "moscow": "Must Have"
+      "moscow": "Must Have",
+      "projectId": "atlas-payroll"
     },
     {
       "id": "US-BASIC-002-T01",
@@ -423,7 +408,8 @@
       "progress": 50,
       "createdAt": "2026-07-05T16:07:05.767Z",
       "updatedAt": "2026-07-05T16:07:05.767Z",
-      "phase": "Phase 2"
+      "phase": "Phase 2",
+      "projectId": "atlas-payroll"
     },
     {
       "id": "US-BASIC-002-T02",
@@ -445,7 +431,8 @@
       "progress": 50,
       "createdAt": "2026-07-05T16:07:05.767Z",
       "updatedAt": "2026-07-05T16:07:05.767Z",
-      "phase": "Phase 2"
+      "phase": "Phase 2",
+      "projectId": "atlas-payroll"
     },
     {
       "id": "US-BASIC-002-T03",
@@ -467,7 +454,8 @@
       "progress": 0,
       "createdAt": "2026-07-05T16:07:05.767Z",
       "updatedAt": "2026-07-05T16:07:05.767Z",
-      "phase": "Phase 2"
+      "phase": "Phase 2",
+      "projectId": "atlas-payroll"
     },
     {
       "id": "US-BASIC-002-T04",
@@ -489,7 +477,8 @@
       "progress": 0,
       "createdAt": "2026-07-05T16:07:05.767Z",
       "updatedAt": "2026-07-05T16:07:05.767Z",
-      "phase": "Phase 2"
+      "phase": "Phase 2",
+      "projectId": "atlas-payroll"
     },
     {
       "id": "US-BASIC-002-T05",
@@ -511,7 +500,8 @@
       "progress": 0,
       "createdAt": "2026-07-05T16:07:05.767Z",
       "updatedAt": "2026-07-05T16:07:05.767Z",
-      "phase": "Phase 2"
+      "phase": "Phase 2",
+      "projectId": "atlas-payroll"
     },
     {
       "id": "US-BASIC-002-T06",
@@ -533,7 +523,8 @@
       "progress": 0,
       "createdAt": "2026-07-05T16:07:05.767Z",
       "updatedAt": "2026-07-05T16:07:05.767Z",
-      "phase": "Phase 2"
+      "phase": "Phase 2",
+      "projectId": "atlas-payroll"
     },
     {
       "id": "US-BASIC-003",
@@ -607,7 +598,8 @@
       "createdAt": "2026-07-05T16:07:05.767Z",
       "updatedAt": "2026-07-05T19:19:02.546Z",
       "phase": "Phase 2",
-      "moscow": "Must Have"
+      "moscow": "Must Have",
+      "projectId": "atlas-payroll"
     },
     {
       "id": "US-BASIC-003-T01",
@@ -629,7 +621,8 @@
       "progress": 50,
       "createdAt": "2026-07-05T16:07:05.767Z",
       "updatedAt": "2026-07-05T16:07:05.767Z",
-      "phase": "Phase 2"
+      "phase": "Phase 2",
+      "projectId": "atlas-payroll"
     },
     {
       "id": "US-BASIC-003-T02",
@@ -651,7 +644,8 @@
       "progress": 50,
       "createdAt": "2026-07-05T16:07:05.767Z",
       "updatedAt": "2026-07-05T16:07:05.767Z",
-      "phase": "Phase 2"
+      "phase": "Phase 2",
+      "projectId": "atlas-payroll"
     },
     {
       "id": "US-BASIC-003-T03",
@@ -673,7 +667,8 @@
       "progress": 0,
       "createdAt": "2026-07-05T16:07:05.767Z",
       "updatedAt": "2026-07-05T16:07:05.767Z",
-      "phase": "Phase 2"
+      "phase": "Phase 2",
+      "projectId": "atlas-payroll"
     },
     {
       "id": "US-BASIC-003-T04",
@@ -695,7 +690,8 @@
       "progress": 0,
       "createdAt": "2026-07-05T16:07:05.767Z",
       "updatedAt": "2026-07-05T16:07:05.767Z",
-      "phase": "Phase 2"
+      "phase": "Phase 2",
+      "projectId": "atlas-payroll"
     },
     {
       "id": "US-BASIC-003-T05",
@@ -717,7 +713,8 @@
       "progress": 0,
       "createdAt": "2026-07-05T16:07:05.767Z",
       "updatedAt": "2026-07-05T16:07:05.767Z",
-      "phase": "Phase 2"
+      "phase": "Phase 2",
+      "projectId": "atlas-payroll"
     },
     {
       "id": "US-BASIC-003-T06",
@@ -739,7 +736,8 @@
       "progress": 0,
       "createdAt": "2026-07-05T16:07:05.767Z",
       "updatedAt": "2026-07-05T16:07:05.767Z",
-      "phase": "Phase 2"
+      "phase": "Phase 2",
+      "projectId": "atlas-payroll"
     },
     {
       "id": "US-BASIC-004",
@@ -813,7 +811,8 @@
       "createdAt": "2026-07-05T16:07:05.767Z",
       "updatedAt": "2026-07-05T18:38:25.416Z",
       "phase": "Phase 2",
-      "moscow": "Must Have"
+      "moscow": "Must Have",
+      "projectId": "atlas-payroll"
     },
     {
       "id": "US-BASIC-004-T01",
@@ -835,7 +834,8 @@
       "progress": 0,
       "createdAt": "2026-07-05T16:07:05.767Z",
       "updatedAt": "2026-07-05T16:07:05.767Z",
-      "phase": "Phase 2"
+      "phase": "Phase 2",
+      "projectId": "atlas-payroll"
     },
     {
       "id": "US-BASIC-004-T02",
@@ -857,7 +857,8 @@
       "progress": 0,
       "createdAt": "2026-07-05T16:07:05.767Z",
       "updatedAt": "2026-07-05T16:07:05.767Z",
-      "phase": "Phase 2"
+      "phase": "Phase 2",
+      "projectId": "atlas-payroll"
     },
     {
       "id": "US-BASIC-004-T03",
@@ -879,7 +880,8 @@
       "progress": 0,
       "createdAt": "2026-07-05T16:07:05.767Z",
       "updatedAt": "2026-07-05T16:07:05.767Z",
-      "phase": "Phase 2"
+      "phase": "Phase 2",
+      "projectId": "atlas-payroll"
     },
     {
       "id": "US-BASIC-004-T04",
@@ -901,7 +903,8 @@
       "progress": 0,
       "createdAt": "2026-07-05T16:07:05.767Z",
       "updatedAt": "2026-07-05T16:07:05.767Z",
-      "phase": "Phase 2"
+      "phase": "Phase 2",
+      "projectId": "atlas-payroll"
     },
     {
       "id": "US-BASIC-004-T05",
@@ -923,7 +926,8 @@
       "progress": 0,
       "createdAt": "2026-07-05T16:07:05.767Z",
       "updatedAt": "2026-07-05T16:07:05.767Z",
-      "phase": "Phase 2"
+      "phase": "Phase 2",
+      "projectId": "atlas-payroll"
     },
     {
       "id": "US-BASIC-004-T06",
@@ -945,7 +949,8 @@
       "progress": 0,
       "createdAt": "2026-07-05T16:07:05.767Z",
       "updatedAt": "2026-07-05T16:07:05.767Z",
-      "phase": "Phase 2"
+      "phase": "Phase 2",
+      "projectId": "atlas-payroll"
     },
     {
       "id": "US-BASIC-005",
@@ -1019,7 +1024,8 @@
       "createdAt": "2026-07-05T16:07:05.767Z",
       "updatedAt": "2026-07-05T16:07:05.767Z",
       "phase": "Phase 2",
-      "moscow": "Must Have"
+      "moscow": "Must Have",
+      "projectId": "atlas-payroll"
     },
     {
       "id": "US-BASIC-005-T01",
@@ -1041,7 +1047,8 @@
       "progress": 0,
       "createdAt": "2026-07-05T16:07:05.767Z",
       "updatedAt": "2026-07-05T16:07:05.767Z",
-      "phase": "Phase 2"
+      "phase": "Phase 2",
+      "projectId": "atlas-payroll"
     },
     {
       "id": "US-BASIC-005-T02",
@@ -1063,7 +1070,8 @@
       "progress": 0,
       "createdAt": "2026-07-05T16:07:05.767Z",
       "updatedAt": "2026-07-05T16:07:05.767Z",
-      "phase": "Phase 2"
+      "phase": "Phase 2",
+      "projectId": "atlas-payroll"
     },
     {
       "id": "US-BASIC-005-T03",
@@ -1085,7 +1093,8 @@
       "progress": 0,
       "createdAt": "2026-07-05T16:07:05.767Z",
       "updatedAt": "2026-07-05T16:07:05.767Z",
-      "phase": "Phase 2"
+      "phase": "Phase 2",
+      "projectId": "atlas-payroll"
     },
     {
       "id": "US-BASIC-005-T04",
@@ -1107,7 +1116,8 @@
       "progress": 0,
       "createdAt": "2026-07-05T16:07:05.767Z",
       "updatedAt": "2026-07-05T16:07:05.767Z",
-      "phase": "Phase 2"
+      "phase": "Phase 2",
+      "projectId": "atlas-payroll"
     },
     {
       "id": "US-BASIC-005-T05",
@@ -1129,7 +1139,8 @@
       "progress": 0,
       "createdAt": "2026-07-05T16:07:05.767Z",
       "updatedAt": "2026-07-05T16:07:05.767Z",
-      "phase": "Phase 2"
+      "phase": "Phase 2",
+      "projectId": "atlas-payroll"
     },
     {
       "id": "US-BASIC-005-T06",
@@ -1151,7 +1162,8 @@
       "progress": 0,
       "createdAt": "2026-07-05T16:07:05.767Z",
       "updatedAt": "2026-07-05T16:07:05.767Z",
-      "phase": "Phase 2"
+      "phase": "Phase 2",
+      "projectId": "atlas-payroll"
     },
     {
       "id": "FEAT-PAY-LOAN-001",
@@ -1171,7 +1183,8 @@
       "scopeStatus": "On Track",
       "targetDate": "2026-08-14",
       "phase": "Phase 2",
-      "moscow": "Must Have"
+      "moscow": "Must Have",
+      "projectId": "atlas-payroll"
     },
     {
       "id": "US-LOAN-001",
@@ -1245,7 +1258,8 @@
       "createdAt": "2026-07-05T16:07:05.767Z",
       "updatedAt": "2026-07-05T16:07:05.767Z",
       "phase": "Phase 2",
-      "moscow": "Must Have"
+      "moscow": "Must Have",
+      "projectId": "atlas-payroll"
     },
     {
       "id": "US-LOAN-001-T01",
@@ -1267,7 +1281,8 @@
       "progress": 100,
       "createdAt": "2026-07-05T16:07:05.767Z",
       "updatedAt": "2026-07-05T16:07:05.767Z",
-      "phase": "Phase 2"
+      "phase": "Phase 2",
+      "projectId": "atlas-payroll"
     },
     {
       "id": "US-LOAN-001-T02",
@@ -1289,7 +1304,8 @@
       "progress": 100,
       "createdAt": "2026-07-05T16:07:05.767Z",
       "updatedAt": "2026-07-05T16:07:05.767Z",
-      "phase": "Phase 2"
+      "phase": "Phase 2",
+      "projectId": "atlas-payroll"
     },
     {
       "id": "US-LOAN-001-T03",
@@ -1311,7 +1327,8 @@
       "progress": 100,
       "createdAt": "2026-07-05T16:07:05.767Z",
       "updatedAt": "2026-07-05T16:07:05.767Z",
-      "phase": "Phase 2"
+      "phase": "Phase 2",
+      "projectId": "atlas-payroll"
     },
     {
       "id": "US-LOAN-001-T04",
@@ -1333,7 +1350,8 @@
       "progress": 100,
       "createdAt": "2026-07-05T16:07:05.767Z",
       "updatedAt": "2026-07-05T16:07:05.767Z",
-      "phase": "Phase 2"
+      "phase": "Phase 2",
+      "projectId": "atlas-payroll"
     },
     {
       "id": "US-LOAN-001-T05",
@@ -1355,7 +1373,8 @@
       "progress": 100,
       "createdAt": "2026-07-05T16:07:05.767Z",
       "updatedAt": "2026-07-05T16:07:05.767Z",
-      "phase": "Phase 2"
+      "phase": "Phase 2",
+      "projectId": "atlas-payroll"
     },
     {
       "id": "US-LOAN-001-T06",
@@ -1377,7 +1396,8 @@
       "progress": 100,
       "createdAt": "2026-07-05T16:07:05.767Z",
       "updatedAt": "2026-07-05T16:07:05.767Z",
-      "phase": "Phase 2"
+      "phase": "Phase 2",
+      "projectId": "atlas-payroll"
     },
     {
       "id": "US-LOAN-002",
@@ -1451,7 +1471,8 @@
       "createdAt": "2026-07-05T16:07:05.767Z",
       "updatedAt": "2026-07-05T16:07:05.767Z",
       "phase": "Phase 2",
-      "moscow": "Must Have"
+      "moscow": "Must Have",
+      "projectId": "atlas-payroll"
     },
     {
       "id": "US-LOAN-002-T01",
@@ -1473,7 +1494,8 @@
       "progress": 50,
       "createdAt": "2026-07-05T16:07:05.767Z",
       "updatedAt": "2026-07-05T16:07:05.767Z",
-      "phase": "Phase 2"
+      "phase": "Phase 2",
+      "projectId": "atlas-payroll"
     },
     {
       "id": "US-LOAN-002-T02",
@@ -1495,7 +1517,8 @@
       "progress": 50,
       "createdAt": "2026-07-05T16:07:05.767Z",
       "updatedAt": "2026-07-05T16:07:05.767Z",
-      "phase": "Phase 2"
+      "phase": "Phase 2",
+      "projectId": "atlas-payroll"
     },
     {
       "id": "US-LOAN-002-T03",
@@ -1517,7 +1540,8 @@
       "progress": 0,
       "createdAt": "2026-07-05T16:07:05.767Z",
       "updatedAt": "2026-07-05T16:07:05.767Z",
-      "phase": "Phase 2"
+      "phase": "Phase 2",
+      "projectId": "atlas-payroll"
     },
     {
       "id": "US-LOAN-002-T04",
@@ -1539,7 +1563,8 @@
       "progress": 0,
       "createdAt": "2026-07-05T16:07:05.767Z",
       "updatedAt": "2026-07-05T16:07:05.767Z",
-      "phase": "Phase 2"
+      "phase": "Phase 2",
+      "projectId": "atlas-payroll"
     },
     {
       "id": "US-LOAN-002-T05",
@@ -1561,7 +1586,8 @@
       "progress": 0,
       "createdAt": "2026-07-05T16:07:05.767Z",
       "updatedAt": "2026-07-05T16:07:05.767Z",
-      "phase": "Phase 2"
+      "phase": "Phase 2",
+      "projectId": "atlas-payroll"
     },
     {
       "id": "US-LOAN-002-T06",
@@ -1583,7 +1609,8 @@
       "progress": 0,
       "createdAt": "2026-07-05T16:07:05.767Z",
       "updatedAt": "2026-07-05T16:07:05.767Z",
-      "phase": "Phase 2"
+      "phase": "Phase 2",
+      "projectId": "atlas-payroll"
     },
     {
       "id": "US-LOAN-003",
@@ -1657,7 +1684,8 @@
       "createdAt": "2026-07-05T16:07:05.767Z",
       "updatedAt": "2026-07-05T16:07:05.767Z",
       "phase": "Phase 2",
-      "moscow": "Must Have"
+      "moscow": "Must Have",
+      "projectId": "atlas-payroll"
     },
     {
       "id": "US-LOAN-003-T01",
@@ -1679,7 +1707,8 @@
       "progress": 50,
       "createdAt": "2026-07-05T16:07:05.767Z",
       "updatedAt": "2026-07-05T16:07:05.767Z",
-      "phase": "Phase 2"
+      "phase": "Phase 2",
+      "projectId": "atlas-payroll"
     },
     {
       "id": "US-LOAN-003-T02",
@@ -1701,7 +1730,8 @@
       "progress": 50,
       "createdAt": "2026-07-05T16:07:05.767Z",
       "updatedAt": "2026-07-05T16:07:05.767Z",
-      "phase": "Phase 2"
+      "phase": "Phase 2",
+      "projectId": "atlas-payroll"
     },
     {
       "id": "US-LOAN-003-T03",
@@ -1723,7 +1753,8 @@
       "progress": 0,
       "createdAt": "2026-07-05T16:07:05.767Z",
       "updatedAt": "2026-07-05T16:07:05.767Z",
-      "phase": "Phase 2"
+      "phase": "Phase 2",
+      "projectId": "atlas-payroll"
     },
     {
       "id": "US-LOAN-003-T04",
@@ -1745,7 +1776,8 @@
       "progress": 0,
       "createdAt": "2026-07-05T16:07:05.767Z",
       "updatedAt": "2026-07-05T16:07:05.767Z",
-      "phase": "Phase 2"
+      "phase": "Phase 2",
+      "projectId": "atlas-payroll"
     },
     {
       "id": "US-LOAN-003-T05",
@@ -1767,7 +1799,8 @@
       "progress": 0,
       "createdAt": "2026-07-05T16:07:05.767Z",
       "updatedAt": "2026-07-05T16:07:05.767Z",
-      "phase": "Phase 2"
+      "phase": "Phase 2",
+      "projectId": "atlas-payroll"
     },
     {
       "id": "US-LOAN-003-T06",
@@ -1789,7 +1822,8 @@
       "progress": 0,
       "createdAt": "2026-07-05T16:07:05.767Z",
       "updatedAt": "2026-07-05T16:07:05.767Z",
-      "phase": "Phase 2"
+      "phase": "Phase 2",
+      "projectId": "atlas-payroll"
     },
     {
       "id": "US-LOAN-004",
@@ -1863,7 +1897,8 @@
       "createdAt": "2026-07-05T16:07:05.767Z",
       "updatedAt": "2026-07-05T16:07:05.767Z",
       "phase": "Phase 2",
-      "moscow": "Must Have"
+      "moscow": "Must Have",
+      "projectId": "atlas-payroll"
     },
     {
       "id": "US-LOAN-004-T01",
@@ -1885,7 +1920,8 @@
       "progress": 0,
       "createdAt": "2026-07-05T16:07:05.767Z",
       "updatedAt": "2026-07-05T16:07:05.767Z",
-      "phase": "Phase 2"
+      "phase": "Phase 2",
+      "projectId": "atlas-payroll"
     },
     {
       "id": "US-LOAN-004-T02",
@@ -1907,7 +1943,8 @@
       "progress": 0,
       "createdAt": "2026-07-05T16:07:05.767Z",
       "updatedAt": "2026-07-05T16:07:05.767Z",
-      "phase": "Phase 2"
+      "phase": "Phase 2",
+      "projectId": "atlas-payroll"
     },
     {
       "id": "US-LOAN-004-T03",
@@ -1929,7 +1966,8 @@
       "progress": 0,
       "createdAt": "2026-07-05T16:07:05.767Z",
       "updatedAt": "2026-07-05T16:07:05.767Z",
-      "phase": "Phase 2"
+      "phase": "Phase 2",
+      "projectId": "atlas-payroll"
     },
     {
       "id": "US-LOAN-004-T04",
@@ -1951,7 +1989,8 @@
       "progress": 0,
       "createdAt": "2026-07-05T16:07:05.767Z",
       "updatedAt": "2026-07-05T16:07:05.767Z",
-      "phase": "Phase 2"
+      "phase": "Phase 2",
+      "projectId": "atlas-payroll"
     },
     {
       "id": "US-LOAN-004-T05",
@@ -1973,7 +2012,8 @@
       "progress": 0,
       "createdAt": "2026-07-05T16:07:05.767Z",
       "updatedAt": "2026-07-05T16:07:05.767Z",
-      "phase": "Phase 2"
+      "phase": "Phase 2",
+      "projectId": "atlas-payroll"
     },
     {
       "id": "US-LOAN-004-T06",
@@ -1995,7 +2035,8 @@
       "progress": 0,
       "createdAt": "2026-07-05T16:07:05.767Z",
       "updatedAt": "2026-07-05T16:07:05.767Z",
-      "phase": "Phase 2"
+      "phase": "Phase 2",
+      "projectId": "atlas-payroll"
     },
     {
       "id": "US-LOAN-005",
@@ -2069,7 +2110,8 @@
       "createdAt": "2026-07-05T16:07:05.767Z",
       "updatedAt": "2026-07-05T16:07:05.767Z",
       "phase": "Phase 2",
-      "moscow": "Must Have"
+      "moscow": "Must Have",
+      "projectId": "atlas-payroll"
     },
     {
       "id": "US-LOAN-005-T01",
@@ -2091,7 +2133,8 @@
       "progress": 0,
       "createdAt": "2026-07-05T16:07:05.767Z",
       "updatedAt": "2026-07-05T16:07:05.767Z",
-      "phase": "Phase 2"
+      "phase": "Phase 2",
+      "projectId": "atlas-payroll"
     },
     {
       "id": "US-LOAN-005-T02",
@@ -2113,7 +2156,8 @@
       "progress": 0,
       "createdAt": "2026-07-05T16:07:05.767Z",
       "updatedAt": "2026-07-05T16:07:05.767Z",
-      "phase": "Phase 2"
+      "phase": "Phase 2",
+      "projectId": "atlas-payroll"
     },
     {
       "id": "US-LOAN-005-T03",
@@ -2135,7 +2179,8 @@
       "progress": 0,
       "createdAt": "2026-07-05T16:07:05.767Z",
       "updatedAt": "2026-07-05T16:07:05.767Z",
-      "phase": "Phase 2"
+      "phase": "Phase 2",
+      "projectId": "atlas-payroll"
     },
     {
       "id": "US-LOAN-005-T04",
@@ -2157,7 +2202,8 @@
       "progress": 0,
       "createdAt": "2026-07-05T16:07:05.767Z",
       "updatedAt": "2026-07-05T16:07:05.767Z",
-      "phase": "Phase 2"
+      "phase": "Phase 2",
+      "projectId": "atlas-payroll"
     },
     {
       "id": "US-LOAN-005-T05",
@@ -2179,7 +2225,8 @@
       "progress": 0,
       "createdAt": "2026-07-05T16:07:05.767Z",
       "updatedAt": "2026-07-05T16:07:05.767Z",
-      "phase": "Phase 2"
+      "phase": "Phase 2",
+      "projectId": "atlas-payroll"
     },
     {
       "id": "US-LOAN-005-T06",
@@ -2201,7 +2248,8 @@
       "progress": 0,
       "createdAt": "2026-07-05T16:07:05.767Z",
       "updatedAt": "2026-07-05T16:07:05.767Z",
-      "phase": "Phase 2"
+      "phase": "Phase 2",
+      "projectId": "atlas-payroll"
     },
     {
       "id": "US-LOAN-006",
@@ -2275,7 +2323,8 @@
       "createdAt": "2026-07-05T16:07:05.767Z",
       "updatedAt": "2026-07-05T16:07:05.767Z",
       "phase": "Phase 2",
-      "moscow": "Must Have"
+      "moscow": "Must Have",
+      "projectId": "atlas-payroll"
     },
     {
       "id": "US-LOAN-006-T01",
@@ -2297,7 +2346,8 @@
       "progress": 0,
       "createdAt": "2026-07-05T16:07:05.767Z",
       "updatedAt": "2026-07-05T16:07:05.767Z",
-      "phase": "Phase 2"
+      "phase": "Phase 2",
+      "projectId": "atlas-payroll"
     },
     {
       "id": "US-LOAN-006-T02",
@@ -2319,7 +2369,8 @@
       "progress": 0,
       "createdAt": "2026-07-05T16:07:05.767Z",
       "updatedAt": "2026-07-05T16:07:05.767Z",
-      "phase": "Phase 2"
+      "phase": "Phase 2",
+      "projectId": "atlas-payroll"
     },
     {
       "id": "US-LOAN-006-T03",
@@ -2341,7 +2392,8 @@
       "progress": 0,
       "createdAt": "2026-07-05T16:07:05.767Z",
       "updatedAt": "2026-07-05T16:07:05.767Z",
-      "phase": "Phase 2"
+      "phase": "Phase 2",
+      "projectId": "atlas-payroll"
     },
     {
       "id": "US-LOAN-006-T04",
@@ -2363,7 +2415,8 @@
       "progress": 0,
       "createdAt": "2026-07-05T16:07:05.767Z",
       "updatedAt": "2026-07-05T16:07:05.767Z",
-      "phase": "Phase 2"
+      "phase": "Phase 2",
+      "projectId": "atlas-payroll"
     },
     {
       "id": "US-LOAN-006-T05",
@@ -2385,7 +2438,8 @@
       "progress": 0,
       "createdAt": "2026-07-05T16:07:05.767Z",
       "updatedAt": "2026-07-05T16:07:05.767Z",
-      "phase": "Phase 2"
+      "phase": "Phase 2",
+      "projectId": "atlas-payroll"
     },
     {
       "id": "US-LOAN-006-T06",
@@ -2407,7 +2461,8 @@
       "progress": 0,
       "createdAt": "2026-07-05T16:07:05.767Z",
       "updatedAt": "2026-07-05T16:07:05.767Z",
-      "phase": "Phase 2"
+      "phase": "Phase 2",
+      "projectId": "atlas-payroll"
     },
     {
       "id": "FEAT-PAY-BONUS-001",
@@ -2427,7 +2482,8 @@
       "scopeStatus": "At Risk",
       "targetDate": "2026-08-21",
       "phase": "Phase 2",
-      "moscow": "Must Have"
+      "moscow": "Must Have",
+      "projectId": "atlas-payroll"
     },
     {
       "id": "US-BONUS-001",
@@ -2501,7 +2557,8 @@
       "createdAt": "2026-07-05T16:07:05.767Z",
       "updatedAt": "2026-07-05T16:07:05.767Z",
       "phase": "Phase 2",
-      "moscow": "Must Have"
+      "moscow": "Must Have",
+      "projectId": "atlas-payroll"
     },
     {
       "id": "US-BONUS-001-T01",
@@ -2523,7 +2580,8 @@
       "progress": 50,
       "createdAt": "2026-07-05T16:07:05.767Z",
       "updatedAt": "2026-07-05T16:07:05.767Z",
-      "phase": "Phase 2"
+      "phase": "Phase 2",
+      "projectId": "atlas-payroll"
     },
     {
       "id": "US-BONUS-001-T02",
@@ -2545,7 +2603,8 @@
       "progress": 50,
       "createdAt": "2026-07-05T16:07:05.767Z",
       "updatedAt": "2026-07-05T16:07:05.767Z",
-      "phase": "Phase 2"
+      "phase": "Phase 2",
+      "projectId": "atlas-payroll"
     },
     {
       "id": "US-BONUS-001-T03",
@@ -2567,7 +2626,8 @@
       "progress": 0,
       "createdAt": "2026-07-05T16:07:05.767Z",
       "updatedAt": "2026-07-05T16:07:05.767Z",
-      "phase": "Phase 2"
+      "phase": "Phase 2",
+      "projectId": "atlas-payroll"
     },
     {
       "id": "US-BONUS-001-T04",
@@ -2589,7 +2649,8 @@
       "progress": 0,
       "createdAt": "2026-07-05T16:07:05.767Z",
       "updatedAt": "2026-07-05T16:07:05.767Z",
-      "phase": "Phase 2"
+      "phase": "Phase 2",
+      "projectId": "atlas-payroll"
     },
     {
       "id": "US-BONUS-001-T05",
@@ -2611,7 +2672,8 @@
       "progress": 0,
       "createdAt": "2026-07-05T16:07:05.767Z",
       "updatedAt": "2026-07-05T16:07:05.767Z",
-      "phase": "Phase 2"
+      "phase": "Phase 2",
+      "projectId": "atlas-payroll"
     },
     {
       "id": "US-BONUS-001-T06",
@@ -2633,7 +2695,8 @@
       "progress": 0,
       "createdAt": "2026-07-05T16:07:05.767Z",
       "updatedAt": "2026-07-05T16:07:05.767Z",
-      "phase": "Phase 2"
+      "phase": "Phase 2",
+      "projectId": "atlas-payroll"
     },
     {
       "id": "US-BONUS-002",
@@ -2707,7 +2770,8 @@
       "createdAt": "2026-07-05T16:07:05.767Z",
       "updatedAt": "2026-07-05T16:07:05.767Z",
       "phase": "Phase 2",
-      "moscow": "Must Have"
+      "moscow": "Must Have",
+      "projectId": "atlas-payroll"
     },
     {
       "id": "US-BONUS-002-T01",
@@ -2729,7 +2793,8 @@
       "progress": 50,
       "createdAt": "2026-07-05T16:07:05.767Z",
       "updatedAt": "2026-07-05T16:07:05.767Z",
-      "phase": "Phase 2"
+      "phase": "Phase 2",
+      "projectId": "atlas-payroll"
     },
     {
       "id": "US-BONUS-002-T02",
@@ -2751,7 +2816,8 @@
       "progress": 50,
       "createdAt": "2026-07-05T16:07:05.767Z",
       "updatedAt": "2026-07-05T16:07:05.767Z",
-      "phase": "Phase 2"
+      "phase": "Phase 2",
+      "projectId": "atlas-payroll"
     },
     {
       "id": "US-BONUS-002-T03",
@@ -2773,7 +2839,8 @@
       "progress": 0,
       "createdAt": "2026-07-05T16:07:05.767Z",
       "updatedAt": "2026-07-05T16:07:05.767Z",
-      "phase": "Phase 2"
+      "phase": "Phase 2",
+      "projectId": "atlas-payroll"
     },
     {
       "id": "US-BONUS-002-T04",
@@ -2795,7 +2862,8 @@
       "progress": 0,
       "createdAt": "2026-07-05T16:07:05.767Z",
       "updatedAt": "2026-07-05T16:07:05.767Z",
-      "phase": "Phase 2"
+      "phase": "Phase 2",
+      "projectId": "atlas-payroll"
     },
     {
       "id": "US-BONUS-002-T05",
@@ -2817,7 +2885,8 @@
       "progress": 0,
       "createdAt": "2026-07-05T16:07:05.767Z",
       "updatedAt": "2026-07-05T16:07:05.767Z",
-      "phase": "Phase 2"
+      "phase": "Phase 2",
+      "projectId": "atlas-payroll"
     },
     {
       "id": "US-BONUS-002-T06",
@@ -2839,7 +2908,8 @@
       "progress": 0,
       "createdAt": "2026-07-05T16:07:05.767Z",
       "updatedAt": "2026-07-05T16:07:05.767Z",
-      "phase": "Phase 2"
+      "phase": "Phase 2",
+      "projectId": "atlas-payroll"
     },
     {
       "id": "US-BONUS-003",
@@ -2913,7 +2983,8 @@
       "createdAt": "2026-07-05T16:07:05.767Z",
       "updatedAt": "2026-07-05T16:07:05.767Z",
       "phase": "Phase 2",
-      "moscow": "Must Have"
+      "moscow": "Must Have",
+      "projectId": "atlas-payroll"
     },
     {
       "id": "US-BONUS-003-T01",
@@ -2935,7 +3006,8 @@
       "progress": 0,
       "createdAt": "2026-07-05T16:07:05.767Z",
       "updatedAt": "2026-07-05T16:07:05.767Z",
-      "phase": "Phase 2"
+      "phase": "Phase 2",
+      "projectId": "atlas-payroll"
     },
     {
       "id": "US-BONUS-003-T02",
@@ -2957,7 +3029,8 @@
       "progress": 0,
       "createdAt": "2026-07-05T16:07:05.767Z",
       "updatedAt": "2026-07-05T16:07:05.767Z",
-      "phase": "Phase 2"
+      "phase": "Phase 2",
+      "projectId": "atlas-payroll"
     },
     {
       "id": "US-BONUS-003-T03",
@@ -2979,7 +3052,8 @@
       "progress": 0,
       "createdAt": "2026-07-05T16:07:05.767Z",
       "updatedAt": "2026-07-05T16:07:05.767Z",
-      "phase": "Phase 2"
+      "phase": "Phase 2",
+      "projectId": "atlas-payroll"
     },
     {
       "id": "US-BONUS-003-T04",
@@ -3001,7 +3075,8 @@
       "progress": 0,
       "createdAt": "2026-07-05T16:07:05.767Z",
       "updatedAt": "2026-07-05T16:07:05.767Z",
-      "phase": "Phase 2"
+      "phase": "Phase 2",
+      "projectId": "atlas-payroll"
     },
     {
       "id": "US-BONUS-003-T05",
@@ -3023,7 +3098,8 @@
       "progress": 0,
       "createdAt": "2026-07-05T16:07:05.767Z",
       "updatedAt": "2026-07-05T16:07:05.767Z",
-      "phase": "Phase 2"
+      "phase": "Phase 2",
+      "projectId": "atlas-payroll"
     },
     {
       "id": "US-BONUS-003-T06",
@@ -3045,7 +3121,8 @@
       "progress": 0,
       "createdAt": "2026-07-05T16:07:05.767Z",
       "updatedAt": "2026-07-05T16:07:05.767Z",
-      "phase": "Phase 2"
+      "phase": "Phase 2",
+      "projectId": "atlas-payroll"
     },
     {
       "id": "US-BONUS-004",
@@ -3119,7 +3196,8 @@
       "createdAt": "2026-07-05T16:07:05.767Z",
       "updatedAt": "2026-07-05T16:07:05.767Z",
       "phase": "Phase 2",
-      "moscow": "Must Have"
+      "moscow": "Must Have",
+      "projectId": "atlas-payroll"
     },
     {
       "id": "US-BONUS-004-T01",
@@ -3141,7 +3219,8 @@
       "progress": 0,
       "createdAt": "2026-07-05T16:07:05.767Z",
       "updatedAt": "2026-07-05T16:07:05.767Z",
-      "phase": "Phase 2"
+      "phase": "Phase 2",
+      "projectId": "atlas-payroll"
     },
     {
       "id": "US-BONUS-004-T02",
@@ -3163,7 +3242,8 @@
       "progress": 0,
       "createdAt": "2026-07-05T16:07:05.767Z",
       "updatedAt": "2026-07-05T16:07:05.767Z",
-      "phase": "Phase 2"
+      "phase": "Phase 2",
+      "projectId": "atlas-payroll"
     },
     {
       "id": "US-BONUS-004-T03",
@@ -3185,7 +3265,8 @@
       "progress": 0,
       "createdAt": "2026-07-05T16:07:05.767Z",
       "updatedAt": "2026-07-05T16:07:05.767Z",
-      "phase": "Phase 2"
+      "phase": "Phase 2",
+      "projectId": "atlas-payroll"
     },
     {
       "id": "US-BONUS-004-T04",
@@ -3207,7 +3288,8 @@
       "progress": 0,
       "createdAt": "2026-07-05T16:07:05.767Z",
       "updatedAt": "2026-07-05T16:07:05.767Z",
-      "phase": "Phase 2"
+      "phase": "Phase 2",
+      "projectId": "atlas-payroll"
     },
     {
       "id": "US-BONUS-004-T05",
@@ -3229,7 +3311,8 @@
       "progress": 0,
       "createdAt": "2026-07-05T16:07:05.767Z",
       "updatedAt": "2026-07-05T16:07:05.767Z",
-      "phase": "Phase 2"
+      "phase": "Phase 2",
+      "projectId": "atlas-payroll"
     },
     {
       "id": "US-BONUS-004-T06",
@@ -3251,7 +3334,8 @@
       "progress": 0,
       "createdAt": "2026-07-05T16:07:05.767Z",
       "updatedAt": "2026-07-05T16:07:05.767Z",
-      "phase": "Phase 2"
+      "phase": "Phase 2",
+      "projectId": "atlas-payroll"
     },
     {
       "id": "US-BONUS-005",
@@ -3325,7 +3409,8 @@
       "createdAt": "2026-07-05T16:07:05.767Z",
       "updatedAt": "2026-07-05T16:07:05.767Z",
       "phase": "Phase 2",
-      "moscow": "Must Have"
+      "moscow": "Must Have",
+      "projectId": "atlas-payroll"
     },
     {
       "id": "US-BONUS-005-T01",
@@ -3347,7 +3432,8 @@
       "progress": 0,
       "createdAt": "2026-07-05T16:07:05.767Z",
       "updatedAt": "2026-07-05T16:07:05.767Z",
-      "phase": "Phase 2"
+      "phase": "Phase 2",
+      "projectId": "atlas-payroll"
     },
     {
       "id": "US-BONUS-005-T02",
@@ -3369,7 +3455,8 @@
       "progress": 0,
       "createdAt": "2026-07-05T16:07:05.767Z",
       "updatedAt": "2026-07-05T16:07:05.767Z",
-      "phase": "Phase 2"
+      "phase": "Phase 2",
+      "projectId": "atlas-payroll"
     },
     {
       "id": "US-BONUS-005-T03",
@@ -3391,7 +3478,8 @@
       "progress": 0,
       "createdAt": "2026-07-05T16:07:05.767Z",
       "updatedAt": "2026-07-05T16:07:05.767Z",
-      "phase": "Phase 2"
+      "phase": "Phase 2",
+      "projectId": "atlas-payroll"
     },
     {
       "id": "US-BONUS-005-T04",
@@ -3413,7 +3501,8 @@
       "progress": 0,
       "createdAt": "2026-07-05T16:07:05.767Z",
       "updatedAt": "2026-07-05T16:07:05.767Z",
-      "phase": "Phase 2"
+      "phase": "Phase 2",
+      "projectId": "atlas-payroll"
     },
     {
       "id": "US-BONUS-005-T05",
@@ -3435,7 +3524,8 @@
       "progress": 0,
       "createdAt": "2026-07-05T16:07:05.767Z",
       "updatedAt": "2026-07-05T16:07:05.767Z",
-      "phase": "Phase 2"
+      "phase": "Phase 2",
+      "projectId": "atlas-payroll"
     },
     {
       "id": "US-BONUS-005-T06",
@@ -3457,7 +3547,8 @@
       "progress": 0,
       "createdAt": "2026-07-05T16:07:05.767Z",
       "updatedAt": "2026-07-05T16:07:05.767Z",
-      "phase": "Phase 2"
+      "phase": "Phase 2",
+      "projectId": "atlas-payroll"
     },
     {
       "id": "FEAT-PAY-DEMIN-001",
@@ -3477,7 +3568,8 @@
       "scopeStatus": "On Track",
       "targetDate": "2026-08-14",
       "phase": "Phase 2",
-      "moscow": "Must Have"
+      "moscow": "Must Have",
+      "projectId": "atlas-payroll"
     },
     {
       "id": "US-DEMIN-001",
@@ -3564,7 +3656,8 @@
       "createdAt": "2026-07-05T16:07:05.767Z",
       "updatedAt": "2026-07-05T16:07:05.767Z",
       "phase": "Phase 2",
-      "moscow": "Must Have"
+      "moscow": "Must Have",
+      "projectId": "atlas-payroll"
     },
     {
       "id": "US-DEMIN-001-T01",
@@ -3586,7 +3679,8 @@
       "progress": 100,
       "createdAt": "2026-07-05T16:07:05.767Z",
       "updatedAt": "2026-07-05T16:07:05.767Z",
-      "phase": "Phase 2"
+      "phase": "Phase 2",
+      "projectId": "atlas-payroll"
     },
     {
       "id": "US-DEMIN-001-T02",
@@ -3608,7 +3702,8 @@
       "progress": 100,
       "createdAt": "2026-07-05T16:07:05.767Z",
       "updatedAt": "2026-07-05T16:07:05.767Z",
-      "phase": "Phase 2"
+      "phase": "Phase 2",
+      "projectId": "atlas-payroll"
     },
     {
       "id": "US-DEMIN-001-T03",
@@ -3630,7 +3725,8 @@
       "progress": 100,
       "createdAt": "2026-07-05T16:07:05.767Z",
       "updatedAt": "2026-07-05T16:07:05.767Z",
-      "phase": "Phase 2"
+      "phase": "Phase 2",
+      "projectId": "atlas-payroll"
     },
     {
       "id": "US-DEMIN-001-T04",
@@ -3652,7 +3748,8 @@
       "progress": 100,
       "createdAt": "2026-07-05T16:07:05.767Z",
       "updatedAt": "2026-07-05T16:07:05.767Z",
-      "phase": "Phase 2"
+      "phase": "Phase 2",
+      "projectId": "atlas-payroll"
     },
     {
       "id": "US-DEMIN-001-T05",
@@ -3674,7 +3771,8 @@
       "progress": 100,
       "createdAt": "2026-07-05T16:07:05.767Z",
       "updatedAt": "2026-07-05T16:07:05.767Z",
-      "phase": "Phase 2"
+      "phase": "Phase 2",
+      "projectId": "atlas-payroll"
     },
     {
       "id": "US-DEMIN-001-T06",
@@ -3696,7 +3794,8 @@
       "progress": 100,
       "createdAt": "2026-07-05T16:07:05.767Z",
       "updatedAt": "2026-07-05T16:07:05.767Z",
-      "phase": "Phase 2"
+      "phase": "Phase 2",
+      "projectId": "atlas-payroll"
     },
     {
       "id": "US-DEMIN-001-T07",
@@ -3718,7 +3817,8 @@
       "progress": 100,
       "createdAt": "2026-07-05T16:07:05.767Z",
       "updatedAt": "2026-07-05T16:07:05.767Z",
-      "phase": "Phase 2"
+      "phase": "Phase 2",
+      "projectId": "atlas-payroll"
     },
     {
       "id": "US-DEMIN-001-T08",
@@ -3740,7 +3840,8 @@
       "progress": 100,
       "createdAt": "2026-07-05T16:07:05.767Z",
       "updatedAt": "2026-07-05T16:07:05.767Z",
-      "phase": "Phase 2"
+      "phase": "Phase 2",
+      "projectId": "atlas-payroll"
     },
     {
       "id": "US-DEMIN-002",
@@ -3827,7 +3928,8 @@
       "createdAt": "2026-07-05T16:07:05.767Z",
       "updatedAt": "2026-07-05T16:07:05.767Z",
       "phase": "Phase 2",
-      "moscow": "Must Have"
+      "moscow": "Must Have",
+      "projectId": "atlas-payroll"
     },
     {
       "id": "US-DEMIN-002-T01",
@@ -3849,7 +3951,8 @@
       "progress": 50,
       "createdAt": "2026-07-05T16:07:05.767Z",
       "updatedAt": "2026-07-05T16:07:05.767Z",
-      "phase": "Phase 2"
+      "phase": "Phase 2",
+      "projectId": "atlas-payroll"
     },
     {
       "id": "US-DEMIN-002-T02",
@@ -3871,7 +3974,8 @@
       "progress": 50,
       "createdAt": "2026-07-05T16:07:05.767Z",
       "updatedAt": "2026-07-05T16:07:05.767Z",
-      "phase": "Phase 2"
+      "phase": "Phase 2",
+      "projectId": "atlas-payroll"
     },
     {
       "id": "US-DEMIN-002-T03",
@@ -3893,7 +3997,8 @@
       "progress": 0,
       "createdAt": "2026-07-05T16:07:05.767Z",
       "updatedAt": "2026-07-05T16:07:05.767Z",
-      "phase": "Phase 2"
+      "phase": "Phase 2",
+      "projectId": "atlas-payroll"
     },
     {
       "id": "US-DEMIN-002-T04",
@@ -3915,7 +4020,8 @@
       "progress": 0,
       "createdAt": "2026-07-05T16:07:05.767Z",
       "updatedAt": "2026-07-05T16:07:05.767Z",
-      "phase": "Phase 2"
+      "phase": "Phase 2",
+      "projectId": "atlas-payroll"
     },
     {
       "id": "US-DEMIN-002-T05",
@@ -3937,7 +4043,8 @@
       "progress": 0,
       "createdAt": "2026-07-05T16:07:05.767Z",
       "updatedAt": "2026-07-05T16:07:05.767Z",
-      "phase": "Phase 2"
+      "phase": "Phase 2",
+      "projectId": "atlas-payroll"
     },
     {
       "id": "US-DEMIN-002-T06",
@@ -3959,7 +4066,8 @@
       "progress": 0,
       "createdAt": "2026-07-05T16:07:05.767Z",
       "updatedAt": "2026-07-05T16:07:05.767Z",
-      "phase": "Phase 2"
+      "phase": "Phase 2",
+      "projectId": "atlas-payroll"
     },
     {
       "id": "US-DEMIN-002-T07",
@@ -3981,7 +4089,8 @@
       "progress": 0,
       "createdAt": "2026-07-05T16:07:05.767Z",
       "updatedAt": "2026-07-05T16:07:05.767Z",
-      "phase": "Phase 2"
+      "phase": "Phase 2",
+      "projectId": "atlas-payroll"
     },
     {
       "id": "US-DEMIN-002-T08",
@@ -4003,7 +4112,8 @@
       "progress": 0,
       "createdAt": "2026-07-05T16:07:05.767Z",
       "updatedAt": "2026-07-05T16:07:05.767Z",
-      "phase": "Phase 2"
+      "phase": "Phase 2",
+      "projectId": "atlas-payroll"
     },
     {
       "id": "US-DEMIN-003",
@@ -4095,7 +4205,8 @@
       "createdAt": "2026-07-05T16:07:05.767Z",
       "updatedAt": "2026-07-05T16:07:05.767Z",
       "phase": "Phase 2",
-      "moscow": "Must Have"
+      "moscow": "Must Have",
+      "projectId": "atlas-payroll"
     },
     {
       "id": "US-DEMIN-003-T01",
@@ -4117,7 +4228,8 @@
       "progress": 50,
       "createdAt": "2026-07-05T16:07:05.767Z",
       "updatedAt": "2026-07-05T16:07:05.767Z",
-      "phase": "Phase 2"
+      "phase": "Phase 2",
+      "projectId": "atlas-payroll"
     },
     {
       "id": "US-DEMIN-003-T02",
@@ -4139,7 +4251,8 @@
       "progress": 50,
       "createdAt": "2026-07-05T16:07:05.767Z",
       "updatedAt": "2026-07-05T16:07:05.767Z",
-      "phase": "Phase 2"
+      "phase": "Phase 2",
+      "projectId": "atlas-payroll"
     },
     {
       "id": "US-DEMIN-003-T03",
@@ -4161,7 +4274,8 @@
       "progress": 0,
       "createdAt": "2026-07-05T16:07:05.767Z",
       "updatedAt": "2026-07-05T16:07:05.767Z",
-      "phase": "Phase 2"
+      "phase": "Phase 2",
+      "projectId": "atlas-payroll"
     },
     {
       "id": "US-DEMIN-003-T04",
@@ -4183,7 +4297,8 @@
       "progress": 0,
       "createdAt": "2026-07-05T16:07:05.767Z",
       "updatedAt": "2026-07-05T16:07:05.767Z",
-      "phase": "Phase 2"
+      "phase": "Phase 2",
+      "projectId": "atlas-payroll"
     },
     {
       "id": "US-DEMIN-003-T05",
@@ -4205,7 +4320,8 @@
       "progress": 0,
       "createdAt": "2026-07-05T16:07:05.767Z",
       "updatedAt": "2026-07-05T16:07:05.767Z",
-      "phase": "Phase 2"
+      "phase": "Phase 2",
+      "projectId": "atlas-payroll"
     },
     {
       "id": "US-DEMIN-003-T06",
@@ -4227,7 +4343,8 @@
       "progress": 0,
       "createdAt": "2026-07-05T16:07:05.767Z",
       "updatedAt": "2026-07-05T16:07:05.767Z",
-      "phase": "Phase 2"
+      "phase": "Phase 2",
+      "projectId": "atlas-payroll"
     },
     {
       "id": "US-DEMIN-003-T07",
@@ -4249,7 +4366,8 @@
       "progress": 0,
       "createdAt": "2026-07-05T16:07:05.767Z",
       "updatedAt": "2026-07-05T16:07:05.767Z",
-      "phase": "Phase 2"
+      "phase": "Phase 2",
+      "projectId": "atlas-payroll"
     },
     {
       "id": "US-DEMIN-003-T08",
@@ -4271,7 +4389,8 @@
       "progress": 0,
       "createdAt": "2026-07-05T16:07:05.767Z",
       "updatedAt": "2026-07-05T16:07:05.767Z",
-      "phase": "Phase 2"
+      "phase": "Phase 2",
+      "projectId": "atlas-payroll"
     },
     {
       "id": "US-DEMIN-003-T09",
@@ -4293,7 +4412,8 @@
       "progress": 0,
       "createdAt": "2026-07-05T16:07:05.767Z",
       "updatedAt": "2026-07-05T16:07:05.767Z",
-      "phase": "Phase 2"
+      "phase": "Phase 2",
+      "projectId": "atlas-payroll"
     },
     {
       "id": "US-DEMIN-004",
@@ -4377,7 +4497,8 @@
       "createdAt": "2026-07-05T16:07:05.767Z",
       "updatedAt": "2026-07-05T16:07:05.767Z",
       "phase": "Phase 2",
-      "moscow": "Must Have"
+      "moscow": "Must Have",
+      "projectId": "atlas-payroll"
     },
     {
       "id": "US-DEMIN-004-T01",
@@ -4399,7 +4520,8 @@
       "progress": 0,
       "createdAt": "2026-07-05T16:07:05.767Z",
       "updatedAt": "2026-07-05T16:07:05.767Z",
-      "phase": "Phase 2"
+      "phase": "Phase 2",
+      "projectId": "atlas-payroll"
     },
     {
       "id": "US-DEMIN-004-T02",
@@ -4421,7 +4543,8 @@
       "progress": 0,
       "createdAt": "2026-07-05T16:07:05.767Z",
       "updatedAt": "2026-07-05T16:07:05.767Z",
-      "phase": "Phase 2"
+      "phase": "Phase 2",
+      "projectId": "atlas-payroll"
     },
     {
       "id": "US-DEMIN-004-T03",
@@ -4443,7 +4566,8 @@
       "progress": 0,
       "createdAt": "2026-07-05T16:07:05.767Z",
       "updatedAt": "2026-07-05T16:07:05.767Z",
-      "phase": "Phase 2"
+      "phase": "Phase 2",
+      "projectId": "atlas-payroll"
     },
     {
       "id": "US-DEMIN-004-T04",
@@ -4465,7 +4589,8 @@
       "progress": 0,
       "createdAt": "2026-07-05T16:07:05.767Z",
       "updatedAt": "2026-07-05T16:07:05.767Z",
-      "phase": "Phase 2"
+      "phase": "Phase 2",
+      "projectId": "atlas-payroll"
     },
     {
       "id": "US-DEMIN-004-T05",
@@ -4487,7 +4612,8 @@
       "progress": 0,
       "createdAt": "2026-07-05T16:07:05.767Z",
       "updatedAt": "2026-07-05T16:07:05.767Z",
-      "phase": "Phase 2"
+      "phase": "Phase 2",
+      "projectId": "atlas-payroll"
     },
     {
       "id": "US-DEMIN-004-T06",
@@ -4509,7 +4635,8 @@
       "progress": 0,
       "createdAt": "2026-07-05T16:07:05.767Z",
       "updatedAt": "2026-07-05T16:07:05.767Z",
-      "phase": "Phase 2"
+      "phase": "Phase 2",
+      "projectId": "atlas-payroll"
     },
     {
       "id": "US-DEMIN-004-T07",
@@ -4531,7 +4658,8 @@
       "progress": 0,
       "createdAt": "2026-07-05T16:07:05.767Z",
       "updatedAt": "2026-07-05T16:07:05.767Z",
-      "phase": "Phase 2"
+      "phase": "Phase 2",
+      "projectId": "atlas-payroll"
     },
     {
       "id": "US-DEMIN-004-T08",
@@ -4553,7 +4681,8 @@
       "progress": 0,
       "createdAt": "2026-07-05T16:07:05.767Z",
       "updatedAt": "2026-07-05T16:07:05.767Z",
-      "phase": "Phase 2"
+      "phase": "Phase 2",
+      "projectId": "atlas-payroll"
     },
     {
       "id": "US-DEMIN-005",
@@ -4637,7 +4766,8 @@
       "createdAt": "2026-07-05T16:07:05.767Z",
       "updatedAt": "2026-07-05T16:07:05.767Z",
       "phase": "Phase 2",
-      "moscow": "Must Have"
+      "moscow": "Must Have",
+      "projectId": "atlas-payroll"
     },
     {
       "id": "US-DEMIN-005-T01",
@@ -4659,7 +4789,8 @@
       "progress": 0,
       "createdAt": "2026-07-05T16:07:05.767Z",
       "updatedAt": "2026-07-05T16:07:05.767Z",
-      "phase": "Phase 2"
+      "phase": "Phase 2",
+      "projectId": "atlas-payroll"
     },
     {
       "id": "US-DEMIN-005-T02",
@@ -4681,7 +4812,8 @@
       "progress": 0,
       "createdAt": "2026-07-05T16:07:05.767Z",
       "updatedAt": "2026-07-05T16:07:05.767Z",
-      "phase": "Phase 2"
+      "phase": "Phase 2",
+      "projectId": "atlas-payroll"
     },
     {
       "id": "US-DEMIN-005-T03",
@@ -4703,7 +4835,8 @@
       "progress": 0,
       "createdAt": "2026-07-05T16:07:05.767Z",
       "updatedAt": "2026-07-05T16:07:05.767Z",
-      "phase": "Phase 2"
+      "phase": "Phase 2",
+      "projectId": "atlas-payroll"
     },
     {
       "id": "US-DEMIN-005-T04",
@@ -4725,7 +4858,8 @@
       "progress": 0,
       "createdAt": "2026-07-05T16:07:05.767Z",
       "updatedAt": "2026-07-05T16:07:05.767Z",
-      "phase": "Phase 2"
+      "phase": "Phase 2",
+      "projectId": "atlas-payroll"
     },
     {
       "id": "US-DEMIN-005-T05",
@@ -4747,7 +4881,8 @@
       "progress": 0,
       "createdAt": "2026-07-05T16:07:05.767Z",
       "updatedAt": "2026-07-05T16:07:05.767Z",
-      "phase": "Phase 2"
+      "phase": "Phase 2",
+      "projectId": "atlas-payroll"
     },
     {
       "id": "US-DEMIN-005-T06",
@@ -4769,7 +4904,8 @@
       "progress": 0,
       "createdAt": "2026-07-05T16:07:05.767Z",
       "updatedAt": "2026-07-05T16:07:05.767Z",
-      "phase": "Phase 2"
+      "phase": "Phase 2",
+      "projectId": "atlas-payroll"
     },
     {
       "id": "US-DEMIN-005-T07",
@@ -4791,7 +4927,8 @@
       "progress": 0,
       "createdAt": "2026-07-05T16:07:05.767Z",
       "updatedAt": "2026-07-05T16:07:05.767Z",
-      "phase": "Phase 2"
+      "phase": "Phase 2",
+      "projectId": "atlas-payroll"
     },
     {
       "id": "US-DEMIN-005-T08",
@@ -4813,7 +4950,8 @@
       "progress": 0,
       "createdAt": "2026-07-05T16:07:05.767Z",
       "updatedAt": "2026-07-05T16:07:05.767Z",
-      "phase": "Phase 2"
+      "phase": "Phase 2",
+      "projectId": "atlas-payroll"
     },
     {
       "id": "FEAT-PAY-CROSS-001",
@@ -4833,7 +4971,8 @@
       "scopeStatus": "On Track",
       "targetDate": "2026-08-31",
       "phase": "Phase 3",
-      "moscow": "Must Have"
+      "moscow": "Must Have",
+      "projectId": "atlas-payroll"
     },
     {
       "id": "US-CROSS-001",
@@ -4907,7 +5046,8 @@
       "createdAt": "2026-07-05T16:07:05.767Z",
       "updatedAt": "2026-07-05T16:07:05.767Z",
       "phase": "Phase 3",
-      "moscow": "Must Have"
+      "moscow": "Must Have",
+      "projectId": "atlas-payroll"
     },
     {
       "id": "US-CROSS-001-T01",
@@ -4929,7 +5069,8 @@
       "progress": 50,
       "createdAt": "2026-07-05T16:07:05.767Z",
       "updatedAt": "2026-07-05T16:07:05.767Z",
-      "phase": "Phase 3"
+      "phase": "Phase 3",
+      "projectId": "atlas-payroll"
     },
     {
       "id": "US-CROSS-001-T02",
@@ -4951,7 +5092,8 @@
       "progress": 50,
       "createdAt": "2026-07-05T16:07:05.767Z",
       "updatedAt": "2026-07-05T16:07:05.767Z",
-      "phase": "Phase 3"
+      "phase": "Phase 3",
+      "projectId": "atlas-payroll"
     },
     {
       "id": "US-CROSS-001-T03",
@@ -4973,7 +5115,8 @@
       "progress": 0,
       "createdAt": "2026-07-05T16:07:05.767Z",
       "updatedAt": "2026-07-05T16:07:05.767Z",
-      "phase": "Phase 3"
+      "phase": "Phase 3",
+      "projectId": "atlas-payroll"
     },
     {
       "id": "US-CROSS-001-T04",
@@ -4995,7 +5138,8 @@
       "progress": 0,
       "createdAt": "2026-07-05T16:07:05.767Z",
       "updatedAt": "2026-07-05T16:07:05.767Z",
-      "phase": "Phase 3"
+      "phase": "Phase 3",
+      "projectId": "atlas-payroll"
     },
     {
       "id": "US-CROSS-001-T05",
@@ -5017,7 +5161,8 @@
       "progress": 0,
       "createdAt": "2026-07-05T16:07:05.767Z",
       "updatedAt": "2026-07-05T16:07:05.767Z",
-      "phase": "Phase 3"
+      "phase": "Phase 3",
+      "projectId": "atlas-payroll"
     },
     {
       "id": "US-CROSS-001-T06",
@@ -5039,7 +5184,8 @@
       "progress": 0,
       "createdAt": "2026-07-05T16:07:05.767Z",
       "updatedAt": "2026-07-05T16:07:05.767Z",
-      "phase": "Phase 3"
+      "phase": "Phase 3",
+      "projectId": "atlas-payroll"
     },
     {
       "id": "US-CROSS-002",
@@ -5113,7 +5259,8 @@
       "createdAt": "2026-07-05T16:07:05.767Z",
       "updatedAt": "2026-07-05T16:07:05.767Z",
       "phase": "Phase 3",
-      "moscow": "Must Have"
+      "moscow": "Must Have",
+      "projectId": "atlas-payroll"
     },
     {
       "id": "US-CROSS-002-T01",
@@ -5135,7 +5282,8 @@
       "progress": 0,
       "createdAt": "2026-07-05T16:07:05.767Z",
       "updatedAt": "2026-07-05T16:07:05.767Z",
-      "phase": "Phase 3"
+      "phase": "Phase 3",
+      "projectId": "atlas-payroll"
     },
     {
       "id": "US-CROSS-002-T02",
@@ -5157,7 +5305,8 @@
       "progress": 0,
       "createdAt": "2026-07-05T16:07:05.767Z",
       "updatedAt": "2026-07-05T16:07:05.767Z",
-      "phase": "Phase 3"
+      "phase": "Phase 3",
+      "projectId": "atlas-payroll"
     },
     {
       "id": "US-CROSS-002-T03",
@@ -5179,7 +5328,8 @@
       "progress": 0,
       "createdAt": "2026-07-05T16:07:05.767Z",
       "updatedAt": "2026-07-05T16:07:05.767Z",
-      "phase": "Phase 3"
+      "phase": "Phase 3",
+      "projectId": "atlas-payroll"
     },
     {
       "id": "US-CROSS-002-T04",
@@ -5201,7 +5351,8 @@
       "progress": 0,
       "createdAt": "2026-07-05T16:07:05.767Z",
       "updatedAt": "2026-07-05T16:07:05.767Z",
-      "phase": "Phase 3"
+      "phase": "Phase 3",
+      "projectId": "atlas-payroll"
     },
     {
       "id": "US-CROSS-002-T05",
@@ -5223,7 +5374,8 @@
       "progress": 0,
       "createdAt": "2026-07-05T16:07:05.767Z",
       "updatedAt": "2026-07-05T16:07:05.767Z",
-      "phase": "Phase 3"
+      "phase": "Phase 3",
+      "projectId": "atlas-payroll"
     },
     {
       "id": "US-CROSS-002-T06",
@@ -5245,7 +5397,8 @@
       "progress": 0,
       "createdAt": "2026-07-05T16:07:05.767Z",
       "updatedAt": "2026-07-05T16:07:05.767Z",
-      "phase": "Phase 3"
+      "phase": "Phase 3",
+      "projectId": "atlas-payroll"
     },
     {
       "id": "US-CROSS-003",
@@ -5338,7 +5491,8 @@
       "createdAt": "2026-07-05T16:07:05.767Z",
       "updatedAt": "2026-07-05T16:07:05.767Z",
       "phase": "Phase 3",
-      "moscow": "Must Have"
+      "moscow": "Must Have",
+      "projectId": "atlas-payroll"
     },
     {
       "id": "US-CROSS-003-T01",
@@ -5360,7 +5514,8 @@
       "progress": 0,
       "createdAt": "2026-07-05T16:07:05.767Z",
       "updatedAt": "2026-07-05T16:07:05.767Z",
-      "phase": "Phase 3"
+      "phase": "Phase 3",
+      "projectId": "atlas-payroll"
     },
     {
       "id": "US-CROSS-003-T02",
@@ -5382,7 +5537,8 @@
       "progress": 0,
       "createdAt": "2026-07-05T16:07:05.767Z",
       "updatedAt": "2026-07-05T16:07:05.767Z",
-      "phase": "Phase 3"
+      "phase": "Phase 3",
+      "projectId": "atlas-payroll"
     },
     {
       "id": "US-CROSS-003-T03",
@@ -5404,7 +5560,8 @@
       "progress": 0,
       "createdAt": "2026-07-05T16:07:05.767Z",
       "updatedAt": "2026-07-05T16:07:05.767Z",
-      "phase": "Phase 3"
+      "phase": "Phase 3",
+      "projectId": "atlas-payroll"
     },
     {
       "id": "US-CROSS-003-T04",
@@ -5426,7 +5583,8 @@
       "progress": 0,
       "createdAt": "2026-07-05T16:07:05.767Z",
       "updatedAt": "2026-07-05T16:07:05.767Z",
-      "phase": "Phase 3"
+      "phase": "Phase 3",
+      "projectId": "atlas-payroll"
     },
     {
       "id": "US-CROSS-003-T05",
@@ -5448,7 +5606,8 @@
       "progress": 0,
       "createdAt": "2026-07-05T16:07:05.767Z",
       "updatedAt": "2026-07-05T16:07:05.767Z",
-      "phase": "Phase 3"
+      "phase": "Phase 3",
+      "projectId": "atlas-payroll"
     },
     {
       "id": "US-CROSS-003-T06",
@@ -5470,7 +5629,8 @@
       "progress": 0,
       "createdAt": "2026-07-05T16:07:05.767Z",
       "updatedAt": "2026-07-05T16:07:05.767Z",
-      "phase": "Phase 3"
+      "phase": "Phase 3",
+      "projectId": "atlas-payroll"
     },
     {
       "id": "EPIC-UNPLANNED",
@@ -5489,7 +5649,8 @@
       "qaFocus": [],
       "dependencies": [],
       "createdAt": "2026-07-05T18:35:34.743Z",
-      "updatedAt": "2026-07-05T18:35:34.743Z"
+      "updatedAt": "2026-07-05T18:35:34.743Z",
+      "projectId": "atlas-payroll"
     },
     {
       "id": "FEAT-UNPLANNED",
@@ -5510,7 +5671,8 @@
       "qaFocus": [],
       "dependencies": [],
       "createdAt": "2026-07-05T18:35:34.743Z",
-      "updatedAt": "2026-07-05T18:35:34.743Z"
+      "updatedAt": "2026-07-05T18:35:34.743Z",
+      "projectId": "atlas-payroll"
     }
   ],
   "tests": [
@@ -5527,7 +5689,8 @@
       "status": "Passed",
       "priority": "High",
       "assignee": "QA Team",
-      "updatedAt": "2026-07-05T18:36:49.756Z"
+      "updatedAt": "2026-07-05T18:36:49.756Z",
+      "projectId": "atlas-payroll"
     },
     {
       "preconditions": "",
@@ -5542,7 +5705,8 @@
       "status": "In Progress",
       "priority": "High",
       "assignee": "QA Team",
-      "updatedAt": "2026-07-05T16:11:12.141Z"
+      "updatedAt": "2026-07-05T16:11:12.141Z",
+      "projectId": "atlas-payroll"
     },
     {
       "preconditions": "",
@@ -5557,7 +5721,8 @@
       "status": "Not Run",
       "priority": "High",
       "assignee": "QA Team",
-      "updatedAt": "2026-07-05T16:07:05.767Z"
+      "updatedAt": "2026-07-05T16:07:05.767Z",
+      "projectId": "atlas-payroll"
     },
     {
       "preconditions": "",
@@ -5572,7 +5737,8 @@
       "status": "Not Run",
       "priority": "High",
       "assignee": "QA Team",
-      "updatedAt": "2026-07-05T16:07:05.767Z"
+      "updatedAt": "2026-07-05T16:07:05.767Z",
+      "projectId": "atlas-payroll"
     },
     {
       "preconditions": "",
@@ -5587,7 +5753,8 @@
       "status": "Not Run",
       "priority": "High",
       "assignee": "QA Team",
-      "updatedAt": "2026-07-05T16:07:05.767Z"
+      "updatedAt": "2026-07-05T16:07:05.767Z",
+      "projectId": "atlas-payroll"
     },
     {
       "preconditions": "",
@@ -5602,7 +5769,8 @@
       "status": "In Progress",
       "priority": "High",
       "assignee": "QA Team",
-      "updatedAt": "2026-07-05T16:07:05.767Z"
+      "updatedAt": "2026-07-05T16:07:05.767Z",
+      "projectId": "atlas-payroll"
     },
     {
       "preconditions": "",
@@ -5617,7 +5785,8 @@
       "status": "Not Run",
       "priority": "High",
       "assignee": "QA Team",
-      "updatedAt": "2026-07-05T16:07:05.767Z"
+      "updatedAt": "2026-07-05T16:07:05.767Z",
+      "projectId": "atlas-payroll"
     },
     {
       "preconditions": "",
@@ -5632,7 +5801,8 @@
       "status": "Not Run",
       "priority": "High",
       "assignee": "QA Team",
-      "updatedAt": "2026-07-05T16:07:05.767Z"
+      "updatedAt": "2026-07-05T16:07:05.767Z",
+      "projectId": "atlas-payroll"
     },
     {
       "preconditions": "",
@@ -5647,7 +5817,8 @@
       "status": "In Progress",
       "priority": "High",
       "assignee": "QA Team",
-      "updatedAt": "2026-07-05T16:07:05.767Z"
+      "updatedAt": "2026-07-05T16:07:05.767Z",
+      "projectId": "atlas-payroll"
     },
     {
       "preconditions": "",
@@ -5662,7 +5833,8 @@
       "status": "Not Run",
       "priority": "High",
       "assignee": "QA Team",
-      "updatedAt": "2026-07-05T16:07:05.767Z"
+      "updatedAt": "2026-07-05T16:07:05.767Z",
+      "projectId": "atlas-payroll"
     },
     {
       "preconditions": "",
@@ -5677,7 +5849,8 @@
       "status": "Not Run",
       "priority": "High",
       "assignee": "QA Team",
-      "updatedAt": "2026-07-05T16:07:05.767Z"
+      "updatedAt": "2026-07-05T16:07:05.767Z",
+      "projectId": "atlas-payroll"
     },
     {
       "preconditions": "",
@@ -5692,7 +5865,8 @@
       "status": "In Progress",
       "priority": "High",
       "assignee": "QA Team",
-      "updatedAt": "2026-07-05T16:07:05.767Z"
+      "updatedAt": "2026-07-05T16:07:05.767Z",
+      "projectId": "atlas-payroll"
     },
     {
       "preconditions": "",
@@ -5707,7 +5881,8 @@
       "status": "Not Run",
       "priority": "High",
       "assignee": "QA Team",
-      "updatedAt": "2026-07-05T16:07:05.767Z"
+      "updatedAt": "2026-07-05T16:07:05.767Z",
+      "projectId": "atlas-payroll"
     },
     {
       "preconditions": "",
@@ -5722,7 +5897,8 @@
       "status": "Not Run",
       "priority": "High",
       "assignee": "QA Team",
-      "updatedAt": "2026-07-05T16:07:05.767Z"
+      "updatedAt": "2026-07-05T16:07:05.767Z",
+      "projectId": "atlas-payroll"
     },
     {
       "preconditions": "",
@@ -5737,7 +5913,8 @@
       "status": "In Progress",
       "priority": "High",
       "assignee": "QA Team",
-      "updatedAt": "2026-07-05T16:07:05.767Z"
+      "updatedAt": "2026-07-05T16:07:05.767Z",
+      "projectId": "atlas-payroll"
     },
     {
       "preconditions": "",
@@ -5752,7 +5929,8 @@
       "status": "Not Run",
       "priority": "High",
       "assignee": "QA Team",
-      "updatedAt": "2026-07-05T16:07:05.767Z"
+      "updatedAt": "2026-07-05T16:07:05.767Z",
+      "projectId": "atlas-payroll"
     },
     {
       "preconditions": "",
@@ -5767,7 +5945,8 @@
       "status": "Passed",
       "priority": "High",
       "assignee": "QA Team",
-      "updatedAt": "2026-07-05T16:07:05.767Z"
+      "updatedAt": "2026-07-05T16:07:05.767Z",
+      "projectId": "atlas-payroll"
     },
     {
       "preconditions": "",
@@ -5782,7 +5961,8 @@
       "status": "In Progress",
       "priority": "High",
       "assignee": "QA Team",
-      "updatedAt": "2026-07-05T16:07:05.767Z"
+      "updatedAt": "2026-07-05T16:07:05.767Z",
+      "projectId": "atlas-payroll"
     },
     {
       "preconditions": "",
@@ -5797,7 +5977,8 @@
       "status": "Not Run",
       "priority": "High",
       "assignee": "QA Team",
-      "updatedAt": "2026-07-05T16:07:05.767Z"
+      "updatedAt": "2026-07-05T16:07:05.767Z",
+      "projectId": "atlas-payroll"
     },
     {
       "preconditions": "",
@@ -5812,7 +5993,8 @@
       "status": "Not Run",
       "priority": "High",
       "assignee": "QA Team",
-      "updatedAt": "2026-07-05T16:07:05.767Z"
+      "updatedAt": "2026-07-05T16:07:05.767Z",
+      "projectId": "atlas-payroll"
     },
     {
       "preconditions": "",
@@ -5827,7 +6009,8 @@
       "status": "In Progress",
       "priority": "High",
       "assignee": "QA Team",
-      "updatedAt": "2026-07-05T16:07:05.767Z"
+      "updatedAt": "2026-07-05T16:07:05.767Z",
+      "projectId": "atlas-payroll"
     },
     {
       "preconditions": "",
@@ -5842,7 +6025,8 @@
       "status": "Not Run",
       "priority": "High",
       "assignee": "QA Team",
-      "updatedAt": "2026-07-05T16:07:05.767Z"
+      "updatedAt": "2026-07-05T16:07:05.767Z",
+      "projectId": "atlas-payroll"
     },
     {
       "preconditions": "",
@@ -5857,7 +6041,8 @@
       "status": "Not Run",
       "priority": "High",
       "assignee": "QA Team",
-      "updatedAt": "2026-07-05T16:07:05.767Z"
+      "updatedAt": "2026-07-05T16:07:05.767Z",
+      "projectId": "atlas-payroll"
     },
     {
       "preconditions": "",
@@ -5872,7 +6057,8 @@
       "status": "In Progress",
       "priority": "High",
       "assignee": "QA Team",
-      "updatedAt": "2026-07-05T16:07:05.767Z"
+      "updatedAt": "2026-07-05T16:07:05.767Z",
+      "projectId": "atlas-payroll"
     },
     {
       "preconditions": "",
@@ -5887,7 +6073,8 @@
       "status": "Not Run",
       "priority": "High",
       "assignee": "QA Team",
-      "updatedAt": "2026-07-05T16:07:05.767Z"
+      "updatedAt": "2026-07-05T16:07:05.767Z",
+      "projectId": "atlas-payroll"
     },
     {
       "preconditions": "",
@@ -5902,7 +6089,8 @@
       "status": "Not Run",
       "priority": "High",
       "assignee": "QA Team",
-      "updatedAt": "2026-07-05T16:07:05.767Z"
+      "updatedAt": "2026-07-05T16:07:05.767Z",
+      "projectId": "atlas-payroll"
     },
     {
       "preconditions": "",
@@ -5917,7 +6105,8 @@
       "status": "In Progress",
       "priority": "High",
       "assignee": "QA Team",
-      "updatedAt": "2026-07-05T16:07:05.767Z"
+      "updatedAt": "2026-07-05T16:07:05.767Z",
+      "projectId": "atlas-payroll"
     },
     {
       "preconditions": "",
@@ -5932,7 +6121,8 @@
       "status": "Not Run",
       "priority": "High",
       "assignee": "QA Team",
-      "updatedAt": "2026-07-05T16:07:05.767Z"
+      "updatedAt": "2026-07-05T16:07:05.767Z",
+      "projectId": "atlas-payroll"
     },
     {
       "preconditions": "",
@@ -5947,7 +6137,8 @@
       "status": "Not Run",
       "priority": "High",
       "assignee": "QA Team",
-      "updatedAt": "2026-07-05T16:07:05.767Z"
+      "updatedAt": "2026-07-05T16:07:05.767Z",
+      "projectId": "atlas-payroll"
     },
     {
       "preconditions": "",
@@ -5962,7 +6153,8 @@
       "status": "In Progress",
       "priority": "High",
       "assignee": "QA Team",
-      "updatedAt": "2026-07-05T16:07:05.767Z"
+      "updatedAt": "2026-07-05T16:07:05.767Z",
+      "projectId": "atlas-payroll"
     },
     {
       "preconditions": "",
@@ -5977,7 +6169,8 @@
       "status": "Not Run",
       "priority": "High",
       "assignee": "QA Team",
-      "updatedAt": "2026-07-05T16:07:05.767Z"
+      "updatedAt": "2026-07-05T16:07:05.767Z",
+      "projectId": "atlas-payroll"
     },
     {
       "preconditions": "",
@@ -5992,7 +6185,8 @@
       "status": "Not Run",
       "priority": "High",
       "assignee": "QA Team",
-      "updatedAt": "2026-07-05T16:07:05.767Z"
+      "updatedAt": "2026-07-05T16:07:05.767Z",
+      "projectId": "atlas-payroll"
     },
     {
       "preconditions": "",
@@ -6007,7 +6201,8 @@
       "status": "In Progress",
       "priority": "High",
       "assignee": "QA Team",
-      "updatedAt": "2026-07-05T16:07:05.767Z"
+      "updatedAt": "2026-07-05T16:07:05.767Z",
+      "projectId": "atlas-payroll"
     },
     {
       "preconditions": "",
@@ -6022,7 +6217,8 @@
       "status": "Not Run",
       "priority": "High",
       "assignee": "QA Team",
-      "updatedAt": "2026-07-05T16:07:05.767Z"
+      "updatedAt": "2026-07-05T16:07:05.767Z",
+      "projectId": "atlas-payroll"
     },
     {
       "preconditions": "",
@@ -6037,7 +6233,8 @@
       "status": "Passed",
       "priority": "High",
       "assignee": "QA Team",
-      "updatedAt": "2026-07-05T16:07:05.767Z"
+      "updatedAt": "2026-07-05T16:07:05.767Z",
+      "projectId": "atlas-payroll"
     },
     {
       "preconditions": "",
@@ -6052,7 +6249,8 @@
       "status": "In Progress",
       "priority": "High",
       "assignee": "QA Team",
-      "updatedAt": "2026-07-05T16:07:05.767Z"
+      "updatedAt": "2026-07-05T16:07:05.767Z",
+      "projectId": "atlas-payroll"
     },
     {
       "preconditions": "",
@@ -6067,7 +6265,8 @@
       "status": "Not Run",
       "priority": "High",
       "assignee": "QA Team",
-      "updatedAt": "2026-07-05T16:07:05.767Z"
+      "updatedAt": "2026-07-05T16:07:05.767Z",
+      "projectId": "atlas-payroll"
     },
     {
       "preconditions": "",
@@ -6082,7 +6281,8 @@
       "status": "Not Run",
       "priority": "High",
       "assignee": "QA Team",
-      "updatedAt": "2026-07-05T16:07:05.767Z"
+      "updatedAt": "2026-07-05T16:07:05.767Z",
+      "projectId": "atlas-payroll"
     },
     {
       "preconditions": "",
@@ -6097,7 +6297,8 @@
       "status": "In Progress",
       "priority": "High",
       "assignee": "QA Team",
-      "updatedAt": "2026-07-05T16:07:05.767Z"
+      "updatedAt": "2026-07-05T16:07:05.767Z",
+      "projectId": "atlas-payroll"
     },
     {
       "preconditions": "",
@@ -6112,7 +6313,8 @@
       "status": "Not Run",
       "priority": "High",
       "assignee": "QA Team",
-      "updatedAt": "2026-07-05T16:07:05.767Z"
+      "updatedAt": "2026-07-05T16:07:05.767Z",
+      "projectId": "atlas-payroll"
     },
     {
       "preconditions": "",
@@ -6127,7 +6329,8 @@
       "status": "Not Run",
       "priority": "High",
       "assignee": "QA Team",
-      "updatedAt": "2026-07-05T16:07:05.767Z"
+      "updatedAt": "2026-07-05T16:07:05.767Z",
+      "projectId": "atlas-payroll"
     },
     {
       "preconditions": "",
@@ -6142,7 +6345,8 @@
       "status": "In Progress",
       "priority": "High",
       "assignee": "QA Team",
-      "updatedAt": "2026-07-05T16:07:05.767Z"
+      "updatedAt": "2026-07-05T16:07:05.767Z",
+      "projectId": "atlas-payroll"
     },
     {
       "preconditions": "",
@@ -6157,7 +6361,8 @@
       "status": "Not Run",
       "priority": "High",
       "assignee": "QA Team",
-      "updatedAt": "2026-07-05T16:07:05.767Z"
+      "updatedAt": "2026-07-05T16:07:05.767Z",
+      "projectId": "atlas-payroll"
     },
     {
       "preconditions": "",
@@ -6172,7 +6377,8 @@
       "status": "Not Run",
       "priority": "High",
       "assignee": "QA Team",
-      "updatedAt": "2026-07-05T16:07:05.767Z"
+      "updatedAt": "2026-07-05T16:07:05.767Z",
+      "projectId": "atlas-payroll"
     },
     {
       "preconditions": "",
@@ -6187,7 +6393,8 @@
       "status": "In Progress",
       "priority": "High",
       "assignee": "QA Team",
-      "updatedAt": "2026-07-05T16:07:05.767Z"
+      "updatedAt": "2026-07-05T16:07:05.767Z",
+      "projectId": "atlas-payroll"
     },
     {
       "preconditions": "",
@@ -6202,7 +6409,8 @@
       "status": "Not Run",
       "priority": "High",
       "assignee": "QA Team",
-      "updatedAt": "2026-07-05T16:07:05.767Z"
+      "updatedAt": "2026-07-05T16:07:05.767Z",
+      "projectId": "atlas-payroll"
     },
     {
       "preconditions": "",
@@ -6217,7 +6425,8 @@
       "status": "Not Run",
       "priority": "High",
       "assignee": "QA Team",
-      "updatedAt": "2026-07-05T16:07:05.767Z"
+      "updatedAt": "2026-07-05T16:07:05.767Z",
+      "projectId": "atlas-payroll"
     },
     {
       "preconditions": "",
@@ -6232,7 +6441,8 @@
       "status": "In Progress",
       "priority": "High",
       "assignee": "QA Team",
-      "updatedAt": "2026-07-05T16:07:05.767Z"
+      "updatedAt": "2026-07-05T16:07:05.767Z",
+      "projectId": "atlas-payroll"
     },
     {
       "preconditions": "",
@@ -6247,7 +6457,8 @@
       "status": "Not Run",
       "priority": "High",
       "assignee": "QA Team",
-      "updatedAt": "2026-07-05T16:07:05.767Z"
+      "updatedAt": "2026-07-05T16:07:05.767Z",
+      "projectId": "atlas-payroll"
     },
     {
       "preconditions": "",
@@ -6262,7 +6473,8 @@
       "status": "Passed",
       "priority": "High",
       "assignee": "QA Team",
-      "updatedAt": "2026-07-05T16:07:05.767Z"
+      "updatedAt": "2026-07-05T16:07:05.767Z",
+      "projectId": "atlas-payroll"
     },
     {
       "preconditions": "",
@@ -6277,7 +6489,8 @@
       "status": "In Progress",
       "priority": "High",
       "assignee": "QA Team",
-      "updatedAt": "2026-07-05T16:07:05.767Z"
+      "updatedAt": "2026-07-05T16:07:05.767Z",
+      "projectId": "atlas-payroll"
     },
     {
       "preconditions": "",
@@ -6292,7 +6505,8 @@
       "status": "Not Run",
       "priority": "High",
       "assignee": "QA Team",
-      "updatedAt": "2026-07-05T16:07:05.767Z"
+      "updatedAt": "2026-07-05T16:07:05.767Z",
+      "projectId": "atlas-payroll"
     },
     {
       "preconditions": "",
@@ -6307,7 +6521,8 @@
       "status": "Not Run",
       "priority": "High",
       "assignee": "QA Team",
-      "updatedAt": "2026-07-05T16:07:05.767Z"
+      "updatedAt": "2026-07-05T16:07:05.767Z",
+      "projectId": "atlas-payroll"
     },
     {
       "preconditions": "",
@@ -6322,7 +6537,8 @@
       "status": "In Progress",
       "priority": "High",
       "assignee": "QA Team",
-      "updatedAt": "2026-07-05T16:07:05.767Z"
+      "updatedAt": "2026-07-05T16:07:05.767Z",
+      "projectId": "atlas-payroll"
     },
     {
       "preconditions": "",
@@ -6337,7 +6553,8 @@
       "status": "Not Run",
       "priority": "High",
       "assignee": "QA Team",
-      "updatedAt": "2026-07-05T16:07:05.767Z"
+      "updatedAt": "2026-07-05T16:07:05.767Z",
+      "projectId": "atlas-payroll"
     },
     {
       "preconditions": "",
@@ -6352,7 +6569,8 @@
       "status": "Not Run",
       "priority": "High",
       "assignee": "QA Team",
-      "updatedAt": "2026-07-05T16:07:05.767Z"
+      "updatedAt": "2026-07-05T16:07:05.767Z",
+      "projectId": "atlas-payroll"
     },
     {
       "preconditions": "",
@@ -6367,7 +6585,8 @@
       "status": "In Progress",
       "priority": "High",
       "assignee": "QA Team",
-      "updatedAt": "2026-07-05T16:07:05.767Z"
+      "updatedAt": "2026-07-05T16:07:05.767Z",
+      "projectId": "atlas-payroll"
     },
     {
       "preconditions": "",
@@ -6382,7 +6601,8 @@
       "status": "Not Run",
       "priority": "High",
       "assignee": "QA Team",
-      "updatedAt": "2026-07-05T16:07:05.767Z"
+      "updatedAt": "2026-07-05T16:07:05.767Z",
+      "projectId": "atlas-payroll"
     },
     {
       "preconditions": "",
@@ -6397,7 +6617,8 @@
       "status": "Not Run",
       "priority": "High",
       "assignee": "QA Team",
-      "updatedAt": "2026-07-05T16:07:05.767Z"
+      "updatedAt": "2026-07-05T16:07:05.767Z",
+      "projectId": "atlas-payroll"
     },
     {
       "preconditions": "",
@@ -6412,7 +6633,8 @@
       "status": "In Progress",
       "priority": "High",
       "assignee": "QA Team",
-      "updatedAt": "2026-07-05T16:07:05.767Z"
+      "updatedAt": "2026-07-05T16:07:05.767Z",
+      "projectId": "atlas-payroll"
     },
     {
       "preconditions": "",
@@ -6427,7 +6649,8 @@
       "status": "Not Run",
       "priority": "High",
       "assignee": "QA Team",
-      "updatedAt": "2026-07-05T16:07:05.767Z"
+      "updatedAt": "2026-07-05T16:07:05.767Z",
+      "projectId": "atlas-payroll"
     },
     {
       "preconditions": "",
@@ -6442,7 +6665,8 @@
       "status": "Not Run",
       "priority": "High",
       "assignee": "QA Team",
-      "updatedAt": "2026-07-05T16:07:05.767Z"
+      "updatedAt": "2026-07-05T16:07:05.767Z",
+      "projectId": "atlas-payroll"
     },
     {
       "preconditions": "",
@@ -6457,7 +6681,8 @@
       "status": "In Progress",
       "priority": "High",
       "assignee": "QA Team",
-      "updatedAt": "2026-07-05T16:07:05.767Z"
+      "updatedAt": "2026-07-05T16:07:05.767Z",
+      "projectId": "atlas-payroll"
     },
     {
       "preconditions": "",
@@ -6472,7 +6697,8 @@
       "status": "Not Run",
       "priority": "High",
       "assignee": "QA Team",
-      "updatedAt": "2026-07-05T16:07:05.767Z"
+      "updatedAt": "2026-07-05T16:07:05.767Z",
+      "projectId": "atlas-payroll"
     },
     {
       "preconditions": "",
@@ -6487,7 +6713,8 @@
       "status": "Passed",
       "priority": "High",
       "assignee": "QA Team",
-      "updatedAt": "2026-07-05T16:07:05.767Z"
+      "updatedAt": "2026-07-05T16:07:05.767Z",
+      "projectId": "atlas-payroll"
     },
     {
       "preconditions": "",
@@ -6502,7 +6729,8 @@
       "status": "In Progress",
       "priority": "High",
       "assignee": "QA Team",
-      "updatedAt": "2026-07-05T16:07:05.767Z"
+      "updatedAt": "2026-07-05T16:07:05.767Z",
+      "projectId": "atlas-payroll"
     },
     {
       "preconditions": "",
@@ -6517,7 +6745,8 @@
       "status": "Not Run",
       "priority": "High",
       "assignee": "QA Team",
-      "updatedAt": "2026-07-05T16:07:05.767Z"
+      "updatedAt": "2026-07-05T16:07:05.767Z",
+      "projectId": "atlas-payroll"
     },
     {
       "preconditions": "",
@@ -6532,7 +6761,8 @@
       "status": "Not Run",
       "priority": "High",
       "assignee": "QA Team",
-      "updatedAt": "2026-07-05T16:07:05.767Z"
+      "updatedAt": "2026-07-05T16:07:05.767Z",
+      "projectId": "atlas-payroll"
     },
     {
       "preconditions": "",
@@ -6547,7 +6777,8 @@
       "status": "In Progress",
       "priority": "High",
       "assignee": "QA Team",
-      "updatedAt": "2026-07-05T16:07:05.767Z"
+      "updatedAt": "2026-07-05T16:07:05.767Z",
+      "projectId": "atlas-payroll"
     },
     {
       "preconditions": "",
@@ -6562,7 +6793,8 @@
       "status": "Not Run",
       "priority": "High",
       "assignee": "QA Team",
-      "updatedAt": "2026-07-05T16:07:05.767Z"
+      "updatedAt": "2026-07-05T16:07:05.767Z",
+      "projectId": "atlas-payroll"
     },
     {
       "preconditions": "",
@@ -6577,7 +6809,8 @@
       "status": "Not Run",
       "priority": "High",
       "assignee": "QA Team",
-      "updatedAt": "2026-07-05T16:07:05.767Z"
+      "updatedAt": "2026-07-05T16:07:05.767Z",
+      "projectId": "atlas-payroll"
     },
     {
       "preconditions": "",
@@ -6592,7 +6825,8 @@
       "status": "In Progress",
       "priority": "High",
       "assignee": "QA Team",
-      "updatedAt": "2026-07-05T16:07:05.767Z"
+      "updatedAt": "2026-07-05T16:07:05.767Z",
+      "projectId": "atlas-payroll"
     },
     {
       "preconditions": "",
@@ -6607,7 +6841,8 @@
       "status": "Not Run",
       "priority": "High",
       "assignee": "QA Team",
-      "updatedAt": "2026-07-05T16:07:05.767Z"
+      "updatedAt": "2026-07-05T16:07:05.767Z",
+      "projectId": "atlas-payroll"
     },
     {
       "preconditions": "",
@@ -6622,7 +6857,8 @@
       "status": "Not Run",
       "priority": "High",
       "assignee": "QA Team",
-      "updatedAt": "2026-07-05T16:07:05.767Z"
+      "updatedAt": "2026-07-05T16:07:05.767Z",
+      "projectId": "atlas-payroll"
     },
     {
       "preconditions": "",
@@ -6637,7 +6873,8 @@
       "status": "Not Run",
       "priority": "High",
       "assignee": "QA Team",
-      "updatedAt": "2026-07-05T16:07:05.767Z"
+      "updatedAt": "2026-07-05T16:07:05.767Z",
+      "projectId": "atlas-payroll"
     },
     {
       "preconditions": "",
@@ -6652,7 +6889,8 @@
       "status": "Not Run",
       "priority": "High",
       "assignee": "QA Team",
-      "updatedAt": "2026-07-05T16:07:05.767Z"
+      "updatedAt": "2026-07-05T16:07:05.767Z",
+      "projectId": "atlas-payroll"
     },
     {
       "preconditions": "",
@@ -6667,7 +6905,8 @@
       "status": "Not Run",
       "priority": "High",
       "assignee": "QA Team",
-      "updatedAt": "2026-07-05T16:07:05.767Z"
+      "updatedAt": "2026-07-05T16:07:05.767Z",
+      "projectId": "atlas-payroll"
     },
     {
       "preconditions": "",
@@ -6682,7 +6921,8 @@
       "status": "Not Run",
       "priority": "High",
       "assignee": "QA Team",
-      "updatedAt": "2026-07-05T16:07:05.767Z"
+      "updatedAt": "2026-07-05T16:07:05.767Z",
+      "projectId": "atlas-payroll"
     },
     {
       "preconditions": "",
@@ -6697,7 +6937,8 @@
       "status": "Not Run",
       "priority": "High",
       "assignee": "QA Team",
-      "updatedAt": "2026-07-05T16:07:05.767Z"
+      "updatedAt": "2026-07-05T16:07:05.767Z",
+      "projectId": "atlas-payroll"
     },
     {
       "preconditions": "",
@@ -6712,7 +6953,8 @@
       "status": "Not Run",
       "priority": "High",
       "assignee": "QA Team",
-      "updatedAt": "2026-07-05T16:07:05.767Z"
+      "updatedAt": "2026-07-05T16:07:05.767Z",
+      "projectId": "atlas-payroll"
     },
     {
       "preconditions": "",
@@ -6727,7 +6969,8 @@
       "status": "Not Run",
       "priority": "High",
       "assignee": "QA Team",
-      "updatedAt": "2026-07-05T16:07:05.767Z"
+      "updatedAt": "2026-07-05T16:07:05.767Z",
+      "projectId": "atlas-payroll"
     },
     {
       "preconditions": "",
@@ -6742,7 +6985,8 @@
       "status": "Not Run",
       "priority": "High",
       "assignee": "QA Team",
-      "updatedAt": "2026-07-05T16:07:05.767Z"
+      "updatedAt": "2026-07-05T16:07:05.767Z",
+      "projectId": "atlas-payroll"
     },
     {
       "preconditions": "",
@@ -6757,7 +7001,8 @@
       "status": "Not Run",
       "priority": "High",
       "assignee": "QA Team",
-      "updatedAt": "2026-07-05T16:07:05.767Z"
+      "updatedAt": "2026-07-05T16:07:05.767Z",
+      "projectId": "atlas-payroll"
     },
     {
       "preconditions": "",
@@ -6772,7 +7017,8 @@
       "status": "Not Run",
       "priority": "High",
       "assignee": "QA Team",
-      "updatedAt": "2026-07-05T16:07:05.767Z"
+      "updatedAt": "2026-07-05T16:07:05.767Z",
+      "projectId": "atlas-payroll"
     },
     {
       "preconditions": "",
@@ -6787,7 +7033,8 @@
       "status": "Not Run",
       "priority": "High",
       "assignee": "QA Team",
-      "updatedAt": "2026-07-05T16:07:05.767Z"
+      "updatedAt": "2026-07-05T16:07:05.767Z",
+      "projectId": "atlas-payroll"
     },
     {
       "preconditions": "",
@@ -6802,7 +7049,8 @@
       "status": "Not Run",
       "priority": "High",
       "assignee": "QA Team",
-      "updatedAt": "2026-07-05T16:07:05.767Z"
+      "updatedAt": "2026-07-05T16:07:05.767Z",
+      "projectId": "atlas-payroll"
     },
     {
       "preconditions": "",
@@ -6817,7 +7065,8 @@
       "status": "Not Run",
       "priority": "High",
       "assignee": "QA Team",
-      "updatedAt": "2026-07-05T16:07:05.767Z"
+      "updatedAt": "2026-07-05T16:07:05.767Z",
+      "projectId": "atlas-payroll"
     },
     {
       "preconditions": "",
@@ -6832,7 +7081,8 @@
       "status": "Not Run",
       "priority": "High",
       "assignee": "QA Team",
-      "updatedAt": "2026-07-05T16:07:05.767Z"
+      "updatedAt": "2026-07-05T16:07:05.767Z",
+      "projectId": "atlas-payroll"
     },
     {
       "preconditions": "",
@@ -6847,7 +7097,8 @@
       "status": "Not Run",
       "priority": "High",
       "assignee": "QA Team",
-      "updatedAt": "2026-07-05T16:07:05.767Z"
+      "updatedAt": "2026-07-05T16:07:05.767Z",
+      "projectId": "atlas-payroll"
     },
     {
       "preconditions": "",
@@ -6862,7 +7113,8 @@
       "status": "Not Run",
       "priority": "High",
       "assignee": "QA Team",
-      "updatedAt": "2026-07-05T16:07:05.767Z"
+      "updatedAt": "2026-07-05T16:07:05.767Z",
+      "projectId": "atlas-payroll"
     },
     {
       "preconditions": "",
@@ -6877,7 +7129,8 @@
       "status": "Not Run",
       "priority": "High",
       "assignee": "QA Team",
-      "updatedAt": "2026-07-05T16:07:05.767Z"
+      "updatedAt": "2026-07-05T16:07:05.767Z",
+      "projectId": "atlas-payroll"
     },
     {
       "preconditions": "",
@@ -6892,7 +7145,8 @@
       "status": "Not Run",
       "priority": "High",
       "assignee": "QA Team",
-      "updatedAt": "2026-07-05T16:07:05.767Z"
+      "updatedAt": "2026-07-05T16:07:05.767Z",
+      "projectId": "atlas-payroll"
     }
   ],
   "risks": [
@@ -6902,7 +7156,8 @@
       "impact": "High",
       "likelihood": "Medium",
       "status": "Open",
-      "owner": "BA Team"
+      "owner": "BA Team",
+      "projectId": "atlas-payroll"
     },
     {
       "id": "RISK-002",
@@ -6910,7 +7165,8 @@
       "impact": "High",
       "likelihood": "Medium",
       "status": "Mitigating",
-      "owner": "Tech Lead"
+      "owner": "Tech Lead",
+      "projectId": "atlas-payroll"
     },
     {
       "id": "RISK-003",
@@ -6918,10 +7174,102 @@
       "impact": "Medium",
       "likelihood": "Low",
       "status": "Open",
-      "owner": "BA Team"
+      "owner": "BA Team",
+      "projectId": "atlas-payroll"
     }
   ],
   "activities": [
+    {
+      "id": "b5328dfe-7876-4c97-af9d-b27132580524",
+      "action": "Switched active project workspace",
+      "actor": "Shared User",
+      "itemId": "atlas-payroll",
+      "at": "2026-07-05T20:52:04.528Z"
+    },
+    {
+      "id": "0b980548-ce38-4137-9660-96fefaea3543",
+      "action": "Switched active project workspace",
+      "actor": "Shared User",
+      "itemId": "project-ef13894c",
+      "at": "2026-07-05T20:52:02.442Z"
+    },
+    {
+      "id": "1b072e18-8de0-4ade-9514-ef018e4c5b84",
+      "action": "Switched active project workspace",
+      "actor": "Shared User",
+      "itemId": "atlas-payroll",
+      "at": "2026-07-05T20:52:00.860Z"
+    },
+    {
+      "id": "91b940b4-4c20-4e9a-8efc-5a9c9cd4bce2",
+      "action": "Switched active project workspace",
+      "actor": "Shared User",
+      "itemId": "project-ef13894c",
+      "at": "2026-07-05T20:51:59.338Z"
+    },
+    {
+      "id": "fc149c4e-0d5b-43ed-8f70-95ff322928d1",
+      "action": "Switched active project workspace",
+      "actor": "Shared User",
+      "itemId": "atlas-payroll",
+      "at": "2026-07-05T20:44:07.857Z"
+    },
+    {
+      "id": "164c418f-6def-4207-9d75-93746ea2ea3b",
+      "action": "Switched active project workspace",
+      "actor": "Shared User",
+      "itemId": "atlas-payroll",
+      "at": "2026-07-05T20:44:07.482Z"
+    },
+    {
+      "id": "ffe612f6-5987-44e0-9196-93534312891c",
+      "action": "Deleted user Mika Reyes",
+      "actor": "Shared User",
+      "itemId": "user-4",
+      "at": "2026-07-05T20:38:22.539Z"
+    },
+    {
+      "id": "385248b2-2493-4dfc-976e-dca4deaded45",
+      "action": "Deleted user Alex Dela Cruz",
+      "actor": "Shared User",
+      "itemId": "user-1",
+      "at": "2026-07-05T20:38:19.141Z"
+    },
+    {
+      "id": "97311811-c996-41bc-a319-92c7f45acec7",
+      "action": "Switched active project workspace",
+      "actor": "Shared User",
+      "itemId": "project-ef13894c",
+      "at": "2026-07-05T20:36:44.562Z"
+    },
+    {
+      "id": "99dd4d1c-b11e-46c9-9bb8-2370987b7b79",
+      "action": "Updated US-BASIC-002",
+      "actor": "Shared User",
+      "itemId": "US-BASIC-002",
+      "at": "2026-07-05T20:27:54.681Z"
+    },
+    {
+      "id": "ca562fc5-796e-4c17-b31b-ce426acf21ff",
+      "action": "Updated US-BASIC-002",
+      "actor": "Shared User",
+      "itemId": "US-BASIC-002",
+      "at": "2026-07-05T20:27:53.759Z"
+    },
+    {
+      "id": "ff4404b2-a6a7-41e1-bc76-7b2ffa3881e0",
+      "action": "Updated US-BASIC-002",
+      "actor": "Shared User",
+      "itemId": "US-BASIC-002",
+      "at": "2026-07-05T20:27:52.613Z"
+    },
+    {
+      "id": "6974ae7b-1f95-41ac-8916-15cc92418695",
+      "action": "Updated US-BASIC-002",
+      "actor": "Shared User",
+      "itemId": "US-BASIC-002",
+      "at": "2026-07-05T20:27:51.129Z"
+    },
     {
       "id": "f6b5bd6c-c3ed-4c92-abe5-2c6bbd949236",
       "action": "Switched active project workspace",
@@ -16553,14 +16901,42 @@
       "presenterNotes": "Lead with the overall outcome, explain the evidence behind the status, then close on the decisions needed to protect the next sprint.",
       "confidence": "On Track",
       "updatedAt": "2026-07-05T17:43:51.819Z"
+    },
+    {
+      "id": "project-ef13894c-sprint-review",
+      "projectId": "project-ef13894c",
+      "sprintName": "Sprint 8",
+      "dateRange": "July 6 - July 17, 2026",
+      "audience": "Atlas Payroll Stakeholders",
+      "headline": "Core payroll requirements are moving into implementation-ready shape.",
+      "sprintGoal": "Finalize the delivery definition for Basic Pay and Company Loan while progressing Bonus and De Minimis scope.",
+      "executiveSummary": "The team has established a traceable delivery baseline across the four priority payroll modules. Basic Pay and Company Loan are furthest along, while Bonus decisions and cross-module dependencies remain the main focus areas.",
+      "highlights": [
+        "Basic Pay requirements now include rate derivation, effective dating, retro pay, and audit behavior.",
+        "Company Loan coverage includes amortization, balances, payment priority, and minimum take-home rules.",
+        "All imported stories now have acceptance criteria, delivery tasks, and linked QA scenarios."
+      ],
+      "decisionsNeeded": [
+        "Confirm the final Bonus computation and eligibility rules.",
+        "Confirm how De Minimis effective-date versions apply during payroll processing.",
+        "Agree the priority for cross-module payroll integration work."
+      ],
+      "nextSprintGoals": [
+        "Close remaining Bonus and De Minimis business-rule questions.",
+        "Move Basic Pay stories into development-ready status.",
+        "Begin end-to-end QA design for payroll computation scenarios."
+      ],
+      "clientAsks": [
+        "Provide owners for open business-rule decisions.",
+        "Review and approve the Definition of Ready for development handoff.",
+        "Confirm the next sprint review date and stakeholder group."
+      ],
+      "presenterNotes": "Lead with the overall outcome, explain the evidence behind the status, then close on the decisions needed to protect the next sprint.",
+      "confidence": "On Track",
+      "updatedAt": "2026-07-05T20:52:16.165Z"
     }
   ],
   "users": [
-    {
-      "id": "user-1",
-      "name": "Alex Dela Cruz",
-      "email": "alex.delacruz@example.com"
-    },
     {
       "id": "user-2",
       "name": "Rhea Santos",
@@ -16570,11 +16946,6 @@
       "id": "user-3",
       "name": "Marco Reyes",
       "email": "marco.reyes@example.com"
-    },
-    {
-      "id": "user-4",
-      "name": "Mika Reyes",
-      "email": "mika.reyes@example.com"
     },
     {
       "id": "user-5",
