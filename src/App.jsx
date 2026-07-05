@@ -243,7 +243,7 @@ function AppShell({ state, setState, onLogout }) {
           {page === "backlog" && <Backlog state={state} openItem={openItem} openCreate={openCreate} />}
           {page === "board" && <Board state={state} openItem={openItem} updateItem={updateItem} openCreate={openCreate} />}
           {page === "qa" && <QA state={state} setState={setState} openItem={openItem} showToast={showToast} />}
-          {page === "requirements" && <Requirements state={state} setState={setState} showToast={showToast} />}
+          {page === "requirements" && <Requirements state={state} setState={setState} showToast={showToast} project={project} />}
           {page === "reports" && <Reports state={state} project={project} />}
           {page === "settings" && <Settings state={state} setState={setState} showToast={showToast} />}
         </div>
@@ -1042,7 +1042,7 @@ function exportAllRequirements(documentBlocks) {
   document.body.removeChild(link);
 }
 
-function Requirements({ state, setState, showToast }) {
+function Requirements({ state, setState, showToast, project }) {
   const [query, setQuery] = useState("");
   const [section, setSection] = useState("All sections");
   
@@ -1203,8 +1203,7 @@ function Requirements({ state, setState, showToast }) {
       <div className="page-heading">
         <div>
           <span className="eyebrow">SOURCE OF TRUTH</span>
-          <h1>Atlas requirements</h1>
-          <p>Complete searchable content extracted from {state.source.source.filename}.</p>
+          <h1>{project?.name || "Atlas"} requirements</h1>
         </div>
         <div className="requirements-header-actions" style={{ display: "flex", gap: "10px" }}>
           <button className="secondary-button" onClick={handleExportAll}>

@@ -1,10 +1,12 @@
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap');
+
 /* ================================================================
    Atlas Delivery Hub — Design System v2
    Tokens → primitives → shell → pages → overlays → print → responsive
    ================================================================ */
 
 :root {
-  font-family: Inter, "Segoe UI", Arial, sans-serif;
+  font-family: 'Outfit', Inter, "Segoe UI", Arial, sans-serif;
   font-feature-settings: "cv02", "cv03", "cv04", "cv11";
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
@@ -146,39 +148,123 @@ input:focus-visible, select:focus-visible, textarea:focus-visible { outline: non
 .app-shell { min-height: 100vh; }
 .sidebar {
   position: fixed; z-index: 30; inset: 0 auto 0 0; width: 228px; color: #cfe0f2; display: flex; flex-direction: column;
-  background: linear-gradient(178deg, var(--navy) 12%, var(--navy-2) 82%, #0c3157);
-  box-shadow: inset -1px 0 0 rgba(255, 255, 255, .05);
+  background: #091322;
+  box-shadow: inset -1px 0 0 rgba(255, 255, 255, 0.05), 4px 0 24px rgba(0, 0, 0, 0.15);
 }
-.sidebar-brand { height: 62px; flex: 0 0 auto; display: flex; align-items: center; gap: 10px; padding: 0 18px; color: white; border-bottom: 1px solid rgba(255, 255, 255, .09); font-size: 14px; letter-spacing: -.01em; }
-.sidebar-brand .brand-mark { width: 28px; height: 28px; border-radius: 8px; font-size: 14px; }
+.sidebar-brand {
+  height: 62px;
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 18px;
+  color: white;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+.sidebar-brand .brand-mark {
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  font-size: 14px;
+  background: linear-gradient(135deg, #2563eb, #7c3aed, #db2777);
+  box-shadow: 0 4px 12px rgba(124, 58, 237, 0.3);
+}
 .project-switch {
-  margin: 16px 12px 12px; padding: 11px 12px; border-radius: var(--r-md); display: flex; align-items: center; justify-content: space-between;
-  background: linear-gradient(155deg, rgba(255, 255, 255, .1), rgba(255, 255, 255, .04));
-  border: 1px solid rgba(255, 255, 255, .1); box-shadow: inset 0 1px 0 rgba(255, 255, 255, .07);
+  margin: 16px 12px 12px;
+  padding: 12px;
+  border-radius: var(--r-md);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03), 0 4px 12px rgba(0, 0, 0, 0.1);
+  transition: all 0.2s ease;
+}
+.project-switch:hover {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.1);
 }
 .project-switch div { min-width: 0; display: flex; flex-direction: column; gap: 3px; }
-.project-switch small { font-size: 9px; color: #82a9cf; letter-spacing: .13em; font-weight: 700; }
-.project-switch strong { font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.project-switch > svg { color: #82a9cf; flex: 0 0 auto; }
-.sidebar nav { padding: 4px 10px; display: flex; flex-direction: column; gap: 3px; overflow-y: auto; }
+.project-switch small { font-size: 8.5px; color: #8eaecf; letter-spacing: 0.1em; font-weight: 700; text-transform: uppercase; }
+.project-switch strong { font-size: 13px; color: white; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.project-switch > svg { color: #8eaecf; flex: 0 0 auto; }
+.sidebar nav { padding: 8px 10px; display: flex; flex-direction: column; gap: 4px; overflow-y: auto; }
 .sidebar nav button {
-  position: relative; display: flex; align-items: center; gap: 12px; min-height: 41px; padding: 0 12px;
-  background: transparent; color: #b9cee2; border-radius: 8px; font-size: 13px; font-weight: 500; text-align: left;
-  transition: background .15s, color .15s;
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 40px;
+  padding: 0 14px;
+  background: transparent;
+  color: #94a8c2;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 500;
+  text-align: left;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  border: 1px solid transparent;
 }
-.sidebar nav button:hover { background: rgba(255, 255, 255, .07); color: white; }
+.sidebar nav button svg {
+  color: #7890b0;
+  transition: color 0.2s ease;
+}
+.sidebar nav button:hover {
+  background: rgba(255, 255, 255, 0.04);
+  color: white;
+  transform: translateX(4px);
+}
+.sidebar nav button:hover svg {
+  color: white;
+}
 .sidebar nav button.active {
-  color: white; font-weight: 600;
-  background: linear-gradient(92deg, #1673e0, #135cbe);
-  box-shadow: 0 4px 14px rgba(9, 62, 128, .45), inset 0 1px 0 rgba(255, 255, 255, .16);
+  color: white;
+  font-weight: 600;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.12);
 }
-.sidebar nav button.active::before { content: ""; position: absolute; left: -10px; top: 9px; bottom: 9px; width: 3px; border-radius: 0 3px 3px 0; background: #59a7ff; }
-.sidebar-bottom { margin-top: auto; padding: 13px 14px; border-top: 1px solid rgba(255, 255, 255, .09); display: flex; align-items: center; justify-content: space-between; background: rgba(0, 0, 0, .14); }
-.sidebar-mini { display: flex; align-items: center; gap: 9px; }
-.sidebar-mini > svg { width: 30px; height: 30px; padding: 7px; border-radius: 50%; background: rgba(255, 255, 255, .1); color: #9cc3ea; }
-.sidebar-mini div { display: flex; flex-direction: column; gap: 2px; }
-.sidebar-mini strong { color: white; font-size: 11px; }
-.sidebar-mini small { color: #82a3c2; font-size: 10px; }
+.sidebar nav button.active svg {
+  color: #3b82f6;
+  filter: drop-shadow(0 0 6px rgba(59, 130, 246, 0.4));
+}
+.sidebar nav button.active::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 10px;
+  bottom: 10px;
+  width: 3px;
+  border-radius: 0 4px 4px 0;
+  background: #3b82f6;
+  box-shadow: 0 0 8px #3b82f6;
+}
+.sidebar-bottom {
+  margin-top: auto;
+  padding: 14px 16px;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: rgba(0, 0, 0, 0.2);
+}
+.sidebar-mini { display: flex; align-items: center; gap: 10px; }
+.sidebar-mini > svg {
+  width: 32px;
+  height: 32px;
+  padding: 8px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.05);
+  color: #9cc3ea;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+.sidebar-mini div { display: flex; flex-direction: column; gap: 1px; }
+.sidebar-mini strong { color: white; font-size: 11px; font-weight: 600; }
+.sidebar-mini small { color: #849ebd; font-size: 9.5px; }
 .workspace { margin-left: 228px; min-height: 100vh; }
 .topbar {
   height: 62px; position: sticky; z-index: 20; top: 0;
