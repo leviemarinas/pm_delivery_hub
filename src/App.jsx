@@ -295,6 +295,7 @@ const linkKindOf = (url = "") => {
   if (value.includes("docs.google.com/forms")) return { label: "Form", tone: "kind-form", Icon: ClipboardText };
   if (/\.pdf([?#]|$)/.test(value)) return { label: "PDF", tone: "kind-pdf", Icon: FilePdf };
   if (value.includes("drive.google.com")) return { label: "Drive", tone: "kind-doc", Icon: FileText };
+  if (value.includes("figma.com")) return { label: "Figma", tone: "kind-figma", Icon: SquaresFour };
   return { label: "Website", tone: "kind-site", Icon: Globe };
 };
 
@@ -303,7 +304,23 @@ const domainOf = (url = "") => {
 };
 
 function LinkKindIcon({ url, size = 15 }) {
-  const { tone, Icon } = linkKindOf(url);
+  const { tone, Icon, label } = linkKindOf(url);
+  if (label === "Figma") {
+    // scale figma logo proportional to the size argument (ratio 2:3)
+    const w = Math.round(size * 0.7);
+    const h = Math.round(w * 1.5);
+    return (
+      <span className={`link-kind-icon ${tone}`} title="Figma">
+        <svg width={w} height={h} viewBox="0 0 18 36" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ display: "block" }}>
+          <path d="M12 6C12 2.68629 9.31371 0 6 0C2.68629 0 0 2.68629 0 6C0 9.31371 2.68629 12 6 12H12V6Z" fill="#F24E1E"/>
+          <path d="M12 18C12 14.6863 9.31371 12 6 12C2.68629 12 0 14.6863 0 18C0 21.3137 2.68629 24 6 24H12V18Z" fill="#A259FF"/>
+          <path d="M0 30C0 26.6863 2.68629 24 6 24C9.31371 24 12 26.6863 12 30C12 33.3137 9.31371 36 6 36C2.68629 36 0 33.3137 0 30Z" fill="#0ACF83"/>
+          <path d="M12 12C15.3137 12 18 9.31371 18 6C18 2.68629 15.3137 0 12 0V12Z" fill="#FF7262"/>
+          <path d="M12 24C15.3137 24 18 21.3137 18 18C18 14.6863 15.3137 12 12 12V24Z" fill="#1ABC9C"/>
+        </svg>
+      </span>
+    );
+  }
   return <span className={`link-kind-icon ${tone}`}><Icon size={size} weight="duotone" /></span>;
 }
 
@@ -478,11 +495,38 @@ function ProjectLinksPage({ state, project, setState, showToast }) {
     }));
   };
 
+  const isEmbeddable = (url = "") => {
+    if (!url) return false;
+    try {
+      const parsed = new URL(url);
+      const host = parsed.hostname.toLowerCase();
+      if (host.includes("docs.google.com") || host.includes("drive.google.com")) return true;
+      if (host.includes("figma.com")) return true;
+      if (host.includes("youtube.com") || host.includes("youtu.be") || host.includes("vimeo.com")) return true;
+      const pathname = parsed.pathname.toLowerCase();
+      if (
+        pathname.endsWith(".pdf") || 
+        pathname.endsWith(".xlsx") || 
+        pathname.endsWith(".xls") || 
+        pathname.endsWith(".docx") || 
+        pathname.endsWith(".doc") || 
+        pathname.endsWith(".pptx") || 
+        pathname.endsWith(".ppt")
+      ) {
+        return true;
+      }
+      return false;
+    } catch (e) {
+      return false;
+    }
+  };
+
   const getEmbedUrl = (url) => {
     if (!url) return "";
     try {
       const parsed = new URL(url);
-      if (parsed.hostname.includes("docs.google.com")) {
+      const host = parsed.hostname.toLowerCase();
+      if (host.includes("docs.google.com")) {
         if (parsed.pathname.includes("/edit")) {
           return url.replace(/\/edit(\?.*)?$/, "/preview");
         }
@@ -490,7 +534,30 @@ function ProjectLinksPage({ state, project, setState, showToast }) {
           return url.split("/edit")[0] + "/preview";
         }
       }
-      if (url.endsWith(".pdf") || url.endsWith(".xlsx") || url.endsWith(".docx") || url.endsWith(".pptx")) {
+      if (host.includes("figma.com")) {
+        return `https://www.figma.com/embed?embed_host=share&url=${encodeURIComponent(url)}`;
+      }
+      if (host.includes("youtube.com") || host.includes("youtu.be")) {
+        let videoId = "";
+        if (host.includes("youtu.be")) {
+          videoId = parsed.pathname.slice(1);
+        } else {
+          videoId = parsed.searchParams.get("v");
+        }
+        if (videoId) {
+          return `https://www.youtube.com/embed/${videoId}`;
+        }
+      }
+      const pathname = parsed.pathname.toLowerCase();
+      if (
+        pathname.endsWith(".pdf") || 
+        pathname.endsWith(".xlsx") || 
+        pathname.endsWith(".xls") || 
+        pathname.endsWith(".docx") || 
+        pathname.endsWith(".doc") || 
+        pathname.endsWith(".pptx") || 
+        pathname.endsWith(".ppt")
+      ) {
         return `https://view.officeapps.live.com/op/embed.aspx?src=${encodeURIComponent(url)}`;
       }
     } catch (e) {
@@ -630,16 +697,38 @@ function ProjectLinksPage({ state, project, setState, showToast }) {
                 </div>
               </div>
 
-              <div className="viewer-frame-container">
-                {frameLoading && <div className="frame-loading"><SpinnerGap className="spin" size={26} /><span>Loading preview…</span></div>}
-                <iframe
-                  key={`${selectedLink.id}-${frameKey}`}
-                  src={getEmbedUrl(selectedLink.url)}
-                  title={selectedLink.name}
-                  className="embed-iframe"
-                  sandbox="allow-scripts allow-same-origin allow-forms allow-popups"
-                  onLoad={() => setFrameLoading(false)}
-                />
+               <div className="viewer-frame-container">
+                {isEmbeddable(selectedLink.url) ? (
+                  <>
+                    {frameLoading && <div className="frame-loading"><SpinnerGap className="spin" size={26} /><span>Loading preview…</span></div>}
+                    <iframe
+                      key={`${selectedLink.id}-${frameKey}`}
+                      src={getEmbedUrl(selectedLink.url)}
+                      title={selectedLink.name}
+                      className="embed-iframe"
+                      sandbox="allow-scripts allow-same-origin allow-forms allow-popups"
+                      onLoad={() => setFrameLoading(false)}
+                    />
+                  </>
+                ) : (
+                  <div className="embed-fallback-card">
+                    <div className="embed-fallback-icon">
+                      <Globe size={26} />
+                    </div>
+                    <h3>Preview not available</h3>
+                    <p>
+                      Due to security restrictions on the target website, inline preview is not supported. Use the options below to open the link.
+                    </p>
+                    <div className="embed-fallback-actions">
+                      <a href={selectedLink.url} target="_blank" rel="noopener noreferrer" className="primary-button">
+                        <ArrowSquareOut size={16} />Open in new tab
+                      </a>
+                      <a href={selectedLink.url} target="_self" className="secondary-button">
+                        Same tab
+                      </a>
+                    </div>
+                  </div>
+                )}
               </div>
 
               {!hintDismissed && (

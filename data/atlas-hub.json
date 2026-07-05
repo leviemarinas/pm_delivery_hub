@@ -30,17 +30,24 @@
           "group": "Presentations"
         },
         {
-          "id": "link-4",
-          "name": "System Architecture Design",
-          "url": "https://mermaid.live/",
+          "id": "link-1783286192148",
+          "name": "De Minimis",
+          "url": "https://www.grantthornton.com.ph/insights/articles-and-updates1/tax-notes/updated-de-minimis-benefits-threshold/",
           "group": "External Sites"
+        },
+        {
+          "id": "link-1783286253696",
+          "name": "Employee Benefits",
+          "url": "https://www.figma.com/design/VuzIzMtwd0ALclE9uLBWP3/-Design--P-A-HRM-Module-Figma-Masterfile-v.1?node-id=5128-124349&p=f&t=Ot5fNWpN21MQCE4x-0",
+          "group": "Figma"
         }
       ],
       "linkGroups": [
         "General",
         "Worksheets",
         "Presentations",
-        "External Sites"
+        "External Sites",
+        "Figma"
       ]
     },
     {
@@ -7179,6 +7186,55 @@
     }
   ],
   "activities": [
+    {
+      "id": "9c03fedb-f3a8-4bf7-a602-3117f340554c",
+      "action": "Switched active project workspace",
+      "actor": "Shared User",
+      "itemId": "atlas-payroll",
+      "at": "2026-07-05T21:21:55.307Z"
+    },
+    {
+      "id": "da647be8-6730-4576-aa71-be6ac6a5193b",
+      "action": "Switched active project workspace",
+      "actor": "Shared User",
+      "itemId": "project-ef13894c",
+      "at": "2026-07-05T21:21:53.084Z"
+    },
+    {
+      "id": "bf754d4b-aee2-4787-adbd-fe3cb6c49775",
+      "action": "Updated project details for Atlas Payroll",
+      "actor": "Shared User",
+      "itemId": "atlas-payroll",
+      "at": "2026-07-05T21:17:33.698Z"
+    },
+    {
+      "id": "7a700378-6821-40fd-8f97-894515354f42",
+      "action": "Updated project details for Atlas Payroll",
+      "actor": "Shared User",
+      "itemId": "atlas-payroll",
+      "at": "2026-07-05T21:17:23.095Z"
+    },
+    {
+      "id": "12fe0b63-576c-492e-b196-8568abbb9967",
+      "action": "Updated project details for Atlas Payroll",
+      "actor": "Shared User",
+      "itemId": "atlas-payroll",
+      "at": "2026-07-05T21:16:52.373Z"
+    },
+    {
+      "id": "d296d4f5-3d53-48f2-bb3e-61c039645390",
+      "action": "Updated project details for Atlas Payroll",
+      "actor": "Shared User",
+      "itemId": "atlas-payroll",
+      "at": "2026-07-05T21:16:32.151Z"
+    },
+    {
+      "id": "c6362300-4e78-4dac-a961-f7f9ad213d39",
+      "action": "Updated project details for Atlas Payroll",
+      "actor": "Shared User",
+      "itemId": "atlas-payroll",
+      "at": "2026-07-05T21:16:24.185Z"
+    },
     {
       "id": "b5328dfe-7876-4c97-af9d-b27132580524",
       "action": "Switched active project workspace",
