@@ -67,6 +67,7 @@ const navItems = [
   ["backlog", "Backlog", Rows],
   ["board", "Boards", Kanban],
   ["qa", "QA & Tests", TestTube],
+  ["requirements", "Requirements", BookOpenText],
   ["reports", "Reports", ChartBar],
   ["settings", "Settings", Gear],
 ];
@@ -146,19 +147,30 @@ function Empty({ title, text }) {
 }
 
 function AppShell({ state, setState, onLogout }) {
-  const [page, setPage] = useState("overview");
+  const [page, setPage] = useState(() => {
+    const saved = window.localStorage.getItem("atlas-page");
+    return navItems.some(([key]) => key === saved) ? saved : "overview";
+  });
   const [selectedId, setSelectedId] = useState(null);
   const [createOpen, setCreateOpen] = useState(false);
   const [createDefaults, setCreateDefaults] = useState({});
   const [mobileNav, setMobileNav] = useState(false);
   const [query, setQuery] = useState("");
   const [toast, setToast] = useState("");
+  const [notifOpen, setNotifOpen] = useState(false);
+  const [notifSeen, setNotifSeen] = useState(() => Number(window.localStorage.getItem("atlas-notif-seen") || 0));
 
   useEffect(() => {
     const onKeyDown = (event) => {
-      if (event.key !== "/" || /INPUT|TEXTAREA|SELECT/.test(document.activeElement?.tagName || "")) return;
-      event.preventDefault();
-      document.getElementById("global-search")?.focus();
+      const inField = /INPUT|TEXTAREA|SELECT/.test(document.activeElement?.tagName || "");
+      if (event.key === "/" && !inField) {
+        event.preventDefault();
+        document.getElementById("global-search")?.focus();
+      }
+      if (event.key === "Escape" && !inField) {
+        setSelectedId(null);
+        setNotifOpen(false);
+      }
     };
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
@@ -170,7 +182,14 @@ function AppShell({ state, setState, onLogout }) {
   const refresh = async () => setState(await api("/api/state"));
   const openCreate = (defaults = {}) => { setCreateDefaults(defaults); setCreateOpen(true); };
   const openItem = (id) => { setSelectedId(id); };
-  const navigate = (next) => { setPage(next); setMobileNav(false); setSelectedId(null); };
+  const navigate = (next) => { setPage(next); setMobileNav(false); setSelectedId(null); setNotifOpen(false); window.localStorage.setItem("atlas-page", next); };
+  const unseenCount = state.activities.filter((entry) => new Date(entry.at).getTime() > notifSeen).length;
+  const toggleNotifications = () => {
+    setNotifOpen((open) => {
+      if (!open) { const now = Date.now(); setNotifSeen(now); window.localStorage.setItem("atlas-notif-seen", String(now)); }
+      return !open;
+    });
+  };
   const searchMatches = query.trim().length > 1 ? state.workItems.filter((item) => `${item.id} ${item.title}`.toLowerCase().includes(query.toLowerCase())).slice(0, 7) : [];
 
   const updateItem = async (id, updates, message = "Work item updated") => {
@@ -193,7 +212,19 @@ function AppShell({ state, setState, onLogout }) {
           <button className="icon-button mobile-only" onClick={() => setMobileNav(true)}><ListBullets /></button>
           <div className="search-wrap"><MagnifyingGlass size={18} /><input id="global-search" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search work items, epics, features..." />{query ? <button onClick={() => setQuery("")}><X size={15} /></button> : <kbd>/</kbd>}{searchMatches.length > 0 && <div className="search-results">{searchMatches.map((item) => <button key={item.id} onClick={() => { openItem(item.id); setQuery(""); }}><TypeIcon type={item.type} /><span><strong>{item.id}</strong>{item.title}</span></button>)}</div>}</div>
           <button className="primary-button" onClick={() => openCreate()}><Plus size={18} />Create work item</button>
-          <button className="icon-button"><Bell /></button>
+          <div className="notif-wrap">
+            <button className="icon-button" title="Recent activity" onClick={toggleNotifications}><Bell />{unseenCount > 0 && <span className="notif-badge">{Math.min(unseenCount, 9)}{unseenCount > 9 ? "+" : ""}</span>}</button>
+            {notifOpen && <div className="notif-panel">
+              <header><strong>Recent activity</strong><span>{state.activities.length} events</span></header>
+              <div>{state.activities.slice(0, 8).map((entry) => {
+                const linked = entry.itemId && state.workItems.some((item) => item.id === entry.itemId);
+                return <button key={entry.id} onClick={() => { if (linked) openItem(entry.itemId); setNotifOpen(false); }}>
+                  <div className="avatar small">{entry.actor.slice(0, 2).toUpperCase()}</div>
+                  <div><strong>{entry.action}</strong><small>{entry.actor} · {new Date(entry.at).toLocaleString()}</small></div>
+                </button>;
+              })}</div>
+            </div>}
+          </div>
           <div className="avatar">SU</div>
         </header>
         <div className={`page ${selected ? "with-detail" : ""}`}>
@@ -202,6 +233,7 @@ function AppShell({ state, setState, onLogout }) {
           {page === "backlog" && <Backlog state={state} openItem={openItem} openCreate={openCreate} />}
           {page === "board" && <Board state={state} openItem={openItem} updateItem={updateItem} openCreate={openCreate} />}
           {page === "qa" && <QA state={state} setState={setState} openItem={openItem} showToast={showToast} />}
+          {page === "requirements" && <Requirements state={state} />}
           {page === "reports" && <Reports state={state} project={project} />}
           {page === "settings" && <Settings state={state} setState={setState} showToast={showToast} />}
         </div>
@@ -291,15 +323,16 @@ function Board({ state, openItem, updateItem, openCreate }) {
   const [sprint, setSprint] = useState("All sprints");
   const [phase, setPhase] = useState("All phases");
   const [dependency, setDependency] = useState("");
+  const [dragTarget, setDragTarget] = useState(null);
   const features = state.workItems.filter((item) => item.type === "Feature" && item.phase !== "Unplanned");
   const sprints = [...new Set(state.workItems.filter((item) => item.type === "User Story").map((item) => item.sprint).filter((value) => value && value !== "Backlog"))];
   const phases = [...new Set(state.workItems.map((item) => item.phase).filter(Boolean))];
   const allStories = state.workItems.filter((item) => item.type === "User Story" && (feature === "All" || item.parentId === feature) && (phase === "All phases" || item.phase === phase) && (!dependency || item.dependencies?.some((value) => value.toLowerCase().includes(dependency.toLowerCase()))));
   const unplanned = allStories.filter((item) => !item.sprint || item.sprint === "Backlog");
   const stories = allStories.filter((item) => item.sprint && item.sprint !== "Backlog" && (sprint === "All sprints" || item.sprint === sprint));
-  const drop = async (event, status) => { event.preventDefault(); const id = event.dataTransfer.getData("text/plain"); if (id) await updateItem(id, { status, progress: status === "Closed" ? 100 : status === "Resolved" ? 80 : status === "Active" ? 50 : 0 }, `Moved ${id} to ${status}`); };
+  const drop = async (event, status) => { event.preventDefault(); setDragTarget(null); const id = event.dataTransfer.getData("text/plain"); if (id) await updateItem(id, { status, progress: status === "Closed" ? 100 : status === "Resolved" ? 80 : status === "Active" ? 50 : 0 }, `Moved ${id} to ${status}`); };
   const card = (item) => <article key={item.id} draggable onDragStart={(event) => event.dataTransfer.setData("text/plain", item.id)} onClick={() => openItem(item.id)}><div className="card-type"><TypeIcon type="User Story" /><strong>{item.id}</strong><span className={`moscow-mini ${item.moscow?.toLowerCase().replaceAll(" ", "-").replace("'", "")}`}>{item.moscow}</span><span className={`priority-dot priority-${item.priority.toLowerCase()}`} /></div><h3>{item.title}</h3><p>{item.description}</p>{item.dependencies?.length > 0 && <div className="card-dependencies"><LinkSimple />{item.dependencies.join(", ")}</div>}<footer><span className="avatar small">{item.assignee.slice(0, 2).toUpperCase()}</span><span>{item.storyPoints} pts</span><span>{item.sprint || "Backlog"}</span></footer></article>;
-  return <div className="content board-page"><div className="page-heading"><div><span className="eyebrow">KANBAN</span><h1>User stories board</h1><p>Filter delivery by sprint and phase, while keeping unplanned work visible outside committed sprint columns.</p></div><button className="primary-button" onClick={() => openCreate({ type: "User Story" })}><Plus />New user story</button></div><div className="toolbar board-filters"><select value={feature} onChange={(event) => setFeature(event.target.value)}><option value="All">All features</option>{features.map((item) => <option value={item.id} key={item.id}>{item.title}</option>)}</select><select value={sprint} onChange={(event) => setSprint(event.target.value)}><option>All sprints</option>{sprints.map((value) => <option key={value}>{value}</option>)}</select><select value={phase} onChange={(event) => setPhase(event.target.value)}><option>All phases</option>{phases.map((value) => <option key={value}>{value}</option>)}</select><div className="dependency-search"><LinkSimple /><input value={dependency} onChange={(event) => setDependency(event.target.value)} placeholder="Dependency ID" /></div><span className="toolbar-count">{stories.length} planned · {unplanned.length} unplanned</span></div>{unplanned.length > 0 ? <section className="unplanned-board"><header><div><Briefcase /><span><strong>Unplanned user stories</strong><small>Not assigned to a sprint</small></span></div><button onClick={() => openCreate({ type: "User Story", parentId: "FEAT-UNPLANNED", sprint: "Backlog", phase: "Unplanned" })}><Plus />Add unplanned story</button></header><div>{unplanned.map(card)}</div></section> : <section className="unplanned-empty"><div><Briefcase /><span><strong>No unplanned stories</strong><small>New uncommitted work will appear here.</small></span></div><button onClick={() => openCreate({ type: "User Story", parentId: "FEAT-UNPLANNED", sprint: "Backlog", phase: "Unplanned" })}><Plus />Add unplanned story</button></section>}<div className="kanban">{statuses.map((status) => { const items = stories.filter((item) => item.status === status); return <section className="kanban-column" key={status} onDragOver={(event) => event.preventDefault()} onDrop={(event) => drop(event, status)}><header><h2>{status}</h2><span>{items.length}</span></header><div className="kanban-items">{items.map(card)}<button className="add-card" onClick={() => openCreate({ type: "User Story", status, sprint: sprint === "All sprints" ? "Backlog" : sprint, phase: phase === "All phases" ? "Phase 2" : phase })}><Plus />New user story</button></div></section>; })}</div></div>;
+  return <div className="content board-page"><div className="page-heading"><div><span className="eyebrow">KANBAN</span><h1>User stories board</h1><p>Filter delivery by sprint and phase, while keeping unplanned work visible outside committed sprint columns.</p></div><button className="primary-button" onClick={() => openCreate({ type: "User Story" })}><Plus />New user story</button></div><div className="toolbar board-filters"><select value={feature} onChange={(event) => setFeature(event.target.value)}><option value="All">All features</option>{features.map((item) => <option value={item.id} key={item.id}>{item.title}</option>)}</select><select value={sprint} onChange={(event) => setSprint(event.target.value)}><option>All sprints</option>{sprints.map((value) => <option key={value}>{value}</option>)}</select><select value={phase} onChange={(event) => setPhase(event.target.value)}><option>All phases</option>{phases.map((value) => <option key={value}>{value}</option>)}</select><div className="dependency-search"><LinkSimple /><input value={dependency} onChange={(event) => setDependency(event.target.value)} placeholder="Dependency ID" /></div><span className="toolbar-count">{stories.length} planned · {unplanned.length} unplanned</span></div>{unplanned.length > 0 ? <section className="unplanned-board"><header><div><Briefcase /><span><strong>Unplanned user stories</strong><small>Not assigned to a sprint</small></span></div><button onClick={() => openCreate({ type: "User Story", parentId: "FEAT-UNPLANNED", sprint: "Backlog", phase: "Unplanned" })}><Plus />Add unplanned story</button></header><div>{unplanned.map(card)}</div></section> : <section className="unplanned-empty"><div><Briefcase /><span><strong>No unplanned stories</strong><small>New uncommitted work will appear here.</small></span></div><button onClick={() => openCreate({ type: "User Story", parentId: "FEAT-UNPLANNED", sprint: "Backlog", phase: "Unplanned" })}><Plus />Add unplanned story</button></section>}<div className="kanban">{statuses.map((status) => { const items = stories.filter((item) => item.status === status); return <section className={`kanban-column ${dragTarget === status ? "drag-over" : ""}`} key={status} onDragOver={(event) => { event.preventDefault(); setDragTarget(status); }} onDragLeave={(event) => { if (!event.currentTarget.contains(event.relatedTarget)) setDragTarget((current) => current === status ? null : current); }} onDrop={(event) => drop(event, status)}><header><h2>{status}</h2><span>{items.length}</span></header><div className="kanban-items">{items.map(card)}<button className="add-card" onClick={() => openCreate({ type: "User Story", status, sprint: sprint === "All sprints" ? "Backlog" : sprint, phase: phase === "All phases" ? "Phase 2" : phase })}><Plus />New user story</button></div></section>; })}</div></div>;
 }
 
 const testCaseColumns = ["Test Case ID", "User Story ID", "Test Case Title", "Preconditions", "Test Steps", "Expected Result", "Priority", "Status", "Assignee", "Sprint", "Tags"];
@@ -330,12 +363,13 @@ async function exportTestCases(tests) {
 
 function QA({ state, setState, openItem, showToast }) {
   const [filter, setFilter] = useState("All");
+  const [search, setSearch] = useState("");
   const [importOpen, setImportOpen] = useState(false);
-  const tests = state.tests.filter((test) => filter === "All" || test.status === filter);
+  const tests = state.tests.filter((test) => (filter === "All" || test.status === filter) && (!search || `${test.id} ${test.title} ${test.storyId}`.toLowerCase().includes(search.toLowerCase())));
   const update = async (id, status) => { const test = await api(`/api/tests/${encodeURIComponent(id)}`, { method: "PUT", body: JSON.stringify({ status }) }); setState((current) => ({ ...current, tests: current.tests.map((entry) => entry.id === id ? test : entry) })); showToast(`${id} marked ${status}`); };
   const passed = state.tests.filter((test) => test.status === "Passed").length;
   const started = state.tests.filter((test) => test.status !== "Not Run").length;
-  return <div className="content"><div className="page-heading"><div><span className="eyebrow">QUALITY ASSURANCE</span><h1>QA & test center</h1><p>Import Excel test cases against a User Story, update execution, and export the complete QA pack.</p></div><div className="page-actions"><button className="secondary-button" onClick={downloadTestTemplate}><FileXls />Excel template</button><button className="secondary-button" onClick={() => exportTestCases(state.tests)}><DownloadSimple />Export Excel</button><button className="primary-button" onClick={() => setImportOpen(true)}><UploadSimple />Import test cases</button></div></div><div className="metrics-row"><Metric label="Total tests" value={state.tests.length} detail="Source and imported cases" icon={TestTube} /><Metric label="Execution started" value={`${Math.round(started / state.tests.length * 100)}%`} detail={`${started} tests`} tone="amber" icon={Clock} /><Metric label="Passed" value={passed} detail={`${Math.round(passed / state.tests.length * 100)}% coverage`} tone="green" icon={CheckCircle} /><Metric label="User stories" value={state.workItems.filter((item) => item.type === "User Story").length} detail="Import target coverage" tone="purple" icon={BookOpenText} /></div><div className="toolbar"><select value={filter} onChange={(event) => setFilter(event.target.value)}><option>All</option><option>Not Run</option><option>In Progress</option><option>Passed</option><option>Failed</option></select><span className="toolbar-count">{tests.length} test cases</span></div><div className="panel table-scroll qa-table"><table><thead><tr><th>Test case</th><th>Scenario</th><th>User story</th><th>Sprint</th><th>Priority</th><th>Assignee</th><th>Status</th></tr></thead><tbody>{tests.map((test) => <tr key={test.id}><td><strong className="link" onClick={() => openItem(test.storyId)}>{test.id}</strong></td><td><strong>{test.title}</strong>{test.expectedResult && <small className="test-expected">Expected: {test.expectedResult}</small>}</td><td><button className="text-button" onClick={() => openItem(test.storyId)}>{test.storyId}</button></td><td>{test.sprint || "Backlog"}</td><td><span className={`priority priority-${test.priority.toLowerCase()}`}>{test.priority}</span></td><td>{test.assignee}</td><td><select className={`test-status test-${test.status.toLowerCase().replaceAll(" ", "-")}`} value={test.status} onChange={(event) => update(test.id, event.target.value)}><option>Not Run</option><option>In Progress</option><option>Passed</option><option>Failed</option></select></td></tr>)}</tbody></table></div>{importOpen && <TestCaseImportModal state={state} setState={setState} close={() => setImportOpen(false)} showToast={showToast} />}</div>;
+  return <div className="content"><div className="page-heading"><div><span className="eyebrow">QUALITY ASSURANCE</span><h1>QA & test center</h1><p>Import Excel test cases against a User Story, update execution, and export the complete QA pack.</p></div><div className="page-actions"><button className="secondary-button" onClick={downloadTestTemplate}><FileXls />Excel template</button><button className="secondary-button" onClick={() => exportTestCases(state.tests)}><DownloadSimple />Export Excel</button><button className="primary-button" onClick={() => setImportOpen(true)}><UploadSimple />Import test cases</button></div></div><div className="metrics-row"><Metric label="Total tests" value={state.tests.length} detail="Source and imported cases" icon={TestTube} /><Metric label="Execution started" value={`${Math.round(started / state.tests.length * 100)}%`} detail={`${started} tests`} tone="amber" icon={Clock} /><Metric label="Passed" value={passed} detail={`${Math.round(passed / state.tests.length * 100)}% coverage`} tone="green" icon={CheckCircle} /><Metric label="User stories" value={state.workItems.filter((item) => item.type === "User Story").length} detail="Import target coverage" tone="purple" icon={BookOpenText} /></div><div className="toolbar"><div className="inline-search"><MagnifyingGlass /><input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search test cases" /></div><select value={filter} onChange={(event) => setFilter(event.target.value)}><option>All</option><option>Not Run</option><option>In Progress</option><option>Passed</option><option>Failed</option></select><span className="toolbar-count">{tests.length} test cases</span></div><div className="panel table-scroll qa-table"><table><thead><tr><th>Test case</th><th>Scenario</th><th>User story</th><th>Sprint</th><th>Priority</th><th>Assignee</th><th>Status</th></tr></thead><tbody>{tests.map((test) => <tr key={test.id}><td><strong className="link" onClick={() => openItem(test.storyId)}>{test.id}</strong></td><td><strong>{test.title}</strong>{test.expectedResult && <small className="test-expected">Expected: {test.expectedResult}</small>}</td><td><button className="text-button" onClick={() => openItem(test.storyId)}>{test.storyId}</button></td><td>{test.sprint || "Backlog"}</td><td><span className={`priority priority-${test.priority.toLowerCase()}`}>{test.priority}</span></td><td>{test.assignee}</td><td><select className={`test-status test-${test.status.toLowerCase().replaceAll(" ", "-")}`} value={test.status} onChange={(event) => update(test.id, event.target.value)}><option>Not Run</option><option>In Progress</option><option>Passed</option><option>Failed</option></select></td></tr>)}</tbody></table></div>{importOpen && <TestCaseImportModal state={state} setState={setState} close={() => setImportOpen(false)} showToast={showToast} />}</div>;
 }
 
 function TestCaseImportModal({ state, setState, close, showToast }) {

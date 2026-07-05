@@ -213,6 +213,19 @@ input:focus-visible, select:focus-visible, textarea:focus-visible { outline: non
 .avatar.small { width: 25px; height: 25px; font-size: 9px; background: linear-gradient(140deg, #2f89b8, #1e6790); box-shadow: none; }
 .icon-button { width: 36px; height: 36px; flex: 0 0 auto; display: grid; place-content: center; background: transparent; border-radius: 8px; color: #52617b; padding: 0; transition: background .15s, color .15s; }
 .icon-button:hover { background: #edf2f9; color: var(--ink); }
+.notif-wrap { position: relative; }
+.notif-wrap .icon-button { position: relative; }
+.notif-badge { position: absolute; top: 2px; right: 1px; min-width: 15px; height: 15px; padding: 0 3px; border-radius: 999px; display: grid; place-content: center; background: linear-gradient(150deg, #e4573d, #c93832); color: white; font-size: 8.5px; font-weight: 700; border: 2px solid white; box-sizing: content-box; }
+.notif-panel { position: absolute; top: 44px; right: 0; width: 330px; z-index: 60; background: white; border: 1px solid var(--line); border-radius: var(--r-md); box-shadow: var(--shadow-lg); overflow: hidden; animation: pop .18s var(--ease) both; }
+.notif-panel > header { display: flex; justify-content: space-between; align-items: center; padding: 11px 14px; border-bottom: 1px solid var(--line); background: var(--surface-2); }
+.notif-panel > header strong { font-size: 12px; }
+.notif-panel > header span { font-size: 9.5px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.notif-panel > div { max-height: 340px; overflow: auto; padding: 6px; display: flex; flex-direction: column; gap: 2px; }
+.notif-panel > div > button { width: 100%; display: flex; gap: 9px; align-items: flex-start; text-align: left; background: white; padding: 9px; border-radius: 7px; transition: background .12s; }
+.notif-panel > div > button:hover { background: #f2f7fd; }
+.notif-panel > div > button > div:last-child { min-width: 0; display: flex; flex-direction: column; gap: 3px; }
+.notif-panel > div strong { font-size: 10.5px; line-height: 1.4; font-weight: 600; color: var(--ink); }
+.notif-panel > div small { color: var(--muted); font-size: 9px; }
 .icon-button.inverse { color: #b9cee2; }
 .icon-button.inverse:hover { background: rgba(255, 255, 255, .1); color: white; }
 .primary-button, .secondary-button, .tertiary-button, .danger-button {
@@ -406,7 +419,8 @@ tbody tr:last-child td { border-bottom: 0; }
    Kanban board
    ================================================================ */
 .kanban { display: grid; grid-template-columns: repeat(4, minmax(250px, 1fr)); gap: 12px; align-items: start; overflow-x: auto; padding-bottom: 12px; }
-.kanban-column { background: linear-gradient(180deg, #edf1f7, #eef2f7 40px, #f1f4f9); border: 1px solid #e2e8f1; border-radius: var(--r-md); min-height: calc(100vh - 215px); padding-bottom: 10px; }
+.kanban-column { background: linear-gradient(180deg, #edf1f7, #eef2f7 40px, #f1f4f9); border: 1px solid #e2e8f1; border-radius: var(--r-md); min-height: calc(100vh - 215px); padding-bottom: 10px; transition: border-color .15s, box-shadow .15s, background .15s; }
+.kanban-column.drag-over { border-color: var(--blue); box-shadow: inset 0 0 0 1px var(--blue), 0 0 0 3px var(--blue-ring); background: linear-gradient(180deg, #e7f0fc, #ebf2fb); }
 .kanban-column > header { height: 48px; display: flex; align-items: center; gap: 8px; justify-content: space-between; padding: 0 13px; }
 .kanban-column > header h2 { font-size: 12px; margin: 0; display: flex; align-items: center; gap: 8px; }
 .kanban-column > header h2::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: #97a2b2; }
