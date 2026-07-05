@@ -361,6 +361,7 @@ const server = http.createServer(async (request, response) => {
   }
 });
 
-server.listen(port, "127.0.0.1", () => {
-  console.log(`Atlas Delivery Hub running at http://127.0.0.1:${port}`);
+const host = process.env.HOST || "0.0.0.0";
+server.listen(port, host, () => {
+  console.log(`Atlas Delivery Hub running at http://${host}:${port}`);
 });
