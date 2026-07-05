@@ -42,6 +42,16 @@
         "Presentations",
         "External Sites"
       ]
+    },
+    {
+      "id": "project-ef13894c",
+      "name": "Test",
+      "description": "Test",
+      "phase": "Phase 1",
+      "targetMilestone": "Scope approval",
+      "targetDate": "2027-11-10",
+      "links": [],
+      "createdAt": "2026-07-05T19:40:41.522Z"
     }
   ],
   "workItems": [
@@ -353,12 +363,12 @@
       "type": "User Story",
       "parentId": "FEAT-PAY-BASIC-001",
       "status": "Active",
-      "assignee": "Rhea Santos",
+      "assignee": "Alex Dela Cruz",
       "sprint": "Sprint 8",
       "storyPoints": 8,
       "progress": 50,
       "createdAt": "2026-07-05T16:07:05.767Z",
-      "updatedAt": "2026-07-05T19:18:58.489Z",
+      "updatedAt": "2026-07-05T19:39:19.489Z",
       "phase": "Phase 2",
       "moscow": "Must Have"
     },
@@ -6881,6 +6891,209 @@
     }
   ],
   "activities": [
+    {
+      "id": "f6b5bd6c-c3ed-4c92-abe5-2c6bbd949236",
+      "action": "Switched active project workspace",
+      "actor": "Shared User",
+      "itemId": "atlas-payroll",
+      "at": "2026-07-05T19:45:20.604Z"
+    },
+    {
+      "id": "0947dcea-1101-4fa3-ae17-69c63c09217c",
+      "action": "Switched active project workspace",
+      "actor": "Shared User",
+      "itemId": "project-ef13894c",
+      "at": "2026-07-05T19:45:20.220Z"
+    },
+    {
+      "id": "5fe7dd79-1b40-4fc0-a901-8f7456354b46",
+      "action": "Switched active project workspace",
+      "actor": "Shared User",
+      "itemId": "atlas-payroll",
+      "at": "2026-07-05T19:45:19.516Z"
+    },
+    {
+      "id": "c53defdf-5621-48a6-95ba-e614ef772b21",
+      "action": "Switched active project workspace",
+      "actor": "Shared User",
+      "itemId": "project-ef13894c",
+      "at": "2026-07-05T19:45:19.043Z"
+    },
+    {
+      "id": "6d1c5890-067b-43c4-b0e8-f35ab8e6ccda",
+      "action": "Switched active project workspace",
+      "actor": "Shared User",
+      "itemId": "atlas-payroll",
+      "at": "2026-07-05T19:45:18.368Z"
+    },
+    {
+      "id": "0ad2a4e9-e6eb-4c2c-9e3b-696f709966d5",
+      "action": "Switched active project workspace",
+      "actor": "Shared User",
+      "itemId": "project-ef13894c",
+      "at": "2026-07-05T19:45:17.820Z"
+    },
+    {
+      "id": "bfd11228-5ee5-422b-8033-6b888d3b6597",
+      "action": "Switched active project workspace",
+      "actor": "Shared User",
+      "itemId": "atlas-payroll",
+      "at": "2026-07-05T19:45:17.003Z"
+    },
+    {
+      "id": "03fc2896-d20d-46aa-95b0-ddb5800473f2",
+      "action": "Switched active project workspace",
+      "actor": "Shared User",
+      "itemId": "project-ef13894c",
+      "at": "2026-07-05T19:45:16.007Z"
+    },
+    {
+      "id": "e89cb59d-cb11-4a93-a711-1e039c08f2fd",
+      "action": "Switched active project workspace",
+      "actor": "Shared User",
+      "itemId": "atlas-payroll",
+      "at": "2026-07-05T19:45:15.995Z"
+    },
+    {
+      "id": "fdd801a9-c9e2-4893-9687-266ca1d1e1ff",
+      "action": "Switched active project workspace",
+      "actor": "Shared User",
+      "itemId": "atlas-payroll",
+      "at": "2026-07-05T19:40:52.641Z"
+    },
+    {
+      "id": "0ccc0d08-8a1a-4ec5-a5af-338118f41dfd",
+      "action": "Switched active project workspace",
+      "actor": "Shared User",
+      "itemId": "project-ef13894c",
+      "at": "2026-07-05T19:40:51.455Z"
+    },
+    {
+      "id": "2b92d287-cd62-4237-88f2-0204eeb982c1",
+      "action": "Switched active project workspace",
+      "actor": "Shared User",
+      "itemId": "atlas-payroll",
+      "at": "2026-07-05T19:40:51.028Z"
+    },
+    {
+      "id": "ef95c434-807c-4b70-9c5c-8c1ab906f6be",
+      "action": "Switched active project workspace",
+      "actor": "Shared User",
+      "itemId": "project-ef13894c",
+      "at": "2026-07-05T19:40:50.398Z"
+    },
+    {
+      "id": "6c3cb929-926c-4961-b9e5-fedbe044ff25",
+      "action": "Switched active project workspace",
+      "actor": "Shared User",
+      "itemId": "atlas-payroll",
+      "at": "2026-07-05T19:40:49.971Z"
+    },
+    {
+      "id": "6d495817-3508-4227-a288-c4d4643bb1c9",
+      "action": "Switched active project workspace",
+      "actor": "Shared User",
+      "itemId": "project-ef13894c",
+      "at": "2026-07-05T19:40:47.390Z"
+    },
+    {
+      "id": "dcd41207-c343-4292-8952-240b643e5145",
+      "action": "Switched active project workspace",
+      "actor": "Shared User",
+      "itemId": "atlas-payroll",
+      "at": "2026-07-05T19:40:47.015Z"
+    },
+    {
+      "id": "23adb043-4271-463f-8358-3c842f61c516",
+      "action": "Switched active project workspace",
+      "actor": "Shared User",
+      "itemId": "project-ef13894c",
+      "at": "2026-07-05T19:40:46.640Z"
+    },
+    {
+      "id": "57329fc3-649a-4842-9a56-d545210ec679",
+      "action": "Switched active project workspace",
+      "actor": "Shared User",
+      "itemId": "atlas-payroll",
+      "at": "2026-07-05T19:40:46.320Z"
+    },
+    {
+      "id": "a31da743-afa2-4b61-b7d1-b8f9dc8f299f",
+      "action": "Switched active project workspace",
+      "actor": "Shared User",
+      "itemId": "project-ef13894c",
+      "at": "2026-07-05T19:40:45.965Z"
+    },
+    {
+      "id": "ebeb7a4b-64ef-4f54-a0d4-47b216dc6b38",
+      "action": "Switched active project workspace",
+      "actor": "Shared User",
+      "itemId": "atlas-payroll",
+      "at": "2026-07-05T19:40:45.560Z"
+    },
+    {
+      "id": "dd223e92-5408-4eac-a3ed-ff3d9b5def8d",
+      "action": "Switched active project workspace",
+      "actor": "Shared User",
+      "itemId": "project-ef13894c",
+      "at": "2026-07-05T19:40:45.135Z"
+    },
+    {
+      "id": "f3393d3f-726c-4232-a99e-3239492833d4",
+      "action": "Switched active project workspace",
+      "actor": "Shared User",
+      "itemId": "atlas-payroll",
+      "at": "2026-07-05T19:40:44.742Z"
+    },
+    {
+      "id": "317a798e-0efd-426b-b2e5-29bc96705b42",
+      "action": "Switched active project workspace",
+      "actor": "Shared User",
+      "itemId": "project-ef13894c",
+      "at": "2026-07-05T19:40:43.655Z"
+    },
+    {
+      "id": "af3c998e-4296-486c-bf46-a1e668fd7391",
+      "action": "Switched active project workspace",
+      "actor": "Shared User",
+      "itemId": "atlas-payroll",
+      "at": "2026-07-05T19:40:43.341Z"
+    },
+    {
+      "id": "6b9811fe-2dc7-4fa1-8c56-c84e8ee90bb6",
+      "action": "Switched active project workspace",
+      "actor": "Shared User",
+      "itemId": "atlas-payroll",
+      "at": "2026-07-05T19:40:43.122Z"
+    },
+    {
+      "id": "bec16687-1c11-47bf-a5fd-e4dec2263af1",
+      "action": "Created project Test",
+      "actor": "Shared User",
+      "itemId": "project-ef13894c",
+      "at": "2026-07-05T19:40:41.522Z"
+    },
+    {
+      "id": "573f7bff-359a-45b6-ad64-6f44bdd356c1",
+      "action": "Updated US-BASIC-002",
+      "actor": "Shared User",
+      "itemId": "US-BASIC-002",
+      "at": "2026-07-05T19:39:19.489Z"
+    },
+    {
+      "id": "c59a6ded-b06b-4ea8-a914-a18348cf53f3",
+      "action": "Updated US-BASIC-002",
+      "actor": "Shared User",
+      "itemId": "US-BASIC-002",
+      "at": "2026-07-05T19:39:18.194Z"
+    },
+    {
+      "id": "3ed0bd07-3117-4905-bab6-b4fe67b5eaf7",
+      "action": "Updated US-BASIC-002",
+      "actor": "Shared User",
+      "itemId": "US-BASIC-002",
+      "at": "2026-07-05T19:38:06.241Z"
+    },
     {
       "id": "330efac3-db05-4c79-b65e-c297af08a794",
       "action": "Updated project details for Atlas Payroll",
@@ -16353,5 +16566,13 @@
       "email": "tech.lead@example.com"
     }
   ],
-  "emails": []
+  "emails": [
+    {
+      "id": "email-c2bbb182",
+      "to": "alex.delacruz@example.com",
+      "subject": "[Atlas Delivery Hub] Work Item Assigned: US-BASIC-002",
+      "body": "Hello Alex Dela Cruz,\n\nYou have been assigned a new item on the Atlas Delivery Hub website:\n\nItem: US-BASIC-002 - Automatically derive annual, daily, hourly, and per-minute rates\nType: User Story\nStatus: Active\nSprint: Sprint 8\n\nYou can view it here: http://localhost:4173/?item=US-BASIC-002\n\nBest regards,\nAtlas Delivery Hub System",
+      "sentAt": "2026-07-05T19:38:06.241Z"
+    }
+  ]
 }

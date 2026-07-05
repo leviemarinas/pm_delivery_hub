@@ -9,6 +9,7 @@ import {
   Bell,
   ArrowsIn,
   ArrowsOut,
+  ArrowSquareOut,
   BookOpenText,
   Briefcase,
   Bug,
@@ -19,9 +20,14 @@ import {
   CheckCircle,
   ClipboardText,
   Clock,
+  Copy,
   DownloadSimple,
+  EnvelopeSimple,
+  FileDoc,
+  FilePdf,
   FileText,
   FileXls,
+  Globe,
   Flag,
   FloppyDisk,
   Gear,
@@ -65,13 +71,13 @@ const api = async (path, options = {}) => {
 
 const navItems = [
   ["overview", "Overview", House],
-  ["links", "Project Links", LinkSimple],
-  ["presentation", "Sprint Presentation", PresentationChart],
+  ["requirements", "Requirements", BookOpenText],
   ["backlog", "Backlog", Rows],
   ["board", "Boards", Kanban],
   ["qa", "QA & Tests", TestTube],
-  ["requirements", "Requirements", BookOpenText],
+  ["presentation", "Sprint Presentation", PresentationChart],
   ["reports", "Reports", ChartBar],
+  ["links", "Project Links", LinkSimple],
   ["settings", "Settings", Gear],
 ];
 
@@ -254,13 +260,33 @@ function TypeIcon({ type, size = 18 }) {
   return <span className={`type-icon ${typeClass(type)}`}><Icon size={size} weight="fill" /></span>;
 }
 
+const linkKindOf = (url = "") => {
+  const value = url.toLowerCase();
+  if (value.includes("docs.google.com/spreadsheets") || /\.(xlsx|xls|csv)([?#]|$)/.test(value)) return { label: "Worksheet", tone: "kind-sheet", Icon: FileXls };
+  if (value.includes("docs.google.com/presentation") || /\.(pptx|ppt)([?#]|$)/.test(value)) return { label: "Slides", tone: "kind-slides", Icon: PresentationChart };
+  if (value.includes("docs.google.com/document") || /\.(docx|doc)([?#]|$)/.test(value)) return { label: "Document", tone: "kind-doc", Icon: FileDoc };
+  if (value.includes("docs.google.com/forms")) return { label: "Form", tone: "kind-form", Icon: ClipboardText };
+  if (/\.pdf([?#]|$)/.test(value)) return { label: "PDF", tone: "kind-pdf", Icon: FilePdf };
+  if (value.includes("drive.google.com")) return { label: "Drive", tone: "kind-doc", Icon: FileText };
+  return { label: "Website", tone: "kind-site", Icon: Globe };
+};
+
+const domainOf = (url = "") => {
+  try { return new URL(url).hostname.replace(/^www\./, ""); } catch { return url; }
+};
+
+function LinkKindIcon({ url, size = 15 }) {
+  const { tone, Icon } = linkKindOf(url);
+  return <span className={`link-kind-icon ${tone}`}><Icon size={size} weight="duotone" /></span>;
+}
+
 function ProjectLinksPage({ state, project, setState, showToast }) {
   const links = project.links || [];
   const groups = project.linkGroups || ["General"];
-  
+
   const [activeGroup, setActiveGroup] = useState(groups[0] || "General");
   const [selectedLinkId, setSelectedLinkId] = useState(null);
-  
+
   const [editingId, setEditingId] = useState(null);
   const [form, setForm] = useState({ name: "", url: "", group: "General" });
   const [adding, setAdding] = useState(false);
@@ -271,6 +297,20 @@ function ProjectLinksPage({ state, project, setState, showToast }) {
   const [renamingGroup, setRenamingGroup] = useState(false);
   const [renameGroupForm, setRenameGroupForm] = useState("");
 
+  const [frameKey, setFrameKey] = useState(0);
+  const [frameLoading, setFrameLoading] = useState(true);
+  const [hintDismissed, setHintDismissed] = useState(() => window.localStorage.getItem("atlas-links-hint") === "1");
+
+  useEffect(() => {
+    if (!isMaximized) return undefined;
+    const onKeyDown = (event) => { if (event.key === "Escape") setIsMaximized(false); };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [isMaximized]);
+
+  useEffect(() => { setFrameLoading(true); }, [selectedLinkId, frameKey]);
+
+  const groupCounts = links.reduce((map, link) => { const key = link.group || "General"; map[key] = (map[key] || 0) + 1; return map; }, {});
   const filteredLinks = links.filter((l) => (l.group || "General") === activeGroup);
   
   useEffect(() => {
@@ -432,182 +472,159 @@ function ProjectLinksPage({ state, project, setState, showToast }) {
     return url;
   };
 
+  const copyLink = async (url) => {
+    try {
+      await navigator.clipboard.writeText(url);
+      showToast("Link copied to clipboard");
+    } catch {
+      showToast("Could not copy — clipboard unavailable");
+    }
+  };
+
+  const startAdd = () => { setEditingId(null); setAdding(true); setForm({ name: "", url: "", group: activeGroup }); };
+  const startEdit = (link) => { setAdding(false); setEditingId(link.id); setForm({ name: link.name, url: link.url, group: link.group || "General" }); };
+  const dismissHint = () => { setHintDismissed(true); window.localStorage.setItem("atlas-links-hint", "1"); };
+
+  const linkForm = (onSubmit, title, submitLabel, onCancel) => (
+    <form onSubmit={onSubmit} className="link-form-card">
+      <h3>{title}</h3>
+      <label>Name / label
+        <input autoFocus placeholder="e.g. Bug Inventory Summary" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} required />
+      </label>
+      <label>Resource URL
+        <input placeholder="https://docs.google.com/..." type="url" value={form.url} onChange={(e) => setForm({ ...form, url: e.target.value })} required />
+      </label>
+      <label>Tab group
+        <select value={form.group} onChange={(e) => setForm({ ...form, group: e.target.value })}>
+          {groups.map((g) => <option key={g} value={g}>{g}</option>)}
+        </select>
+      </label>
+      {form.url && <div className="link-form-preview"><LinkKindIcon url={form.url} /><span>Detected as <strong>{linkKindOf(form.url).label}</strong> · {domainOf(form.url)}</span></div>}
+      <div className="form-actions">
+        <button type="button" className="secondary-button" onClick={onCancel}>Cancel</button>
+        <button type="submit" className="primary-button">{submitLabel}</button>
+      </div>
+    </form>
+  );
+
   return (
     <div className={`content links-page-container ${isMaximized ? "maximized" : ""}`}>
       <div className="page-heading">
         <div>
-          <span className="eyebrow">WORKSPACE RESOURCE HUBS</span>
+          <span className="eyebrow">WORKSPACE RESOURCE HUB</span>
           <h1>Project links & attachments</h1>
-          <p>Attach worksheets, reference documents, slide presentations, and open them inline or in same/new tabs.</p>
+          <p>Attach worksheets, documents, decks, and reference sites. Preview them inline, organize them into tab groups, and open them in a click.</p>
         </div>
-        {!adding && !editingId && (
-          <button className="primary-button" onClick={() => { setAdding(true); setForm({ name: "", url: "", group: activeGroup }); }}>
-            <Plus />Add project link
-          </button>
-        )}
+        <button className="primary-button" onClick={startAdd}><Plus />Add project link</button>
       </div>
 
-      <div className="links-tab-bar-container">
-        <div className="links-tab-bar-scrollable">
-          {groups.map((g) => (
-            <button key={g} className={`links-tab-pill ${activeGroup === g ? "active" : ""}`} onClick={() => setActiveGroup(g)}>
-              <span>{g}</span>
-            </button>
-          ))}
-          
-          {addingGroup ? (
-            <form onSubmit={handleCreateGroup} className="new-tab-inline-form">
-              <input autoFocus placeholder="New tab name..." value={newGroupForm} onChange={(e) => setNewGroupForm(e.target.value)} required />
-              <button type="submit" className="tab-form-btn-submit">Add</button>
-              <button type="button" className="tab-form-btn-cancel" onClick={() => setAddingGroup(false)}>✕</button>
+      <div className="links-tab-bar">
+        {groups.map((g) => (
+          renamingGroup && activeGroup === g ? (
+            <form key={g} onSubmit={handleRenameGroup} className="tab-inline-form">
+              <input autoFocus value={renameGroupForm} onChange={(e) => setRenameGroupForm(e.target.value)} required />
+              <button type="submit" className="confirm" title="Save name"><Check size={13} /></button>
+              <button type="button" className="cancel" title="Cancel" onClick={() => setRenamingGroup(false)}><X size={13} /></button>
             </form>
           ) : (
-            <button className="links-tab-pill add-tab-btn" onClick={() => { setAddingGroup(true); setNewGroupForm(""); }}>
-              <Plus size={13} /> <span>New Tab</span>
+            <button key={g} className={`links-tab-pill ${activeGroup === g ? "active" : ""}`} onClick={() => setActiveGroup(g)}>
+              <span>{g}</span>
+              <em>{groupCounts[g] || 0}</em>
+              {activeGroup === g && g !== "General" && <span className="tab-pill-tools">
+                <span role="button" tabIndex={0} title="Rename tab group" onClick={(e) => { e.stopPropagation(); setRenamingGroup(true); setRenameGroupForm(g); }} onKeyDown={(e) => { if (e.key === "Enter") { e.stopPropagation(); setRenamingGroup(true); setRenameGroupForm(g); } }}><PencilSimple size={12} /></span>
+                <span role="button" tabIndex={0} title="Delete tab group" className="danger" onClick={(e) => { e.stopPropagation(); handleDeleteGroup(); }} onKeyDown={(e) => { if (e.key === "Enter") { e.stopPropagation(); handleDeleteGroup(); } }}><Trash size={12} /></span>
+              </span>}
             </button>
-          )}
-        </div>
-
-        {activeGroup !== "General" && (
-          <div className="active-tab-controls">
-            {renamingGroup ? (
-              <form onSubmit={handleRenameGroup} className="rename-tab-inline-form">
-                <input autoFocus value={renameGroupForm} onChange={(e) => setRenameGroupForm(e.target.value)} required />
-                <button type="submit" className="save">Save</button>
-                <button type="button" className="cancel" onClick={() => setRenamingGroup(false)}>Cancel</button>
-              </form>
-            ) : (
-              <div className="tab-options-row">
-                <button onClick={() => { setRenamingGroup(true); setRenameGroupForm(activeGroup); }} title="Rename this tab group">
-                  <PencilSimple size={13} /> Rename tab
-                </button>
-                <button onClick={handleDeleteGroup} className="delete" title="Delete this tab group">
-                  <Trash size={13} /> Delete tab
-                </button>
-              </div>
-            )}
-          </div>
+          )
+        ))}
+        {addingGroup ? (
+          <form onSubmit={handleCreateGroup} className="tab-inline-form">
+            <input autoFocus placeholder="New tab name…" value={newGroupForm} onChange={(e) => setNewGroupForm(e.target.value)} required />
+            <button type="submit" className="confirm" title="Create tab"><Check size={13} /></button>
+            <button type="button" className="cancel" title="Cancel" onClick={() => setAddingGroup(false)}><X size={13} /></button>
+          </form>
+        ) : (
+          <button className="links-tab-pill add-tab-btn" onClick={() => { setAddingGroup(true); setNewGroupForm(""); }}>
+            <Plus size={13} /><span>New tab</span>
+          </button>
         )}
       </div>
 
       <div className="links-page-layout">
         <aside className="links-sidebar-panel panel">
-          <PanelHeader title={`Attachments (${activeGroup})`} />
-          
-          {adding && (
-            <form onSubmit={handleAdd} className="link-sidebar-form">
-              <h3>New resource link</h3>
-              <label>Name / Label
-                <input placeholder="e.g. Payroll Spreadsheet" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} required />
-              </label>
-              <label>Resource URL
-                <input placeholder="https://docs.google.com/..." type="url" value={form.url} onChange={(e) => setForm({ ...form, url: e.target.value })} required />
-              </label>
-              <label>Tab Group
-                <select value={form.group} onChange={(e) => setForm({ ...form, group: e.target.value })}>
-                  {groups.map((g) => <option key={g} value={g}>{g}</option>)}
-                </select>
-              </label>
-              <div className="form-actions">
-                <button type="button" className="secondary-button" onClick={() => setAdding(false)}>Cancel</button>
-                <button type="submit" className="primary-button">Add</button>
+          <PanelHeader title={`Resources · ${filteredLinks.length}`} action="Add link" onAction={startAdd} />
+          <div className="links-sidebar-scroll">
+            {adding && linkForm(handleAdd, "New resource link", "Add link", () => setAdding(false))}
+            {editingId && linkForm(handleSaveEdit, "Edit resource", "Save changes", () => setEditingId(null))}
+            {filteredLinks.length === 0 && !adding ? (
+              <div className="links-empty">
+                <LinkSimple size={26} weight="duotone" />
+                <strong>Nothing in “{activeGroup}” yet</strong>
+                <span>Add a worksheet, deck, or reference site to preview it here.</span>
+                <button className="secondary-button" onClick={startAdd}><Plus size={15} />Add a link</button>
               </div>
-            </form>
-          )}
-
-          {editingId && (
-            <form onSubmit={handleSaveEdit} className="link-sidebar-form">
-              <h3>Rename / Edit resource</h3>
-              <label>Name / Label
-                <input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} required />
-              </label>
-              <label>Resource URL
-                <input type="url" value={form.url} onChange={(e) => setForm({ ...form, url: e.target.value })} required />
-              </label>
-              <label>Tab Group
-                <select value={form.group} onChange={(e) => setForm({ ...form, group: e.target.value })}>
-                  {groups.map((g) => <option key={g} value={g}>{g}</option>)}
-                </select>
-              </label>
-              <div className="form-actions">
-                <button type="button" className="secondary-button" onClick={() => setEditingId(null)}>Cancel</button>
-                <button type="submit" className="primary-button">Save</button>
-              </div>
-            </form>
-          )}
-
-          {!adding && !editingId && (
-            <div className="links-list-group">
-              {filteredLinks.length === 0 ? (
-                <p className="empty-text">No links in this tab group.</p>
-              ) : (
-                filteredLinks.map((link) => (
-                  <div key={link.id} className={`links-list-item-wrapper ${selectedLinkId === link.id ? "active" : ""}`}>
-                    <button className="link-select-btn" onClick={() => setSelectedLinkId(link.id)}>
-                      <LinkSimple size={18} />
-                      <span>{link.name}</span>
-                    </button>
-                    <div className="link-actions">
-                      <button onClick={() => { setEditingId(link.id); setForm({ name: link.name, url: link.url, group: link.group || "General" }); }} title="Rename/Edit">
-                        <PencilSimple size={14} />
-                      </button>
-                      <button onClick={() => handleDelete(link.id)} className="delete" title="Delete">
-                        <Trash size={14} />
-                      </button>
-                    </div>
+            ) : (
+              filteredLinks.map((link) => (
+                <div key={link.id} className={`link-row ${selectedLinkId === link.id ? "active" : ""} ${editingId === link.id ? "editing" : ""}`}>
+                  <button className="link-row-main" onClick={() => setSelectedLinkId(link.id)}>
+                    <LinkKindIcon url={link.url} />
+                    <span className="link-row-text"><strong>{link.name}</strong><small>{domainOf(link.url)}</small></span>
+                  </button>
+                  <div className="link-row-actions">
+                    <a href={link.url} target="_blank" rel="noopener noreferrer" title="Open in new tab" onClick={(e) => e.stopPropagation()}><ArrowSquareOut size={14} /></a>
+                    <button onClick={() => startEdit(link)} title="Edit link"><PencilSimple size={14} /></button>
+                    <button onClick={() => handleDelete(link.id)} className="delete" title="Delete link"><Trash size={14} /></button>
                   </div>
-                ))
-              )}
-            </div>
-          )}
+                </div>
+              ))
+            )}
+          </div>
         </aside>
 
         <main className="links-viewer-panel panel">
           {selectedLink ? (
             <div className="links-viewer-content">
               <div className="viewer-header">
-                <div>
-                  <h2>{selectedLink.name}</h2>
-                  <span className="link-raw-url">{selectedLink.url}</span>
+                <div className="viewer-title">
+                  <LinkKindIcon url={selectedLink.url} size={17} />
+                  <div>
+                    <h2>{selectedLink.name}</h2>
+                    <span className="viewer-subtitle">{linkKindOf(selectedLink.url).label} · {domainOf(selectedLink.url)}</span>
+                  </div>
                 </div>
                 <div className="viewer-actions">
-                  <a href={selectedLink.url} target="_self" className="secondary-button" title="Open in this window (same tab)">
-                    Open directly (same tab)
-                  </a>
-                  <a href={selectedLink.url} target="_blank" rel="noopener noreferrer" className="primary-button">
-                    Open in new tab
-                  </a>
-                  <button 
-                    onClick={() => setIsMaximized(!isMaximized)} 
-                    className="secondary-button maximize-btn"
-                    title={isMaximized ? "Restore view" : "Maximize view"}
-                    style={{ padding: '0 10px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-                  >
-                    {isMaximized ? <ArrowsIn size={18} /> : <ArrowsOut size={18} />}
+                  <button className="icon-button" title="Copy link" onClick={() => copyLink(selectedLink.url)}><Copy size={17} /></button>
+                  <button className="icon-button" title="Reload preview" onClick={() => setFrameKey((k) => k + 1)}><ArrowClockwise size={17} /></button>
+                  <a href={selectedLink.url} target="_self" className="secondary-button" title="Open in this window, replacing the app">Same tab</a>
+                  <a href={selectedLink.url} target="_blank" rel="noopener noreferrer" className="primary-button"><ArrowSquareOut size={16} />Open in new tab</a>
+                  <button onClick={() => setIsMaximized(!isMaximized)} className="icon-button viewer-maximize" title={isMaximized ? "Restore view (Esc)" : "Maximize view"}>
+                    {isMaximized ? <ArrowsIn size={17} /> : <ArrowsOut size={17} />}
                   </button>
                 </div>
               </div>
-              
+
               <div className="viewer-frame-container">
+                {frameLoading && <div className="frame-loading"><SpinnerGap className="spin" size={26} /><span>Loading preview…</span></div>}
                 <iframe
-                  key={selectedLink.id}
+                  key={`${selectedLink.id}-${frameKey}`}
                   src={getEmbedUrl(selectedLink.url)}
                   title={selectedLink.name}
                   className="embed-iframe"
                   sandbox="allow-scripts allow-same-origin allow-forms allow-popups"
+                  onLoad={() => setFrameLoading(false)}
                 />
-                
-                <div className="embed-info-banner">
-                  <Warning size={16} />
-                  <span>
-                    Direct embeds of complex apps (e.g. Google Sheets or slides) may show warning messages or require sign-in.
-                    If the frame remains blank, use the <strong>Open directly (same tab)</strong> or <strong>Open in new tab</strong> buttons above.
-                  </span>
-                </div>
               </div>
+
+              {!hintDismissed && (
+                <div className="embed-info-banner">
+                  <Warning size={15} />
+                  <span>Some apps (Google Sheets, Slides) may require sign-in or block embedding. If the preview stays blank, use <strong>Open in new tab</strong>.</span>
+                  <button onClick={dismissHint} title="Dismiss hint"><X size={13} /></button>
+                </div>
+              )}
             </div>
           ) : (
-            <Empty title="No link selected" text="Click on a resource link from the sidebar list to open and view it." />
+            <Empty title="No resource selected" text="Pick a link from the list, or add your first resource to preview it inline." />
           )}
         </main>
       </div>
@@ -640,11 +657,12 @@ function Overview({ state, project, openItem, navigate, setState }) {
       
       <section className="panel project-links-card">
         <PanelHeader title="Project links" action="Open page" onAction={() => navigate("links")} />
-        <div className="project-links-list-mini" style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '12px' }}>
+        <div className="project-links-list-mini">
           {(project.links || []).slice(0, 4).map((link) => (
-            <button key={link.id} onClick={() => navigate("links")} className="project-link-mini-btn" style={{ display: 'flex', alignItems: 'center', gap: '8px', background: 'var(--surface-2)', border: '1px solid var(--line)', borderRadius: 'var(--r-sm)', padding: '8px 12px', textAlign: 'left', cursor: 'pointer', width: '100%' }}>
-              <LinkSimple size={14} />
-              <strong style={{ fontSize: '13.5px', fontWeight: '500', color: 'var(--ink)' }}>{link.name}</strong>
+            <button key={link.id} onClick={() => navigate("links")} className="project-link-mini-btn">
+              <LinkKindIcon url={link.url} size={13} />
+              <strong>{link.name}</strong>
+              <small>{domainOf(link.url)}</small>
             </button>
           ))}
           {(!project.links || project.links.length === 0) && <p className="empty-text">No project links attached.</p>}
@@ -944,11 +962,20 @@ function Reports({ state, project }) {
   const stories = state.workItems.filter((item) => item.type === "User Story");
   const byStatus = Object.fromEntries(statuses.map((status) => [status, stories.filter((item) => item.status === status).length]));
   return <div className="content reports-page"><div className="page-heading"><div><span className="eyebrow">REPORTING</span><h1>Project status report</h1><p>A client-ready summary with live delivery and QA data.</p></div><a className="primary-button" href="/api/export.csv"><DownloadSimple />Export work items</a></div><section className="report-cover"><div><span>ATLAS DELIVERY STATUS</span><h2>{project.name}</h2><p>{project.phase} · Updated {new Date().toLocaleDateString()}</p></div><div className="report-mark">A</div></section><div className="metrics-row"><Metric label="Epics" value={state.workItems.filter((item) => item.type === "Epic").length} icon={Briefcase} /><Metric label="Features" value={features.length} tone="purple" icon={Flag} /><Metric label="User stories" value={stories.length} tone="green" icon={BookOpenText} /><Metric label="Tasks" value={state.workItems.filter((item) => item.type === "Task").length} tone="amber" icon={CheckCircle} /></div><div className="report-grid"><section className="panel"><PanelHeader title="Story status" /><div className="status-chart">{statuses.map((status) => <div key={status}><span>{status}</span><div><i className={`chart-${status.toLowerCase()}`} style={{ width: `${stories.length ? byStatus[status] / stories.length * 100 : 0}%` }} /></div><strong>{byStatus[status]}</strong></div>)}</div></section><section className="panel"><PanelHeader title="Feature delivery" /><div className="feature-progress-list">{features.map((feature) => <div key={feature.id}><div><strong>{feature.title}</strong><span>{feature.progress}%</span></div><ProgressBar value={feature.progress} /></div>)}</div></section><section className="panel"><PanelHeader title="Current risk posture" /><div className="risk-list">{state.risks.map((risk, index) => <div className="risk" key={risk.id}><span className={`risk-number ${index === 0 ? "red" : "amber"}`}>{index + 1}</span><div><strong>{risk.title}</strong><small>{risk.status} · {risk.owner}</small></div></div>)}</div></section><section className="panel"><PanelHeader title="Readiness coverage" /><div className="coverage-list"><div><span>Acceptance criteria</span><strong>{state.source.stories.reduce((total, story) => total + story.acceptanceCriteria.length, 0)}</strong></div><div><span>Dev / QA tasks</span><strong>{state.source.stories.reduce((total, story) => total + story.tasks.length, 0)}</strong></div><div><span>QA scenarios</span><strong>{state.tests.length}</strong></div><div><span>Source blocks retained</span><strong>{state.source.document.length}</strong></div></div></section></div></div>;
-}function Settings({ state, setState, showToast }) {
+}
+
+const settingsTabs = [
+  ["workspaces", "Workspaces", Briefcase],
+  ["team", "Team & notifications", Users],
+  ["access", "Access & security", Gear],
+];
+
+function Settings({ state, setState, showToast }) {
   const activeProject = state.projects.find((p) => p.id === state.activeProjectId) || state.projects[0];
+  const [settingsTab, setSettingsTab] = useState("workspaces");
   const [form, setForm] = useState({ name: "", description: "", phase: "Phase 1", targetMilestone: "Scope approval", targetDate: "" });
   const [createError, setCreateError] = useState("");
-  
+
   const [editForm, setEditForm] = useState({ name: "", description: "", phase: "Phase 1", targetMilestone: "", targetDate: "" });
   const [editError, setEditError] = useState("");
 
@@ -1046,127 +1073,159 @@ function Reports({ state, project }) {
           <p>Manage reusable project workspaces, team users, email notifications, and shared access.</p>
         </div>
       </div>
-      <div className="settings-grid">
-        <section className="panel settings-section">
-          <PanelHeader title="Project workspaces" />
-          <p>Click a workspace below to switch the active project. Work items and presentations adapt automatically.</p>
-          <div className="project-list">
-            {state.projects.map((p) => (
-              <div key={p.id} className={p.id === state.activeProjectId ? "active" : ""} onClick={() => switchWorkspace(p.id)} style={{ cursor: "pointer" }}>
-                <div className="project-avatar">{p.name.slice(0, 1)}</div>
-                <div>
-                  <strong>{p.name}</strong>
-                  <small>{p.phase} · {p.targetMilestone}</small>
-                </div>
-                {p.id === state.activeProjectId && <span>Active</span>}
-              </div>
-            ))}
-          </div>
-        </section>
 
-        {activeProject && (
+      <div className="settings-nav">
+        {settingsTabs.map(([key, label, Icon]) => (
+          <button key={key} className={settingsTab === key ? "active" : ""} onClick={() => setSettingsTab(key)}>
+            <Icon size={16} weight={settingsTab === key ? "fill" : "regular"} />
+            <span>{label}</span>
+            {key === "workspaces" && <em>{state.projects.length}</em>}
+            {key === "team" && <em>{(state.users || []).length}</em>}
+          </button>
+        ))}
+      </div>
+
+      {settingsTab === "workspaces" && (
+        <div className="settings-grid">
           <section className="panel settings-section">
-            <PanelHeader title="Edit active workspace" />
-            <form className="settings-form" onSubmit={saveProjectEdit}>
-              <label>Project name<input value={editForm.name} onChange={(event) => setEditForm({ ...editForm, name: event.target.value })} /></label>
-              <label>Description<textarea value={editForm.description} onChange={(event) => setEditForm({ ...editForm, description: event.target.value })} /></label>
+            <PanelHeader title="Project workspaces" />
+            <p>Click a workspace to make it active. Work items, boards, and presentations adapt automatically.</p>
+            <div className="project-list">
+              {state.projects.map((p) => (
+                <button type="button" key={p.id} className={p.id === state.activeProjectId ? "active" : ""} onClick={() => switchWorkspace(p.id)}>
+                  <div className="project-avatar">{p.name.slice(0, 1)}</div>
+                  <div>
+                    <strong>{p.name}</strong>
+                    <small>{p.targetMilestone}{p.targetDate ? ` · ${new Date(`${p.targetDate}T00:00:00`).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" })}` : ""}</small>
+                  </div>
+                  <span className="phase-pill">{p.phase}</span>
+                  {p.id === state.activeProjectId ? <span className="workspace-active-pill"><CheckCircle size={13} weight="fill" />Active</span> : <span className="workspace-switch-hint">Switch</span>}
+                </button>
+              ))}
+            </div>
+          </section>
+
+          {activeProject && (
+            <section className="panel settings-section">
+              <PanelHeader title={`Edit “${activeProject.name}”`} />
+              <form className="settings-form" onSubmit={saveProjectEdit}>
+                <label>Project name<input value={editForm.name} onChange={(event) => setEditForm({ ...editForm, name: event.target.value })} /></label>
+                <label>Description<textarea value={editForm.description} onChange={(event) => setEditForm({ ...editForm, description: event.target.value })} /></label>
+                <div className="form-row">
+                  <label>Current phase
+                    <select value={editForm.phase} onChange={(event) => setEditForm({ ...editForm, phase: event.target.value })}>
+                      <option>Phase 1</option>
+                      <option>Phase 2</option>
+                      <option>Phase 3</option>
+                    </select>
+                  </label>
+                  <label>Target date<input type="date" value={editForm.targetDate} onChange={(event) => setEditForm({ ...editForm, targetDate: event.target.value })} /></label>
+                </div>
+                <label>Target milestone<input value={editForm.targetMilestone} onChange={(event) => setEditForm({ ...editForm, targetMilestone: event.target.value })} /></label>
+                {editError && <div className="form-error">{editError}</div>}
+                <button className="primary-button"><FloppyDisk />Save workspace changes</button>
+              </form>
+            </section>
+          )}
+
+          <section className="panel settings-section">
+            <PanelHeader title="Create new workspace" />
+            <form className="settings-form" onSubmit={createProject}>
+              <label>Project name<input value={form.name} onChange={(event) => setForm({ ...form, name: event.target.value })} placeholder="e.g. Customer Portal" /></label>
+              <label>Description<textarea value={form.description} onChange={(event) => setForm({ ...form, description: event.target.value })} /></label>
               <div className="form-row">
                 <label>Current phase
-                  <select value={editForm.phase} onChange={(event) => setEditForm({ ...editForm, phase: event.target.value })}>
+                  <select value={form.phase} onChange={(event) => setForm({ ...form, phase: event.target.value })}>
                     <option>Phase 1</option>
                     <option>Phase 2</option>
                     <option>Phase 3</option>
                   </select>
                 </label>
-                <label>Target date<input type="date" value={editForm.targetDate} onChange={(event) => setEditForm({ ...editForm, targetDate: event.target.value })} /></label>
+                <label>Target date<input type="date" value={form.targetDate} onChange={(event) => setForm({ ...form, targetDate: event.target.value })} /></label>
               </div>
-              <label>Target milestone<input value={editForm.targetMilestone} onChange={(event) => setEditForm({ ...editForm, targetMilestone: event.target.value })} /></label>
-              {editError && <div className="form-error">{editError}</div>}
-              <button className="primary-button"><FloppyDisk />Save workspace changes</button>
+              <label>Target milestone<input value={form.targetMilestone} onChange={(event) => setForm({ ...form, targetMilestone: event.target.value })} /></label>
+              {createError && <div className="form-error">{createError}</div>}
+              <button className="primary-button"><Plus />Create project</button>
             </form>
           </section>
-        )}
+        </div>
+      )}
 
-        <section className="panel settings-section">
-          <PanelHeader title="Create new workspace" />
-          <form className="settings-form" onSubmit={createProject}>
-            <label>Project name<input value={form.name} onChange={(event) => setForm({ ...form, name: event.target.value })} placeholder="e.g. Customer Portal" /></label>
-            <label>Description<textarea value={form.description} onChange={(event) => setForm({ ...form, description: event.target.value })} /></label>
-            <div className="form-row">
-              <label>Current phase
-                <select value={form.phase} onChange={(event) => setForm({ ...form, phase: event.target.value })}>
-                  <option>Phase 1</option>
-                  <option>Phase 2</option>
-                  <option>Phase 3</option>
-                </select>
-              </label>
-              <label>Target date<input type="date" value={form.targetDate} onChange={(event) => setForm({ ...form, targetDate: event.target.value })} /></label>
-            </div>
-            <label>Target milestone<input value={form.targetMilestone} onChange={(event) => setForm({ ...form, targetMilestone: event.target.value })} /></label>
-            {createError && <div className="form-error">{createError}</div>}
-            <button className="primary-button"><Plus />Create project</button>
-          </form>
-        </section>
-
-        <section className="panel settings-section">
-          <PanelHeader title="User Management" />
-          <p>Register team members with their emails. When items are assigned to them, a notification is simulated.</p>
-          
-          <form className="settings-form user-form" onSubmit={createUser}>
-            <div className="form-row">
-              <label>Full name<input value={userForm.name} onChange={(event) => setUserForm({ ...userForm, name: event.target.value })} placeholder="e.g. Alex Dela Cruz" required /></label>
-              <label>Email<input type="email" value={userForm.email} onChange={(event) => setUserForm({ ...userForm, email: event.target.value })} placeholder="e.g. alex@example.com" required /></label>
-            </div>
-            {userError && <div className="form-error">{userError}</div>}
-            <button className="primary-button"><Plus />Add team user</button>
-          </form>
-
-          <div className="user-list">
-            {(state.users || []).map((u) => (
-              <div key={u.id} className="user-item">
-                <div className="user-avatar-circle">{u.name.slice(0, 2).toUpperCase()}</div>
-                <div className="user-details">
-                  <strong>{u.name}</strong>
-                  <span>{u.email}</span>
-                </div>
-                <button className="icon-button delete" type="button" onClick={() => deleteUser(u.id, u.name)} title="Delete user"><Trash size={15} /></button>
+      {settingsTab === "team" && (
+        <div className="settings-grid">
+          <section className="panel settings-section">
+            <PanelHeader title="Team users" />
+            <p>Register team members with their emails. When work is assigned to them, a notification email is simulated.</p>
+            <form className="settings-form user-form" onSubmit={createUser}>
+              <div className="form-row">
+                <label>Full name<input value={userForm.name} onChange={(event) => setUserForm({ ...userForm, name: event.target.value })} placeholder="e.g. Alex Dela Cruz" required /></label>
+                <label>Email<input type="email" value={userForm.email} onChange={(event) => setUserForm({ ...userForm, email: event.target.value })} placeholder="e.g. alex@example.com" required /></label>
               </div>
-            ))}
-          </div>
-        </section>
-
-        <section className="panel settings-section email-logs-section">
-          <PanelHeader title="Simulated Email Notifications" />
-          <p>A history of simulated outbound notifications triggered by item assignments.</p>
-          <div className="email-logs-list">
-            {(!state.emails || state.emails.length === 0) ? (
-              <p className="empty-text">No email notifications dispatched yet.</p>
-            ) : (
-              state.emails.map((email) => (
-                <div key={email.id} className="email-log-item">
-                  <div className="email-log-meta">
-                    <strong>To: {email.to}</strong>
-                    <small>{new Date(email.sentAt).toLocaleTimeString()}</small>
+              {userError && <div className="form-error">{userError}</div>}
+              <button className="primary-button"><Plus />Add team user</button>
+            </form>
+            <div className="user-list">
+              {(state.users || []).length === 0 && <p className="empty-text">No team users yet — add the first one above.</p>}
+              {(state.users || []).map((u) => (
+                <div key={u.id} className="user-item">
+                  <div className="user-avatar-circle">{u.name.slice(0, 2).toUpperCase()}</div>
+                  <div className="user-details">
+                    <strong>{u.name}</strong>
+                    <span>{u.email}</span>
                   </div>
-                  <div className="email-log-subject">{email.subject}</div>
-                  <pre className="email-log-body">{email.body}</pre>
+                  <button className="icon-button delete" type="button" onClick={() => deleteUser(u.id, u.name)} title="Delete user"><Trash size={15} /></button>
                 </div>
-              ))
-            )}
-          </div>
-        </section>
+              ))}
+            </div>
+          </section>
 
-        <section className="panel settings-section access-card">
-          <PanelHeader title="Shared access" />
-          <div className="access-icon"><Users size={28} weight="duotone" /></div>
-          <h3>One credential, shared state</h3>
-          <p>All users sign in with one server-managed credential. Updates persist centrally and are immediately available to the next user.</p>
-          <div className="access-note">
-            <Warning size={18} />
-            <span>Change <code>ATLAS_USERNAME</code> and <code>ATLAS_PASSWORD</code> before exposing this service beyond a trusted internal network.</span>
-          </div>
-        </section>
-      </div>
+          <section className="panel settings-section email-logs-section">
+            <PanelHeader title="Simulated email notifications" />
+            <p>Outbound notifications triggered by item assignments, newest first.</p>
+            <div className="email-logs-list">
+              {(!state.emails || state.emails.length === 0) ? (
+                <div className="links-empty">
+                  <EnvelopeSimple size={26} weight="duotone" />
+                  <strong>No emails dispatched yet</strong>
+                  <span>Assign a work item to a registered team user to trigger one.</span>
+                </div>
+              ) : (
+                state.emails.map((email) => (
+                  <div key={email.id} className="email-log-item">
+                    <div className="email-log-icon"><EnvelopeSimple size={16} weight="duotone" /></div>
+                    <div className="email-log-content">
+                      <div className="email-log-meta">
+                        <strong>{email.to}</strong>
+                        <small>{new Date(email.sentAt).toLocaleString()}</small>
+                      </div>
+                      <div className="email-log-subject">{email.subject}</div>
+                      <details className="email-log-details">
+                        <summary>View message body</summary>
+                        <pre className="email-log-body">{email.body}</pre>
+                      </details>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          </section>
+        </div>
+      )}
+
+      {settingsTab === "access" && (
+        <div className="settings-grid">
+          <section className="panel settings-section access-card">
+            <PanelHeader title="Shared access" />
+            <div className="access-icon"><Users size={28} weight="duotone" /></div>
+            <h3>One credential, shared state</h3>
+            <p>All users sign in with one server-managed credential. Updates persist centrally and are immediately available to the next user.</p>
+            <div className="access-note">
+              <Warning size={18} />
+              <span>Change <code>ATLAS_USERNAME</code> and <code>ATLAS_PASSWORD</code> before exposing this service beyond a trusted internal network.</span>
+            </div>
+          </section>
+        </div>
+      )}
     </div>
   );
 }
