@@ -236,6 +236,10 @@ function seedState(source) {
       phase: "Phase 2 - Payroll Delivery",
       targetMilestone: "Requirements Sign-off",
       targetDate: "2026-08-31",
+      links: [
+        { id: "link-1", name: "Bug Inventory Summary", url: "https://docs.google.com/spreadsheets/d/10SCnCAbwqQB4Llix_gQllwygaCk5k-yWKv76_yxQi_k/edit" },
+        { id: "link-2", name: "Payroll Timeline Sheet", url: "https://docs.google.com/spreadsheets/d/1FopPinrWpPNFCJ3mfAVBHh2gZ-EB9VACgOqJwo8LNMQ/edit" }
+      ],
       createdAt,
     }],
     workItems,
@@ -250,6 +254,17 @@ function seedState(source) {
     ],
     presentations: [defaultSprintPresentation()],
     source,
+    users: [
+      { id: "user-1", name: "Alex Dela Cruz", email: "alex.delacruz@example.com" },
+      { id: "user-2", name: "Rhea Santos", email: "rhea.santos@example.com" },
+      { id: "user-3", name: "Marco Reyes", email: "marco.reyes@example.com" },
+      { id: "user-4", name: "Mika Reyes", email: "mika.reyes@example.com" },
+      { id: "user-5", name: "BA Team", email: "ba.team@example.com" },
+      { id: "user-6", name: "QA Team", email: "qa.team@example.com" },
+      { id: "user-7", name: "Project Team", email: "project.team@example.com" },
+      { id: "user-8", name: "Tech Lead", email: "tech.lead@example.com" }
+    ],
+    emails: []
   };
 }
 
@@ -301,6 +316,33 @@ async function loadState() {
       existing.presentations = [defaultSprintPresentation()];
       migrated = true;
     }
+    if (!existing.users) {
+      existing.users = [
+        { id: "user-1", name: "Alex Dela Cruz", email: "alex.delacruz@example.com" },
+        { id: "user-2", name: "Rhea Santos", email: "rhea.santos@example.com" },
+        { id: "user-3", name: "Marco Reyes", email: "marco.reyes@example.com" },
+        { id: "user-4", name: "Mika Reyes", email: "mika.reyes@example.com" },
+        { id: "user-5", name: "BA Team", email: "ba.team@example.com" },
+        { id: "user-6", name: "QA Team", email: "qa.team@example.com" },
+        { id: "user-7", name: "Project Team", email: "project.team@example.com" },
+        { id: "user-8", name: "Tech Lead", email: "tech.lead@example.com" }
+      ];
+      migrated = true;
+    }
+    if (!existing.emails) {
+      existing.emails = [];
+      migrated = true;
+    }
+    existing.projects = (existing.projects || []).map((proj) => {
+      if (!proj.links) {
+        proj.links = [
+          { id: "link-1", name: "Bug Inventory Summary", url: "https://docs.google.com/spreadsheets/d/10SCnCAbwqQB4Llix_gQllwygaCk5k-yWKv76_yxQi_k/edit" },
+          { id: "link-2", name: "Payroll Timeline Sheet", url: "https://docs.google.com/spreadsheets/d/1FopPinrWpPNFCJ3mfAVBHh2gZ-EB9VACgOqJwo8LNMQ/edit" }
+        ];
+        migrated = true;
+      }
+      return proj;
+    });
     if (migrated) await saveState(existing);
     return existing;
   } catch {
@@ -367,6 +409,37 @@ function csvEscape(value) {
   return /[",\n]/.test(text) ? `"${text.replaceAll('"', '""')}"` : text;
 }
 
+function sendEmailNotification(user, item, actionType) {
+  const emailId = `email-${crypto.randomUUID().slice(0, 8)}`;
+  const subject = `[Atlas Delivery Hub] Work Item Assigned: ${item.id}`;
+  const bodyText = `Hello ${user.name},\n\nYou have been assigned a new item on the Atlas Delivery Hub website:\n\n` +
+                   `Item: ${item.id} - ${item.title}\n` +
+                   `Type: ${item.type}\n` +
+                   `Status: ${item.status}\n` +
+                   `Sprint: ${item.sprint || "Backlog"}\n\n` +
+                   `You can view it here: http://localhost:4173/?item=${item.id}\n\n` +
+                   `Best regards,\nAtlas Delivery Hub System`;
+  
+  const emailLog = {
+    id: emailId,
+    to: user.email,
+    subject,
+    body: bodyText,
+    sentAt: now()
+  };
+  
+  if (!state.emails) state.emails = [];
+  state.emails.unshift(emailLog);
+  state.emails = state.emails.slice(0, 50);
+  
+  console.log("========================================================================");
+  console.log(`[EMAIL NOTIFICATION SENT]`);
+  console.log(`To: ${user.email}`);
+  console.log(`Subject: ${subject}`);
+  console.log(`Body:\n${bodyText}`);
+  console.log("========================================================================");
+}
+
 async function handleApi(request, response, url) {
   if (url.pathname === "/api/login" && request.method === "POST") {
     const credentials = await body(request);
@@ -393,13 +466,35 @@ async function handleApi(request, response, url) {
   if (url.pathname === "/api/state" && request.method === "GET") return json(response, 200, state);
   if (url.pathname === "/api/projects" && request.method === "POST") {
     const input = await body(request);
-    const project = { id: `project-${crypto.randomUUID().slice(0, 8)}`, name: input.name?.trim(), description: input.description?.trim() || "", phase: input.phase || "Discovery", targetMilestone: input.targetMilestone || "Scope approval", targetDate: input.targetDate || "", createdAt: now() };
+    const project = { id: `project-${crypto.randomUUID().slice(0, 8)}`, name: input.name?.trim(), description: input.description?.trim() || "", phase: input.phase || "Discovery", targetMilestone: input.targetMilestone || "Scope approval", targetDate: input.targetDate || "", links: input.links || [], createdAt: now() };
     if (!project.name) return json(response, 400, { error: "Project name is required." });
     state.projects.push(project);
     state.activeProjectId = project.id;
     activity(`Created project ${project.name}`, project.id);
     await saveState(state);
     return json(response, 201, project);
+  }
+  if (url.pathname === "/api/projects/active" && request.method === "PUT") {
+    const input = await body(request);
+    const nextActiveId = input.activeProjectId;
+    if (!nextActiveId || !state.projects.some(p => p.id === nextActiveId)) {
+      return json(response, 400, { error: "Invalid project ID." });
+    }
+    state.activeProjectId = nextActiveId;
+    activity(`Switched active project workspace`, nextActiveId);
+    await saveState(state);
+    return json(response, 200, state);
+  }
+  const projectMatch = url.pathname.match(/^\/api\/projects\/([^/]+)$/);
+  if (projectMatch && request.method === "PUT") {
+    const id = decodeURIComponent(projectMatch[1]);
+    const index = state.projects.findIndex((p) => p.id === id);
+    if (index < 0) return json(response, 404, { error: "Project not found." });
+    const input = await body(request);
+    state.projects[index] = { ...state.projects[index], ...input, id };
+    activity(`Updated project details for ${state.projects[index].name}`, id);
+    await saveState(state);
+    return json(response, 200, state.projects[index]);
   }
   const presentationMatch = url.pathname.match(/^\/api\/presentations\/([^/]+)$/);
   if (presentationMatch && request.method === "PUT") {
@@ -442,6 +537,12 @@ async function handleApi(request, response, url) {
     if (!item.title) return json(response, 400, { error: "Title is required." });
     if (state.workItems.some((existing) => existing.id === item.id)) return json(response, 409, { error: "Work item ID already exists." });
     state.workItems.push(item);
+    if (item.assignee && item.assignee !== "Unassigned") {
+      const user = state.users?.find((u) => u.name === item.assignee);
+      if (user && user.email) {
+        sendEmailNotification(user, item, "assigned");
+      }
+    }
     activity(`Created ${item.type}: ${item.title}`, item.id);
     await saveState(state);
     return json(response, 201, item);
@@ -452,7 +553,15 @@ async function handleApi(request, response, url) {
     const index = state.workItems.findIndex((item) => item.id === id);
     if (index < 0) return json(response, 404, { error: "Work item not found." });
     const input = await body(request);
+    const oldAssignee = state.workItems[index].assignee;
     state.workItems[index] = { ...state.workItems[index], ...input, id, updatedAt: now() };
+    const newAssignee = state.workItems[index].assignee;
+    if (newAssignee && newAssignee !== oldAssignee && newAssignee !== "Unassigned") {
+      const user = state.users?.find((u) => u.name === newAssignee);
+      if (user && user.email) {
+        sendEmailNotification(user, state.workItems[index], "assigned");
+      }
+    }
     activity(`Updated ${id}`, id);
     await saveState(state);
     return json(response, 200, state.workItems[index]);
@@ -532,6 +641,34 @@ async function handleApi(request, response, url) {
     const lines = [headers, ...state.workItems.map((item) => [item.id, item.type, item.parentId, item.title, item.status, item.phase, item.moscow, item.priority, item.assignee, item.sprint, (item.dependencies || []).join(" | "), item.storyPoints, item.progress])];
     response.writeHead(200, { "Content-Type": "text/csv; charset=utf-8", "Content-Disposition": "attachment; filename=atlas-work-items.csv" });
     return response.end(lines.map((line) => line.map(csvEscape).join(",")).join("\n"));
+  }
+  if (url.pathname === "/api/users" && request.method === "POST") {
+    const input = await body(request);
+    const name = input.name?.trim();
+    const email = input.email?.trim();
+    if (!name || !email) {
+      return json(response, 400, { error: "Name and email are required." });
+    }
+    if (state.users?.some((u) => u.name.toLowerCase() === name.toLowerCase())) {
+      return json(response, 400, { error: "A user with this name already exists." });
+    }
+    const newUser = { id: `user-${crypto.randomUUID().slice(0, 8)}`, name, email };
+    if (!state.users) state.users = [];
+    state.users.push(newUser);
+    activity(`Created user ${name}`, newUser.id);
+    await saveState(state);
+    return json(response, 201, newUser);
+  }
+  const userMatch = url.pathname.match(/^\/api\/users\/([^/]+)$/);
+  if (userMatch && request.method === "DELETE") {
+    const id = decodeURIComponent(userMatch[1]);
+    const index = state.users?.findIndex((u) => u.id === id) ?? -1;
+    if (index < 0) return json(response, 404, { error: "User not found." });
+    const userName = state.users[index].name;
+    state.users.splice(index, 1);
+    activity(`Deleted user ${userName}`, id);
+    await saveState(state);
+    return json(response, 200, { deleted: true });
   }
   return json(response, 404, { error: "API route not found." });
 }

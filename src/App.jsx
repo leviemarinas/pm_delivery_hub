@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useRef } from "react";
 import {
   Pulse,
   Archive,
@@ -228,7 +228,7 @@ function AppShell({ state, setState, onLogout }) {
           <div className="avatar">SU</div>
         </header>
         <div className={`page ${selected ? "with-detail" : ""}`}>
-          {page === "overview" && <Overview state={state} project={project} openItem={openItem} navigate={navigate} />}
+          {page === "overview" && <Overview state={state} project={project} openItem={openItem} navigate={navigate} setState={setState} />}
           {page === "presentation" && <SprintPresentation state={state} setState={setState} project={project} showToast={showToast} />}
           {page === "backlog" && <Backlog state={state} openItem={openItem} openCreate={openCreate} />}
           {page === "board" && <Board state={state} openItem={openItem} updateItem={updateItem} openCreate={openCreate} />}
@@ -250,7 +250,110 @@ function TypeIcon({ type, size = 18 }) {
   return <span className={`type-icon ${typeClass(type)}`}><Icon size={size} weight="fill" /></span>;
 }
 
-function Overview({ state, project, openItem, navigate }) {
+function ProjectLinksPanel({ project, setState }) {
+  const [editingId, setEditingId] = useState(null);
+  const [form, setForm] = useState({ name: "", url: "" });
+  const [adding, setAdding] = useState(false);
+  const links = project.links || [];
+
+  const handleAdd = async (e) => {
+    e.preventDefault();
+    if (!form.name || !form.url) return;
+    const newLink = { id: `link-${Date.now()}`, name: form.name.trim(), url: form.url.trim() };
+    const nextLinks = [...links, newLink];
+    await updateProjectLinks(nextLinks);
+    setForm({ name: "", url: "" });
+    setAdding(false);
+  };
+
+  const handleSaveEdit = async (e) => {
+    e.preventDefault();
+    if (!form.name || !form.url) return;
+    const nextLinks = links.map((l) => (l.id === editingId ? { ...l, name: form.name.trim(), url: form.url.trim() } : l));
+    await updateProjectLinks(nextLinks);
+    setForm({ name: "", url: "" });
+    setEditingId(null);
+  };
+
+  const handleDelete = async (id) => {
+    if (!window.confirm("Delete this link?")) return;
+    const nextLinks = links.filter((l) => l.id !== id);
+    await updateProjectLinks(nextLinks);
+  };
+
+  const updateProjectLinks = async (nextLinks) => {
+    const updated = await api(`/api/projects/${project.id}`, {
+      method: "PUT",
+      body: JSON.stringify({ ...project, links: nextLinks }),
+    });
+    setState((current) => ({
+      ...current,
+      projects: current.projects.map((p) => (p.id === project.id ? updated : p)),
+    }));
+  };
+
+  return (
+    <section className="panel project-links-panel">
+      <div className="panel-header">
+        <h2>Project links</h2>
+        {!adding && !editingId && (
+          <button className="text-button text-button-add" onClick={() => setAdding(true)}>
+            <Plus size={14} />Add link
+          </button>
+        )}
+      </div>
+      
+      {adding && (
+        <form onSubmit={handleAdd} className="link-inline-form">
+          <input placeholder="Label (e.g. Figma)" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} required />
+          <input placeholder="URL" type="url" value={form.url} onChange={(e) => setForm({ ...form, url: e.target.value })} required />
+          <div className="form-actions">
+            <button type="button" className="secondary-button" onClick={() => setAdding(false)}>Cancel</button>
+            <button type="submit" className="primary-button">Save</button>
+          </div>
+        </form>
+      )}
+
+      {editingId && (
+        <form onSubmit={handleSaveEdit} className="link-inline-form">
+          <input placeholder="Label" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} required />
+          <input placeholder="URL" type="url" value={form.url} onChange={(e) => setForm({ ...form, url: e.target.value })} required />
+          <div className="form-actions">
+            <button type="button" className="secondary-button" onClick={() => setEditingId(null)}>Cancel</button>
+            <button type="submit" className="primary-button">Save</button>
+          </div>
+        </form>
+      )}
+
+      {!adding && !editingId && (
+        <div className="project-links-list">
+          {links.length === 0 ? (
+            <p className="empty-text">No project links attached.</p>
+          ) : (
+            links.map((link) => (
+              <div key={link.id} className="project-link-item">
+                <a href={link.url} target="_blank" rel="noopener noreferrer">
+                  <LinkSimple size={16} />
+                  <span>{link.name}</span>
+                </a>
+                <div className="link-actions">
+                  <button onClick={() => { setEditingId(link.id); setForm({ name: link.name, url: link.url }); }} title="Rename/Edit">
+                    <PencilSimple size={14} />
+                  </button>
+                  <button onClick={() => handleDelete(link.id)} className="delete" title="Delete">
+                    <Trash size={14} />
+                  </button>
+                </div>
+              </div>
+            ))
+          )}
+        </div>
+      )}
+    </section>
+  );
+}
+
+function Overview({ state, project, openItem, navigate, setState }) {
   const features = state.workItems.filter((item) => item.type === "Feature" && item.phase !== "Unplanned");
   const stories = state.workItems.filter((item) => item.type === "User Story");
   const tasks = state.workItems.filter((item) => item.type === "Task");
@@ -272,6 +375,7 @@ function Overview({ state, project, openItem, navigate }) {
       <section className="panel"><PanelHeader title="Top risks" action="Source questions" onAction={() => navigate("requirements")} /><div className="risk-list">{state.risks.map((risk, index) => <div className="risk" key={risk.id}><span className={`risk-number ${index === 0 ? "red" : "amber"}`}>{index + 1}</span><div><strong>{risk.title}</strong><small>Impact: {risk.impact} · Likelihood: {risk.likelihood} · {risk.owner}</small></div></div>)}</div></section>
       <section className="panel qa-readiness"><PanelHeader title="QA readiness" action="Open QA" onAction={() => navigate("qa")} /><div className="donut" style={{ "--value": `${state.tests.length ? Math.round(qaRun / state.tests.length * 100) : 0}%` }}><div><strong>{state.tests.length ? Math.round(qaRun / state.tests.length * 100) : 0}%</strong><span>started</span></div></div><div className="legend"><span><i className="green" />Passed {qaPassed}</span><span><i className="blue" />In progress {state.tests.filter((test) => test.status === "In Progress").length}</span><span><i />Not run {state.tests.filter((test) => test.status === "Not Run").length}</span></div></section>
       <section className="panel"><PanelHeader title="Recent activity" /><div className="activity-list">{state.activities.slice(0, 5).map((entry) => <div key={entry.id}><div className="avatar small">{entry.actor.slice(0, 2).toUpperCase()}</div><div><strong>{entry.actor}</strong><span>{entry.action}</span><small>{new Date(entry.at).toLocaleString()}</small></div></div>)}</div></section>
+      <ProjectLinksPanel project={project} setState={setState} />
     </div>
   </div>;
 }
@@ -373,6 +477,7 @@ function QA({ state, setState, openItem, showToast }) {
 }
 
 function TestCaseImportModal({ state, setState, close, showToast }) {
+  const fileInputRef = useRef(null);
   const [filename, setFilename] = useState("");
   const [rows, setRows] = useState([]);
   const [errors, setErrors] = useState([]);
@@ -423,7 +528,7 @@ function TestCaseImportModal({ state, setState, close, showToast }) {
     } catch (requestError) { setErrors([{ row: "Import", message: requestError.message }]); }
     finally { setBusy(false); }
   };
-  return <div className="modal-backdrop" onMouseDown={close}><section className="modal import-modal" onMouseDown={(event) => event.stopPropagation()}><header><div><span className="eyebrow">EXCEL IMPORT</span><h2>Import test cases to User Stories</h2></div><button className="icon-button" onClick={close}><X /></button></header><div className="import-drop"><FileXls size={32} weight="duotone" /><div><strong>{filename || "Choose Darla's Excel file or the Atlas template"}</strong><span>.xlsx, .xls, or .csv · First worksheet will be imported</span></div><label className="secondary-button">Choose file<input type="file" accept=".xlsx,.xls,.csv" onChange={chooseFile} /></label></div><div className="import-summary"><span><strong>{rows.length}</strong> rows found</span><span className={errors.length ? "red" : "green"}><strong>{errors.length}</strong> validation issues</span></div>{errors.length > 0 && <div className="import-errors">{errors.slice(0, 8).map((error, index) => <div key={index}><Warning size={15} /><span>Row {error.row}: {error.message}</span></div>)}</div>}{rows.length > 0 && <div className="table-scroll import-preview"><table><thead><tr><th>Test Case ID</th><th>User Story</th><th>Title</th><th>Status</th><th>Sprint</th></tr></thead><tbody>{rows.slice(0, 8).map((row, index) => <tr key={`${row.id}-${index}`}><td>{row.id || "Auto"}</td><td>{row.storyId}</td><td>{row.title}</td><td>{row.status}</td><td>{row.sprint}</td></tr>)}</tbody></table>{rows.length > 8 && <small>Previewing 8 of {rows.length} rows.</small>}</div>}<footer><button className="secondary-button" onClick={downloadTestTemplate}><DownloadSimple />Download format</button><button className="secondary-button" onClick={close}>Cancel</button><button className="primary-button" disabled={busy || !rows.length || errors.length > 0} onClick={importRows}>{busy ? <SpinnerGap className="spin" /> : <UploadSimple />}Import {rows.length || ""} test cases</button></footer></section></div>;
+  return <div className="modal-backdrop" onMouseDown={close}><section className="modal import-modal" onMouseDown={(event) => event.stopPropagation()}><header><div><span className="eyebrow">EXCEL IMPORT</span><h2>Import test cases to User Stories</h2></div><button className="icon-button" onClick={close}><X /></button></header><div className="import-drop"><FileXls size={32} weight="duotone" /><div><strong>{filename || "Choose Darla's Excel file or the Atlas template"}</strong><span>.xlsx, .xls, or .csv · First worksheet will be imported</span></div><input type="file" ref={fileInputRef} accept=".xlsx,.xls,.csv" onChange={chooseFile} style={{ display: "none" }} /><button type="button" className="secondary-button" onClick={() => fileInputRef.current?.click()}>Choose file</button></div><div className="import-summary"><span><strong>{rows.length}</strong> rows found</span><span className={errors.length ? "red" : "green"}><strong>{errors.length}</strong> validation issues</span></div>{errors.length > 0 && <div className="import-errors">{errors.slice(0, 8).map((error, index) => <div key={index}><Warning size={15} /><span>Row {error.row}: {error.message}</span></div>)}</div>}{rows.length > 0 && <div className="table-scroll import-preview"><table><thead><tr><th>Test Case ID</th><th>User Story</th><th>Title</th><th>Status</th><th>Sprint</th></tr></thead><tbody>{rows.slice(0, 8).map((row, index) => <tr key={`${row.id}-${index}`}><td>{row.id || "Auto"}</td><td>{row.storyId}</td><td>{row.title}</td><td>{row.status}</td><td>{row.sprint}</td></tr>)}</tbody></table>{rows.length > 8 && <small>Previewing 8 of {rows.length} rows.</small>}</div>}<footer><button className="secondary-button" onClick={downloadTestTemplate}><DownloadSimple />Download format</button><button className="secondary-button" onClick={close}>Cancel</button><button className="primary-button" disabled={busy || !rows.length || errors.length > 0} onClick={importRows}>{busy ? <SpinnerGap className="spin" /> : <UploadSimple />}Import {rows.length || ""} test cases</button></footer></section></div>;
 }
 
 function Requirements({ state }) {
@@ -565,15 +670,232 @@ function Reports({ state, project }) {
   const stories = state.workItems.filter((item) => item.type === "User Story");
   const byStatus = Object.fromEntries(statuses.map((status) => [status, stories.filter((item) => item.status === status).length]));
   return <div className="content reports-page"><div className="page-heading"><div><span className="eyebrow">REPORTING</span><h1>Project status report</h1><p>A client-ready summary with live delivery and QA data.</p></div><a className="primary-button" href="/api/export.csv"><DownloadSimple />Export work items</a></div><section className="report-cover"><div><span>ATLAS DELIVERY STATUS</span><h2>{project.name}</h2><p>{project.phase} · Updated {new Date().toLocaleDateString()}</p></div><div className="report-mark">A</div></section><div className="metrics-row"><Metric label="Epics" value={state.workItems.filter((item) => item.type === "Epic").length} icon={Briefcase} /><Metric label="Features" value={features.length} tone="purple" icon={Flag} /><Metric label="User stories" value={stories.length} tone="green" icon={BookOpenText} /><Metric label="Tasks" value={state.workItems.filter((item) => item.type === "Task").length} tone="amber" icon={CheckCircle} /></div><div className="report-grid"><section className="panel"><PanelHeader title="Story status" /><div className="status-chart">{statuses.map((status) => <div key={status}><span>{status}</span><div><i className={`chart-${status.toLowerCase()}`} style={{ width: `${stories.length ? byStatus[status] / stories.length * 100 : 0}%` }} /></div><strong>{byStatus[status]}</strong></div>)}</div></section><section className="panel"><PanelHeader title="Feature delivery" /><div className="feature-progress-list">{features.map((feature) => <div key={feature.id}><div><strong>{feature.title}</strong><span>{feature.progress}%</span></div><ProgressBar value={feature.progress} /></div>)}</div></section><section className="panel"><PanelHeader title="Current risk posture" /><div className="risk-list">{state.risks.map((risk, index) => <div className="risk" key={risk.id}><span className={`risk-number ${index === 0 ? "red" : "amber"}`}>{index + 1}</span><div><strong>{risk.title}</strong><small>{risk.status} · {risk.owner}</small></div></div>)}</div></section><section className="panel"><PanelHeader title="Readiness coverage" /><div className="coverage-list"><div><span>Acceptance criteria</span><strong>{state.source.stories.reduce((total, story) => total + story.acceptanceCriteria.length, 0)}</strong></div><div><span>Dev / QA tasks</span><strong>{state.source.stories.reduce((total, story) => total + story.tasks.length, 0)}</strong></div><div><span>QA scenarios</span><strong>{state.tests.length}</strong></div><div><span>Source blocks retained</span><strong>{state.source.document.length}</strong></div></div></section></div></div>;
-}
-
-function Settings({ state, setState, showToast }) {
+}function Settings({ state, setState, showToast }) {
+  const activeProject = state.projects.find((p) => p.id === state.activeProjectId) || state.projects[0];
   const [form, setForm] = useState({ name: "", description: "", phase: "Phase 1", targetMilestone: "Scope approval", targetDate: "" });
-  const [error, setError] = useState("");
-  const createProject = async (event) => { event.preventDefault(); setError(""); try { const project = await api("/api/projects", { method: "POST", body: JSON.stringify(form) }); const next = await api("/api/state"); setState(next); setForm({ name: "", description: "", phase: "Phase 1", targetMilestone: "Scope approval", targetDate: "" }); showToast(`Project ${project.name} created`); } catch (requestError) { setError(requestError.message); } };
-  return <div className="content settings-page"><div className="page-heading"><div><span className="eyebrow">ADMINISTRATION</span><h1>Project settings</h1><p>Manage reusable project workspaces and shared-access configuration.</p></div></div><div className="settings-grid"><section className="panel settings-section"><PanelHeader title="Project workspaces" /><p>Atlas Delivery Hub supports multiple reusable project definitions. Work items can be associated with the active project.</p><div className="project-list">{state.projects.map((project) => <div key={project.id} className={project.id === state.activeProjectId ? "active" : ""}><div className="project-avatar">{project.name.slice(0, 1)}</div><div><strong>{project.name}</strong><small>{project.phase} · {project.targetMilestone}</small></div>{project.id === state.activeProjectId && <span>Active</span>}</div>)}</div></section><section className="panel settings-section"><PanelHeader title="Create project" /><form className="settings-form" onSubmit={createProject}><label>Project name<input value={form.name} onChange={(event) => setForm({ ...form, name: event.target.value })} placeholder="e.g. Customer Portal" /></label><label>Description<textarea value={form.description} onChange={(event) => setForm({ ...form, description: event.target.value })} /></label><div className="form-row"><label>Current phase<select value={form.phase} onChange={(event) => setForm({ ...form, phase: event.target.value })}><option>Phase 1</option><option>Phase 2</option><option>Phase 3</option></select></label><label>Target date<input type="date" value={form.targetDate} onChange={(event) => setForm({ ...form, targetDate: event.target.value })} /></label></div><label>Target milestone<input value={form.targetMilestone} onChange={(event) => setForm({ ...form, targetMilestone: event.target.value })} /></label>{error && <div className="form-error">{error}</div>}<button className="primary-button"><Plus />Create project</button></form></section><section className="panel settings-section access-card"><PanelHeader title="Shared access" /><div className="access-icon"><Users size={28} weight="duotone" /></div><h3>One credential, shared state</h3><p>All users sign in with one server-managed credential. Updates persist centrally and are immediately available to the next user.</p><div className="access-note"><Warning size={18} /><span>Change <code>ATLAS_USERNAME</code> and <code>ATLAS_PASSWORD</code> before exposing this service beyond a trusted internal network.</span></div></section></div></div>;
-}
+  const [createError, setCreateError] = useState("");
+  
+  const [editForm, setEditForm] = useState({ name: "", description: "", phase: "Phase 1", targetMilestone: "", targetDate: "" });
+  const [editError, setEditError] = useState("");
 
+  const [userForm, setUserForm] = useState({ name: "", email: "" });
+  const [userError, setUserError] = useState("");
+
+  useEffect(() => {
+    if (activeProject) {
+      setEditForm({
+        name: activeProject.name || "",
+        description: activeProject.description || "",
+        phase: activeProject.phase || "Phase 1",
+        targetMilestone: activeProject.targetMilestone || "",
+        targetDate: activeProject.targetDate || ""
+      });
+    }
+  }, [state.activeProjectId, activeProject?.id]);
+
+  const createProject = async (event) => {
+    event.preventDefault();
+    setCreateError("");
+    try {
+      const project = await api("/api/projects", { method: "POST", body: JSON.stringify(form) });
+      const next = await api("/api/state");
+      setState(next);
+      setForm({ name: "", description: "", phase: "Phase 1", targetMilestone: "Scope approval", targetDate: "" });
+      showToast(`Project ${project.name} created`);
+    } catch (requestError) {
+      setCreateError(requestError.message);
+    }
+  };
+
+  const saveProjectEdit = async (event) => {
+    event.preventDefault();
+    setEditError("");
+    try {
+      const updated = await api(`/api/projects/${activeProject.id}`, { method: "PUT", body: JSON.stringify(editForm) });
+      setState((current) => ({
+        ...current,
+        projects: current.projects.map((p) => p.id === activeProject.id ? updated : p)
+      }));
+      showToast(`Workspace details updated`);
+    } catch (requestError) {
+      setEditError(requestError.message);
+    }
+  };
+
+  const switchWorkspace = async (projectId) => {
+    try {
+      const next = await api("/api/projects/active", { method: "PUT", body: JSON.stringify({ activeProjectId: projectId }) });
+      setState(next);
+      showToast(`Switched active workspace`);
+    } catch (requestError) {
+      showToast(requestError.message);
+    }
+  };
+
+  const createUser = async (event) => {
+    event.preventDefault();
+    setUserError("");
+    if (!userForm.name || !userForm.email) return;
+    try {
+      const newUser = await api("/api/users", { method: "POST", body: JSON.stringify(userForm) });
+      setState((current) => ({
+        ...current,
+        users: [...(current.users || []), newUser]
+      }));
+      setUserForm({ name: "", email: "" });
+      showToast(`User ${newUser.name} created`);
+    } catch (requestError) {
+      setUserError(requestError.message);
+    }
+  };
+
+  const deleteUser = async (id, name) => {
+    if (!window.confirm(`Delete user ${name}?`)) return;
+    try {
+      await api(`/api/users/${id}`, { method: "DELETE" });
+      setState((current) => ({
+        ...current,
+        users: current.users.filter((u) => u.id !== id)
+      }));
+      showToast(`User deleted`);
+    } catch (requestError) {
+      showToast(requestError.message);
+    }
+  };
+
+  return (
+    <div className="content settings-page">
+      <div className="page-heading">
+        <div>
+          <span className="eyebrow">ADMINISTRATION</span>
+          <h1>Project settings</h1>
+          <p>Manage reusable project workspaces, team users, email notifications, and shared access.</p>
+        </div>
+      </div>
+      <div className="settings-grid">
+        <section className="panel settings-section">
+          <PanelHeader title="Project workspaces" />
+          <p>Click a workspace below to switch the active project. Work items and presentations adapt automatically.</p>
+          <div className="project-list">
+            {state.projects.map((p) => (
+              <div key={p.id} className={p.id === state.activeProjectId ? "active" : ""} onClick={() => switchWorkspace(p.id)} style={{ cursor: "pointer" }}>
+                <div className="project-avatar">{p.name.slice(0, 1)}</div>
+                <div>
+                  <strong>{p.name}</strong>
+                  <small>{p.phase} · {p.targetMilestone}</small>
+                </div>
+                {p.id === state.activeProjectId && <span>Active</span>}
+              </div>
+            ))}
+          </div>
+        </section>
+
+        {activeProject && (
+          <section className="panel settings-section">
+            <PanelHeader title="Edit active workspace" />
+            <form className="settings-form" onSubmit={saveProjectEdit}>
+              <label>Project name<input value={editForm.name} onChange={(event) => setEditForm({ ...editForm, name: event.target.value })} /></label>
+              <label>Description<textarea value={editForm.description} onChange={(event) => setEditForm({ ...editForm, description: event.target.value })} /></label>
+              <div className="form-row">
+                <label>Current phase
+                  <select value={editForm.phase} onChange={(event) => setEditForm({ ...editForm, phase: event.target.value })}>
+                    <option>Phase 1</option>
+                    <option>Phase 2</option>
+                    <option>Phase 3</option>
+                  </select>
+                </label>
+                <label>Target date<input type="date" value={editForm.targetDate} onChange={(event) => setEditForm({ ...editForm, targetDate: event.target.value })} /></label>
+              </div>
+              <label>Target milestone<input value={editForm.targetMilestone} onChange={(event) => setEditForm({ ...editForm, targetMilestone: event.target.value })} /></label>
+              {editError && <div className="form-error">{editError}</div>}
+              <button className="primary-button"><FloppyDisk />Save workspace changes</button>
+            </form>
+          </section>
+        )}
+
+        <section className="panel settings-section">
+          <PanelHeader title="Create new workspace" />
+          <form className="settings-form" onSubmit={createProject}>
+            <label>Project name<input value={form.name} onChange={(event) => setForm({ ...form, name: event.target.value })} placeholder="e.g. Customer Portal" /></label>
+            <label>Description<textarea value={form.description} onChange={(event) => setForm({ ...form, description: event.target.value })} /></label>
+            <div className="form-row">
+              <label>Current phase
+                <select value={form.phase} onChange={(event) => setForm({ ...form, phase: event.target.value })}>
+                  <option>Phase 1</option>
+                  <option>Phase 2</option>
+                  <option>Phase 3</option>
+                </select>
+              </label>
+              <label>Target date<input type="date" value={form.targetDate} onChange={(event) => setForm({ ...form, targetDate: event.target.value })} /></label>
+            </div>
+            <label>Target milestone<input value={form.targetMilestone} onChange={(event) => setForm({ ...form, targetMilestone: event.target.value })} /></label>
+            {createError && <div className="form-error">{createError}</div>}
+            <button className="primary-button"><Plus />Create project</button>
+          </form>
+        </section>
+
+        <section className="panel settings-section">
+          <PanelHeader title="User Management" />
+          <p>Register team members with their emails. When items are assigned to them, a notification is simulated.</p>
+          
+          <form className="settings-form user-form" onSubmit={createUser}>
+            <div className="form-row">
+              <label>Full name<input value={userForm.name} onChange={(event) => setUserForm({ ...userForm, name: event.target.value })} placeholder="e.g. Alex Dela Cruz" required /></label>
+              <label>Email<input type="email" value={userForm.email} onChange={(event) => setUserForm({ ...userForm, email: event.target.value })} placeholder="e.g. alex@example.com" required /></label>
+            </div>
+            {userError && <div className="form-error">{userError}</div>}
+            <button className="primary-button"><Plus />Add team user</button>
+          </form>
+
+          <div className="user-list">
+            {(state.users || []).map((u) => (
+              <div key={u.id} className="user-item">
+                <div className="user-avatar-circle">{u.name.slice(0, 2).toUpperCase()}</div>
+                <div className="user-details">
+                  <strong>{u.name}</strong>
+                  <span>{u.email}</span>
+                </div>
+                <button className="icon-button delete" type="button" onClick={() => deleteUser(u.id, u.name)} title="Delete user"><Trash size={15} /></button>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        <section className="panel settings-section email-logs-section">
+          <PanelHeader title="Simulated Email Notifications" />
+          <p>A history of simulated outbound notifications triggered by item assignments.</p>
+          <div className="email-logs-list">
+            {(!state.emails || state.emails.length === 0) ? (
+              <p className="empty-text">No email notifications dispatched yet.</p>
+            ) : (
+              state.emails.map((email) => (
+                <div key={email.id} className="email-log-item">
+                  <div className="email-log-meta">
+                    <strong>To: {email.to}</strong>
+                    <small>{new Date(email.sentAt).toLocaleTimeString()}</small>
+                  </div>
+                  <div className="email-log-subject">{email.subject}</div>
+                  <pre className="email-log-body">{email.body}</pre>
+                </div>
+              ))
+            )}
+          </div>
+        </section>
+
+        <section className="panel settings-section access-card">
+          <PanelHeader title="Shared access" />
+          <div className="access-icon"><Users size={28} weight="duotone" /></div>
+          <h3>One credential, shared state</h3>
+          <p>All users sign in with one server-managed credential. Updates persist centrally and are immediately available to the next user.</p>
+          <div className="access-note">
+            <Warning size={18} />
+            <span>Change <code>ATLAS_USERNAME</code> and <code>ATLAS_PASSWORD</code> before exposing this service beyond a trusted internal network.</span>
+          </div>
+        </section>
+      </div>
+    </div>
+  );
+}
 function DetailPanel({ item, state, close, updateItem, refresh, openItem, openCreate, showToast }) {
   const [tab, setTab] = useState("details");
   const [editing, setEditing] = useState(false);
@@ -590,7 +912,97 @@ function DetailPanel({ item, state, close, updateItem, refresh, openItem, openCr
   const saveTest = async () => { try { await api(`/api/tests/${encodeURIComponent(testDraft.id)}`, { method: "PUT", body: JSON.stringify(testDraft) }); await refresh(); setEditingTestId(null); showToast(`${testDraft.id} updated`); } catch (requestError) { setError(requestError.message); } };
   const remove = async () => { if (!window.confirm(`Delete ${item.id}? This cannot be undone.`)) return; try { await api(`/api/work-items/${encodeURIComponent(item.id)}`, { method: "DELETE" }); close(); await refresh(); showToast(`${item.id} deleted`); } catch (requestError) { setError(requestError.message); } };
   return <aside className="detail-panel"><header><div><TypeIcon type={item.type} /><span>{item.type.toUpperCase()}</span><strong>{item.id}</strong></div><button className="icon-button" onClick={close}><X /></button></header><div className="detail-scroll"><h2>{item.title}</h2><div className="detail-meta"><Status value={item.status} /><span><User />{item.assignee}</span><span><Flag />{item.priority}</span></div><div className="detail-tabs">{["details", "criteria", "children", "tests", "history"].map((value) => <button key={value} className={tab === value ? "active" : ""} onClick={() => setTab(value)}>{value === "criteria" ? `Acceptance (${item.acceptanceCriteria?.length || 0})` : value === "children" ? `Children (${children.length})` : value === "tests" ? `Tests (${tests.length})` : value[0].toUpperCase() + value.slice(1)}</button>)}</div>{error && <div className="form-error">{error}</div>}
-    {tab === "details" && (editing ? <div className="detail-form"><label>Title<input value={draft.title} onChange={(event) => setDraft({ ...draft, title: event.target.value })} /></label><label>Description<textarea rows="4" value={draft.description || ""} onChange={(event) => setDraft({ ...draft, description: event.target.value })} /></label><div className="form-row"><label>Status<select value={draft.status} onChange={(event) => setDraft({ ...draft, status: event.target.value, progress: event.target.value === "Closed" ? 100 : draft.progress })}>{statuses.map((status) => <option key={status}>{status}</option>)}</select></label><label>Priority<select value={draft.priority} onChange={(event) => setDraft({ ...draft, priority: event.target.value })}><option>Critical</option><option>High</option><option>Medium</option><option>Low</option></select></label></div><div className="form-row"><label>Phase<select value={draft.phase || "Phase 1"} onChange={(event) => setDraft({ ...draft, phase: event.target.value })}><option>Phase 1</option><option>Phase 2</option><option>Phase 3</option><option>Unplanned</option></select></label>{(item.type === "Feature" || item.type === "User Story") ? <label>MoSCoW<select value={draft.moscow || "Should Have"} onChange={(event) => setDraft({ ...draft, moscow: event.target.value })}><option>Must Have</option><option>Should Have</option><option>Could Have</option><option>Won't Have</option></select></label> : <label>Type<input disabled value={item.type} /></label>}</div><div className="form-row"><label>Assignee<input value={draft.assignee || ""} onChange={(event) => setDraft({ ...draft, assignee: event.target.value })} /></label><label>Sprint<input value={draft.sprint || ""} onChange={(event) => setDraft({ ...draft, sprint: event.target.value })} placeholder="Backlog for unplanned" /></label></div><div className="form-row"><label>Story points<input type="number" value={draft.storyPoints || 0} onChange={(event) => setDraft({ ...draft, storyPoints: Number(event.target.value) })} /></label><label>Progress<input type="number" min="0" max="100" value={draft.progress || 0} onChange={(event) => setDraft({ ...draft, progress: Number(event.target.value) })} /></label></div><label>Dependencies <small>One Work Item ID per line</small><textarea rows="4" value={(draft.dependencies || []).join("\n")} onChange={(event) => setDraft({ ...draft, dependencies: event.target.value.split("\n").map((value) => value.trim()).filter(Boolean) })} placeholder="US-BASIC-001" /></label><label>Acceptance criteria <small>One criterion per line</small><textarea rows="6" value={(draft.acceptanceCriteria || []).join("\n")} onChange={(event) => setDraft({ ...draft, acceptanceCriteria: event.target.value.split("\n").map((value) => value.trim()).filter(Boolean) })} /></label><label>QA focus <small>One test focus per line</small><textarea rows="6" value={(draft.qaFocus || []).join("\n")} onChange={(event) => setDraft({ ...draft, qaFocus: event.target.value.split("\n").map((value) => value.trim()).filter(Boolean) })} /></label><label>Source trace<textarea rows="3" value={draft.sourceTrace || ""} onChange={(event) => setDraft({ ...draft, sourceTrace: event.target.value })} /></label></div> : <div className="detail-content"><Section title="Description"><p>{item.description || "No description supplied."}</p></Section>{item.persona && <Section title="User story"><p><strong>{item.persona}</strong> {item.need} {item.benefit}</p></Section>}<Section title="Planning"><dl><div><dt>Phase</dt><dd>{item.phase || "—"}</dd></div><div><dt>MoSCoW</dt><dd>{item.moscow || "—"}</dd></div><div><dt>Sprint</dt><dd>{item.sprint || "Backlog"}</dd></div><div><dt>Story points</dt><dd>{item.storyPoints || "—"}</dd></div><div><dt>Complexity</dt><dd>{item.complexity || "—"}</dd></div><div><dt>Progress</dt><dd>{item.progress || 0}%</dd></div></dl><ProgressBar value={item.progress} /></Section><Section title="Dependencies">{item.dependencies?.length ? <div className="tags dependency-tags">{item.dependencies.map((dependency) => { const linked = state.workItems.some((entry) => entry.id === dependency); return linked ? <button key={dependency} onClick={() => openItem(dependency)}><LinkSimple />{dependency}</button> : <span key={dependency}>{dependency}</span>; })}</div> : <p>No dependencies recorded.</p>}</Section><Section title="Source trace"><p>{item.sourceTrace || "Created in Atlas Delivery Hub"}</p></Section></div>)}
+    {tab === "details" && (editing ? (
+      <div className="detail-form">
+        <label>Title<input value={draft.title} onChange={(event) => setDraft({ ...draft, title: event.target.value })} /></label>
+        <label>Description<textarea rows="4" value={draft.description || ""} onChange={(event) => setDraft({ ...draft, description: event.target.value })} /></label>
+        <div className="form-row">
+          <label>Status
+            <select value={draft.status} onChange={(event) => setDraft({ ...draft, status: event.target.value, progress: event.target.value === "Closed" ? 100 : draft.progress })}>
+              {statuses.map((status) => <option key={status}>{status}</option>)}
+            </select>
+          </label>
+          <label>Priority
+            <select value={draft.priority} onChange={(event) => setDraft({ ...draft, priority: event.target.value })}>
+              <option>Critical</option>
+              <option>High</option>
+              <option>Medium</option>
+              <option>Low</option>
+            </select>
+          </label>
+        </div>
+        <div className="form-row">
+          <label>Phase
+            <select value={draft.phase || "Phase 1"} onChange={(event) => setDraft({ ...draft, phase: event.target.value })}>
+              <option>Phase 1</option>
+              <option>Phase 2</option>
+              <option>Phase 3</option>
+              <option>Unplanned</option>
+            </select>
+          </label>
+          {(item.type === "Feature" || item.type === "User Story") ? (
+            <label>MoSCoW
+              <select value={draft.moscow || "Should Have"} onChange={(event) => setDraft({ ...draft, moscow: event.target.value })}>
+                <option>Must Have</option>
+                <option>Should Have</option>
+                <option>Could Have</option>
+                <option>Won't Have</option>
+              </select>
+            </label>
+          ) : (
+            <label>Type<input disabled value={item.type} /></label>
+          )}
+        </div>
+        <div className="form-row">
+          <label>Assignee
+            <select value={draft.assignee || "Unassigned"} onChange={(event) => setDraft({ ...draft, assignee: event.target.value })}>
+              <option value="Unassigned">Unassigned</option>
+              {(state.users || []).map((u) => (
+                <option key={u.id} value={u.name}>{u.name}</option>
+              ))}
+            </select>
+          </label>
+          <label>Sprint<input value={draft.sprint || ""} onChange={(event) => setDraft({ ...draft, sprint: event.target.value })} placeholder="Backlog for unplanned" /></label>
+        </div>
+        <div className="form-row">
+          <label>Story points<input type="number" value={draft.storyPoints || 0} onChange={(event) => setDraft({ ...draft, storyPoints: Number(event.target.value) })} /></label>
+          <label>Progress<input type="number" min="0" max="100" value={draft.progress || 0} onChange={(event) => setDraft({ ...draft, progress: Number(event.target.value) })} /></label>
+        </div>
+        <label>Dependencies <small>One Work Item ID per line</small><textarea rows="4" value={(draft.dependencies || []).join("\n")} onChange={(event) => setDraft({ ...draft, dependencies: event.target.value.split("\n").map((value) => value.trim()).filter(Boolean) })} placeholder="US-BASIC-001" /></label>
+        <label>Acceptance criteria <small>One criterion per line</small><textarea rows="6" value={(draft.acceptanceCriteria || []).join("\n")} onChange={(event) => setDraft({ ...draft, acceptanceCriteria: event.target.value.split("\n").map((value) => value.trim()).filter(Boolean) })} /></label>
+        <label>QA focus <small>One test focus per line</small><textarea rows="6" value={(draft.qaFocus || []).join("\n")} onChange={(event) => setDraft({ ...draft, qaFocus: event.target.value.split("\n").map((value) => value.trim()).filter(Boolean) })} /></label>
+        <label>Source trace<textarea rows="3" value={draft.sourceTrace || ""} onChange={(event) => setDraft({ ...draft, sourceTrace: event.target.value })} /></label>
+      </div>
+    ) : (
+      <div className="detail-content">
+        <Section title="Description"><p>{item.description || "No description supplied."}</p></Section>
+        {item.persona && <Section title="User story"><p><strong>{item.persona}</strong> {item.need} {item.benefit}</p></Section>}
+        <Section title="Planning">
+          <dl>
+            <div><dt>Phase</dt><dd>{item.phase || "—"}</dd></div>
+            <div><dt>MoSCoW</dt><dd>{item.moscow || "—"}</dd></div>
+            <div><dt>Sprint</dt><dd>{item.sprint || "Backlog"}</dd></div>
+            <div><dt>Story points</dt><dd>{item.storyPoints || "—"}</dd></div>
+            <div><dt>Complexity</dt><dd>{item.complexity || "—"}</dd></div>
+            <div><dt>Progress</dt><dd>{item.progress || 0}%</dd></div>
+          </dl>
+          <ProgressBar value={item.progress} />
+        </Section>
+        <Section title="Dependencies">
+          {item.dependencies?.length ? (
+            <div className="tags dependency-tags">
+              {item.dependencies.map((dependency) => {
+                const linked = state.workItems.some((entry) => entry.id === dependency);
+                return linked ? <button key={dependency} onClick={() => openItem(dependency)}><LinkSimple />{dependency}</button> : <span key={dependency}>{dependency}</span>;
+              })}
+            </div>
+          ) : (
+            <p>No dependencies recorded.</p>
+          )}
+        </Section>
+        <Section title="Source trace"><p>{item.sourceTrace || "Created in Atlas Delivery Hub"}</p></Section>
+      </div>
+    ))}
     {tab === "criteria" && <div className="check-list">{item.acceptanceCriteria?.length ? item.acceptanceCriteria.map((criterion, index) => <div key={index}><CheckCircle size={20} weight="fill" /><p>{criterion}</p></div>) : <Empty title="No acceptance criteria" text="Edit this item to add delivery conditions." />}{item.qaFocus?.length > 0 && <><h3>QA focus</h3>{item.qaFocus.map((focus, index) => <div key={index}><TestTube size={20} /><p>{focus}</p></div>)}</>}</div>}
     {tab === "children" && <div className="child-list">{children.map((child) => <button key={child.id} onClick={() => openItem(child.id)}><TypeIcon type={child.type} /><div><strong>{child.id}</strong><span>{child.title}</span></div><Status value={child.status} /></button>)}{children.length === 0 && <Empty title="No child items" text="Add a child work item to break down the scope." />}<button className="secondary-button full" onClick={() => openCreate({ parentId: item.id, type: item.type === "Epic" ? "Feature" : item.type === "Feature" ? "User Story" : "Task" })}><Plus />Add child work item</button></div>}
     {tab === "tests" && <div className="child-list">{tests.map((test) => editingTestId === test.id ? <div className="inline-test-editor" key={test.id}><label>Test title<input value={testDraft.title} onChange={(event) => setTestDraft({ ...testDraft, title: event.target.value })} /></label><label>Preconditions<textarea rows="2" value={testDraft.preconditions || ""} onChange={(event) => setTestDraft({ ...testDraft, preconditions: event.target.value })} /></label><label>Steps<textarea rows="3" value={(testDraft.steps || []).join("\n")} onChange={(event) => setTestDraft({ ...testDraft, steps: event.target.value.split("\n").filter(Boolean) })} /></label><label>Expected result<textarea rows="2" value={testDraft.expectedResult || ""} onChange={(event) => setTestDraft({ ...testDraft, expectedResult: event.target.value })} /></label><div><button className="secondary-button" onClick={() => setEditingTestId(null)}>Cancel</button><button className="primary-button" onClick={saveTest}><Check />Save test</button></div></div> : <div className="test-row" key={test.id}><TestTube /><div><strong>{test.id}</strong><span>{test.title}</span></div><div className="test-row-actions"><span className={`test-pill test-${test.status.toLowerCase().replaceAll(" ", "-")}`}>{test.status}</span><button className="text-button" onClick={() => editTest(test)}>Edit</button></div></div>)}{tests.length === 0 && <Empty title="No linked tests" text="Import test cases from Excel or add QA focus while editing the User Story." />}</div>}
@@ -606,7 +1018,108 @@ function CreateModal({ state, defaults, close, onCreated }) {
   const [busy, setBusy] = useState(false);
   const validParents = state.workItems.filter((item) => form.type === "Epic" ? false : form.type === "Feature" ? item.type === "Epic" : form.type === "User Story" || form.type === "Bug" ? item.type === "Feature" : item.type === "User Story");
   const submit = async (event) => { event.preventDefault(); setBusy(true); setError(""); try { const item = await api("/api/work-items", { method: "POST", body: JSON.stringify({ ...form, acceptanceCriteria: form.acceptanceText.split("\n").map((value) => value.trim()).filter(Boolean), qaFocus: form.qaFocusText.split("\n").map((value) => value.trim()).filter(Boolean), dependencies: form.dependenciesText.split("\n").map((value) => value.trim()).filter(Boolean) }) }); onCreated(item); } catch (requestError) { setError(requestError.message); } finally { setBusy(false); } };
-  return <div className="modal-backdrop" onMouseDown={close}><form className="modal create-work-modal" onSubmit={submit} onMouseDown={(event) => event.stopPropagation()}><header><div><span className="eyebrow">NEW WORK ITEM</span><h2>Create work item</h2></div><button type="button" className="icon-button" onClick={close}><X /></button></header><div className="form-row"><label>Type<select value={form.type} onChange={(event) => setForm({ ...form, type: event.target.value, parentId: "" })}><option>Epic</option><option>Feature</option><option>User Story</option><option>Task</option><option>Bug</option></select></label><label>Parent<select disabled={form.type === "Epic"} value={form.parentId} onChange={(event) => setForm({ ...form, parentId: event.target.value })}><option value="">No parent</option>{validParents.map((item) => <option value={item.id} key={item.id}>{item.id} — {item.title}</option>)}</select></label></div><label>Title<input autoFocus value={form.title} onChange={(event) => setForm({ ...form, title: event.target.value })} placeholder="What needs to be delivered?" /></label><label>Description<textarea rows="3" value={form.description} onChange={(event) => setForm({ ...form, description: event.target.value })} placeholder="Describe the outcome, context, or user need." /></label><div className="form-row"><label>Status<select value={form.status} onChange={(event) => setForm({ ...form, status: event.target.value })}>{statuses.map((status) => <option key={status}>{status}</option>)}</select></label><label>Priority<select value={form.priority} onChange={(event) => setForm({ ...form, priority: event.target.value })}><option>Critical</option><option>High</option><option>Medium</option><option>Low</option></select></label></div><div className="form-row"><label>Phase<select value={form.phase} onChange={(event) => setForm({ ...form, phase: event.target.value })}><option>Phase 1</option><option>Phase 2</option><option>Phase 3</option><option>Unplanned</option></select></label>{(form.type === "Feature" || form.type === "User Story") ? <label>MoSCoW<select value={form.moscow} onChange={(event) => setForm({ ...form, moscow: event.target.value })}><option>Must Have</option><option>Should Have</option><option>Could Have</option><option>Won't Have</option></select></label> : <label>Story points<input type="number" value={form.storyPoints} onChange={(event) => setForm({ ...form, storyPoints: Number(event.target.value) })} /></label>}</div><div className="form-row"><label>Assignee<input value={form.assignee} onChange={(event) => setForm({ ...form, assignee: event.target.value })} /></label><label>Sprint<input value={form.sprint} onChange={(event) => setForm({ ...form, sprint: event.target.value })} placeholder="Backlog for unplanned" /></label></div><label>Dependencies <small>One Work Item ID per line</small><textarea rows="3" value={form.dependenciesText} onChange={(event) => setForm({ ...form, dependenciesText: event.target.value })} /></label>{form.type === "User Story" && <><label>Acceptance criteria <small>One criterion per line</small><textarea rows="4" value={form.acceptanceText} onChange={(event) => setForm({ ...form, acceptanceText: event.target.value })} /></label><label>QA focus <small>One focus or test per line</small><textarea rows="4" value={form.qaFocusText} onChange={(event) => setForm({ ...form, qaFocusText: event.target.value })} /></label></>}{error && <div className="form-error"><Warning />{error}</div>}<footer><button type="button" className="secondary-button" onClick={close}>Cancel</button><button className="primary-button" disabled={busy}>{busy ? <SpinnerGap className="spin" /> : <Plus />}Create {form.type.toLowerCase()}</button></footer></form></div>;
+  
+  return (
+    <div className="modal-backdrop" onMouseDown={close}>
+      <form className="modal create-work-modal" onSubmit={submit} onMouseDown={(event) => event.stopPropagation()}>
+        <header>
+          <div>
+            <span className="eyebrow">NEW WORK ITEM</span>
+            <h2>Create work item</h2>
+          </div>
+          <button type="button" className="icon-button" onClick={close}><X /></button>
+        </header>
+        
+        <div className="form-row">
+          <label>Type
+            <select value={form.type} onChange={(event) => setForm({ ...form, type: event.target.value, parentId: "" })}>
+              <option>Epic</option>
+              <option>Feature</option>
+              <option>User Story</option>
+              <option>Task</option>
+              <option>Bug</option>
+            </select>
+          </label>
+          <label>Parent
+            <select disabled={form.type === "Epic"} value={form.parentId} onChange={(event) => setForm({ ...form, parentId: event.target.value })}>
+              <option value="">No parent</option>
+              {validParents.map((item) => <option value={item.id} key={item.id}>{item.id} — {item.title}</option>)}
+            </select>
+          </label>
+        </div>
+
+        <label>Title<input autoFocus value={form.title} onChange={(event) => setForm({ ...form, title: event.target.value })} placeholder="What needs to be delivered?" required /></label>
+        <label>Description<textarea rows="3" value={form.description} onChange={(event) => setForm({ ...form, description: event.target.value })} placeholder="Describe the outcome, context, or user need." /></label>
+
+        <div className="form-row">
+          <label>Status
+            <select value={form.status} onChange={(event) => setForm({ ...form, status: event.target.value })}>
+              {statuses.map((status) => <option key={status}>{status}</option>)}
+            </select>
+          </label>
+          <label>Priority
+            <select value={form.priority} onChange={(event) => setForm({ ...form, priority: event.target.value })}>
+              <option>Critical</option>
+              <option>High</option>
+              <option>Medium</option>
+              <option>Low</option>
+            </select>
+          </label>
+        </div>
+
+        <div className="form-row">
+          <label>Phase
+            <select value={form.phase} onChange={(event) => setForm({ ...form, phase: event.target.value })}>
+              <option>Phase 1</option>
+              <option>Phase 2</option>
+              <option>Phase 3</option>
+              <option>Unplanned</option>
+            </select>
+          </label>
+          {(form.type === "Feature" || form.type === "User Story") ? (
+            <label>MoSCoW
+              <select value={form.moscow} onChange={(event) => setForm({ ...form, moscow: event.target.value })}>
+                <option>Must Have</option>
+                <option>Should Have</option>
+                <option>Could Have</option>
+                <option>Won't Have</option>
+              </select>
+            </label>
+          ) : (
+            <label>Story points<input type="number" value={form.storyPoints} onChange={(event) => setForm({ ...form, storyPoints: Number(event.target.value) })} /></label>
+          )}
+        </div>
+
+        <div className="form-row">
+          <label>Assignee
+            <select value={form.assignee} onChange={(event) => setForm({ ...form, assignee: event.target.value })}>
+              <option value="Unassigned">Unassigned</option>
+              {(state.users || []).map((u) => (
+                <option key={u.id} value={u.name}>{u.name}</option>
+              ))}
+            </select>
+          </label>
+          <label>Sprint<input value={form.sprint} onChange={(event) => setForm({ ...form, sprint: event.target.value })} placeholder="Backlog for unplanned" /></label>
+        </div>
+
+        <label>Dependencies <small>One Work Item ID per line</small><textarea rows="3" value={form.dependenciesText} onChange={(event) => setForm({ ...form, dependenciesText: event.target.value })} placeholder="US-BASIC-001" /></label>
+
+        {form.type === "User Story" && (
+          <>
+            <label>Acceptance criteria <small>One criterion per line</small><textarea rows="4" value={form.acceptanceText} onChange={(event) => setForm({ ...form, acceptanceText: event.target.value })} /></label>
+            <label>QA focus <small>One focus or test per line</small><textarea rows="4" value={form.qaFocusText} onChange={(event) => setForm({ ...form, qaFocusText: event.target.value })} /></label>
+          </>
+        )}
+
+        {error && <div className="form-error"><Warning />{error}</div>}
+
+        <footer>
+          <button type="button" className="secondary-button" onClick={close}>Cancel</button>
+          <button type="submit" className="primary-button" disabled={busy}>{busy ? <SpinnerGap className="spin" /> : <Plus />}Create {form.type.toLowerCase()}</button>
+        </footer>
+      </form>
+    </div>
+  );
 }
 
 export function App() {
