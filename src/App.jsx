@@ -16,6 +16,8 @@ import {
   CaretDown,
   CaretRight,
   ChartBar,
+  ChartBarHorizontal,
+  ChartDonut,
   Check,
   CheckCircle,
   ClipboardText,
@@ -205,6 +207,7 @@ function AppShell({ state, setState, onLogout }) {
     tests: state.tests.filter((test) => test.projectId === state.activeProjectId || (!test.projectId && projectStoryIds.has(test.storyId))),
     risks: state.risks.filter((risk) => risk.projectId === state.activeProjectId),
     momEntries: (state.momEntries || []).filter((entry) => entry.projectId === state.activeProjectId),
+    reportCharts: (state.reportCharts || []).filter((chart) => chart.projectId === state.activeProjectId),
     presentations: state.presentations.filter((presentation) => presentation.projectId === state.activeProjectId),
     activities: state.activities.filter((entry) => entry.itemId === state.activeProjectId || projectItemIds.has(entry.itemId)),
   };
@@ -276,7 +279,7 @@ function AppShell({ state, setState, onLogout }) {
           {page === "board" && <Board state={projectState} openItem={openItem} updateItem={updateItem} openCreate={openCreate} />}
           {page === "qa" && <QA state={projectState} setState={setState} openItem={openItem} showToast={showToast} />}
           {page === "requirements" && <Requirements state={projectState} setState={setState} showToast={showToast} project={project} />}
-          {page === "reports" && <Reports state={projectState} project={project} />}
+          {page === "reports" && <Reports state={projectState} setState={setState} showToast={showToast} project={project} />}
           {page === "settings" && <Settings state={state} setState={setState} showToast={showToast} />}
         </div>
       </main>
@@ -2395,13 +2398,296 @@ function SlideMetric({ value, label, note }) { return <div className="slide-metr
 function SlideStatusRow({ label, value, total, tone }) { const percentage = Math.round(value / Math.max(1, total) * 100); return <div className="slide-status-row"><div><span>{label}</span><strong>{value} · {percentage}%</strong></div><i><b className={tone} style={{ width: `${percentage}%` }} /></i></div>; }
 function SlideQualityRow({ label, value, total, tone }) { const percentage = Math.round(value / Math.max(1, total) * 100); return <div className="quality-row"><div><span><i className={tone} />{label}</span><strong>{value}</strong></div><ProgressBar value={percentage} /></div>; }
 
-function Reports({ state, project }) {
+/* ================================================================
+   Custom report charts
+   ================================================================ */
+const CHART_PALETTE = ["#1665d8", "#6d55c9", "#0e8a50", "#b26a05", "#c93832", "#0891b2", "#c9367a", "#64748b"];
+const reportItemTypes = ["All", "Epic", "Feature", "User Story", "Task", "Bug"];
+const reportChartSources = {
+  workItems: {
+    label: "Work items",
+    fields: [["status", "Status"], ["type", "Type"], ["priority", "Priority"], ["moscow", "MoSCoW"], ["phase", "Phase"], ["assignee", "Assignee"], ["sprint", "Sprint"], ["complexity", "Complexity"], ["approvedByClient", "Client approval"]],
+    metrics: [["count", "Count of items"], ["sumStoryPoints", "Total story points"], ["avgProgress", "Average progress %"]],
+  },
+  tests: {
+    label: "QA tests",
+    fields: [["status", "Status"], ["priority", "Priority"], ["sprint", "Sprint"], ["assignee", "Assignee"]],
+    metrics: [["count", "Count of tests"]],
+  },
+  risks: {
+    label: "Risks",
+    fields: [["impact", "Impact"], ["likelihood", "Likelihood"], ["status", "Status"], ["owner", "Owner"]],
+    metrics: [["count", "Count of risks"]],
+  },
+};
+const reportChartTypes = [["bar", "Bar", ChartBarHorizontal], ["column", "Column", ChartBar], ["donut", "Donut", ChartDonut]];
+
+function aggregateReportChart(state, chart) {
+  let dataset = state[chart.source] || [];
+  if (chart.source === "workItems" && chart.itemTypeFilter && chart.itemTypeFilter !== "All") {
+    dataset = dataset.filter((item) => item.type === chart.itemTypeFilter);
+  }
+  const groups = new Map();
+  for (const item of dataset) {
+    const raw = item[chart.groupBy];
+    const key = raw === undefined || raw === null || raw === "" ? "Unspecified" : String(raw);
+    if (!groups.has(key)) groups.set(key, { count: 0, storyPoints: 0, progressSum: 0 });
+    const bucket = groups.get(key);
+    bucket.count += 1;
+    bucket.storyPoints += Number(item.storyPoints) || 0;
+    bucket.progressSum += Number(item.progress) || 0;
+  }
+  const rows = [...groups.entries()].map(([key, bucket]) => ({
+    key,
+    value: chart.metric === "sumStoryPoints" ? bucket.storyPoints : chart.metric === "avgProgress" ? Math.round(bucket.progressSum / bucket.count) : bucket.count,
+  }));
+  if (chart.groupBy === "sprint") {
+    rows.sort((a, b) => {
+      const an = a.key.match(/\d+/)?.[0];
+      const bn = b.key.match(/\d+/)?.[0];
+      if (an && bn) return Number(an) - Number(bn);
+      if (an) return -1;
+      if (bn) return 1;
+      return a.key.localeCompare(b.key);
+    });
+  } else {
+    rows.sort((a, b) => b.value - a.value);
+  }
+  return rows;
+}
+
+function ReportBarChart({ rows }) {
+  const max = Math.max(1, ...rows.map((row) => row.value));
+  return (
+    <div className="report-bar-chart">
+      {rows.slice(0, 10).map((row, index) => (
+        <div key={row.key}>
+          <span title={row.key}>{row.key}</span>
+          <div><i style={{ width: `${(row.value / max) * 100}%`, background: CHART_PALETTE[index % CHART_PALETTE.length] }} /></div>
+          <strong>{row.value}</strong>
+        </div>
+      ))}
+      {rows.length > 10 && <small className="report-chart-note">Showing top 10 of {rows.length} categories.</small>}
+    </div>
+  );
+}
+
+function ReportColumnChart({ rows }) {
+  const max = Math.max(1, ...rows.map((row) => row.value));
+  return (
+    <div className="report-column-chart">
+      {rows.slice(0, 12).map((row, index) => (
+        <div key={row.key} title={`${row.key}: ${row.value}`}>
+          <strong>{row.value}</strong>
+          <i style={{ height: `${Math.max(4, (row.value / max) * 100)}%`, background: CHART_PALETTE[index % CHART_PALETTE.length] }} />
+          <span>{row.key}</span>
+        </div>
+      ))}
+      {rows.length > 12 && <small className="report-chart-note">Showing top 12 of {rows.length} categories.</small>}
+    </div>
+  );
+}
+
+function ReportDonutChart({ rows }) {
+  const top = rows.slice(0, 6);
+  const rest = rows.slice(6);
+  const restValue = rest.reduce((sum, row) => sum + row.value, 0);
+  const segments = restValue > 0 ? [...top, { key: "Other", value: restValue }] : top;
+  const total = segments.reduce((sum, segment) => sum + segment.value, 0);
+  let cursor = 0;
+  const stops = segments.map((segment, index) => {
+    const pct = total ? (segment.value / total) * 100 : 0;
+    const start = cursor;
+    cursor += pct;
+    const color = segment.key === "Other" ? "#c3cad6" : CHART_PALETTE[index % CHART_PALETTE.length];
+    return `${color} ${start}% ${cursor}%`;
+  }).join(", ");
+  return (
+    <div className="report-donut-chart">
+      <div className="report-donut-ring" style={{ background: `conic-gradient(${stops})` }}>
+        <div className="report-donut-center"><strong>{total}</strong><span>total</span></div>
+      </div>
+      <div className="report-donut-legend">
+        {segments.map((segment, index) => (
+          <div key={segment.key}>
+            <i style={{ background: segment.key === "Other" ? "#c3cad6" : CHART_PALETTE[index % CHART_PALETTE.length] }} />
+            <span>{segment.key}</span>
+            <strong>{segment.value}</strong>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function ReportChartCard({ chart, state, onEdit, onDelete }) {
+  const rows = useMemo(() => aggregateReportChart(state, chart), [state, chart]);
+  const sourceMeta = reportChartSources[chart.source];
+  const fieldLabel = sourceMeta.fields.find(([key]) => key === chart.groupBy)?.[1] || chart.groupBy;
+  const metricLabel = sourceMeta.metrics.find(([key]) => key === chart.metric)?.[1] || chart.metric;
+  return (
+    <section className="panel report-chart-panel">
+      <div className="panel-header report-chart-header">
+        <div>
+          <h2>{chart.title}</h2>
+          <span className="report-chart-meta">{sourceMeta.label}{chart.source === "workItems" && chart.itemTypeFilter !== "All" ? ` · ${chart.itemTypeFilter}` : ""} · by {fieldLabel} · {metricLabel}</span>
+        </div>
+        <div className="report-chart-actions">
+          <button className="icon-button" onClick={() => onEdit(chart)} title="Edit chart"><PencilSimple size={13} /></button>
+          <button className="icon-button delete" onClick={() => onDelete(chart)} title="Remove chart"><Trash size={13} /></button>
+        </div>
+      </div>
+      {rows.length === 0 ? (
+        <Empty title="No data yet" text="This chart will populate once matching records exist." />
+      ) : chart.chartType === "donut" ? (
+        <ReportDonutChart rows={rows} />
+      ) : chart.chartType === "column" ? (
+        <ReportColumnChart rows={rows} />
+      ) : (
+        <ReportBarChart rows={rows} />
+      )}
+    </section>
+  );
+}
+
+function emptyReportChartForm() {
+  return { title: "", source: "workItems", itemTypeFilter: "All", groupBy: "status", metric: "count", chartType: "bar" };
+}
+
+function ReportChartBuilderModal({ initial, close, save, saving }) {
+  const [form, setForm] = useState(initial || emptyReportChartForm());
+  const sourceMeta = reportChartSources[form.source];
+
+  const setSource = (source) => {
+    const meta = reportChartSources[source];
+    setForm((current) => ({ ...current, source, groupBy: meta.fields[0][0], metric: meta.metrics[0][0], itemTypeFilter: "All" }));
+  };
+
+  const submit = (event) => {
+    event.preventDefault();
+    if (!form.title.trim()) return;
+    save(form);
+  };
+
+  return (
+    <div className="modal-backdrop modal-backdrop-top" onMouseDown={close}>
+      <form className="modal report-chart-modal" onMouseDown={(event) => event.stopPropagation()} onSubmit={submit}>
+        <header>
+          <div>
+            <span className="eyebrow">CUSTOM CHART</span>
+            <h2>{initial ? "Edit chart" : "Build a chart"}</h2>
+          </div>
+          <button type="button" className="icon-button" onClick={close}><X /></button>
+        </header>
+        <div className="modal-body report-chart-modal-body">
+          <label>Chart title
+            <input value={form.title} onChange={(event) => setForm({ ...form, title: event.target.value })} placeholder="e.g. Stories by MoSCoW priority" required />
+          </label>
+          <div className="form-row">
+            <label>Data source
+              <select value={form.source} onChange={(event) => setSource(event.target.value)}>
+                {Object.entries(reportChartSources).map(([key, meta]) => <option key={key} value={key}>{meta.label}</option>)}
+              </select>
+            </label>
+            {form.source === "workItems" && (
+              <label>Item type
+                <select value={form.itemTypeFilter} onChange={(event) => setForm({ ...form, itemTypeFilter: event.target.value })}>
+                  {reportItemTypes.map((type) => <option key={type} value={type}>{type}</option>)}
+                </select>
+              </label>
+            )}
+          </div>
+          <div className="form-row">
+            <label>Group by
+              <select value={form.groupBy} onChange={(event) => setForm({ ...form, groupBy: event.target.value })}>
+                {sourceMeta.fields.map(([key, label]) => <option key={key} value={key}>{label}</option>)}
+              </select>
+            </label>
+            <label>Metric
+              <select value={form.metric} onChange={(event) => setForm({ ...form, metric: event.target.value })}>
+                {sourceMeta.metrics.map(([key, label]) => <option key={key} value={key}>{label}</option>)}
+              </select>
+            </label>
+          </div>
+          <label>Chart type
+            <div className="report-chart-type-tabs" role="group" aria-label="Chart type">
+              {reportChartTypes.map(([key, label, Icon]) => (
+                <button key={key} type="button" className={`report-chart-type-pill${form.chartType === key ? " active" : ""}`} onClick={() => setForm({ ...form, chartType: key })}>
+                  <Icon weight={form.chartType === key ? "fill" : "regular"} />{label}
+                </button>
+              ))}
+            </div>
+          </label>
+        </div>
+        <footer>
+          <button type="button" className="secondary-button" onClick={close}>Cancel</button>
+          <button type="submit" className="primary-button" disabled={saving}>{saving ? <SpinnerGap className="spin" /> : <FloppyDisk />}{initial ? "Save changes" : "Add chart"}</button>
+        </footer>
+      </form>
+    </div>
+  );
+}
+
+function Reports({ state, setState, showToast, project }) {
   const features = state.workItems.filter((item) => item.type === "Feature" && item.phase !== "Unplanned");
   const stories = state.workItems.filter((item) => item.type === "User Story");
   const byStatus = Object.fromEntries(statuses.map((status) => [status, stories.filter((item) => item.status === status).length]));
   const taskCount = state.workItems.filter((item) => item.type === "Task").length;
   const acceptanceCount = stories.reduce((total, story) => total + (story.acceptanceCriteria?.length || 0), 0);
-  return <div className="content reports-page"><div className="page-heading"><div><span className="eyebrow">REPORTING</span><h1>Project status report</h1><p>A client-ready summary with live delivery and QA data.</p></div><a className="primary-button" href="/api/export.csv"><DownloadSimple />Export work items</a></div><section className="report-cover"><div><span>DELIVERY STATUS</span><h2>{project.name}</h2><p>{project.phase} · Updated {new Date().toLocaleDateString()}</p></div><div className="report-mark">{project.name.slice(0, 1)}</div></section><div className="metrics-row"><Metric label="Epics" value={state.workItems.filter((item) => item.type === "Epic").length} icon={Briefcase} /><Metric label="Features" value={features.length} tone="purple" icon={Flag} /><Metric label="User stories" value={stories.length} tone="green" icon={BookOpenText} /><Metric label="Tasks" value={taskCount} tone="amber" icon={CheckCircle} /></div><div className="report-grid"><section className="panel"><PanelHeader title="Story status" /><div className="status-chart">{statuses.map((status) => <div key={status}><span>{status}</span><div><i className={`chart-${status.toLowerCase()}`} style={{ width: `${stories.length ? byStatus[status] / stories.length * 100 : 0}%` }} /></div><strong>{byStatus[status]}</strong></div>)}</div></section><section className="panel"><PanelHeader title="Feature delivery" /><div className="feature-progress-list">{features.map((feature) => <div key={feature.id}><div><strong>{feature.title}</strong><span>{feature.progress}%</span></div><ProgressBar value={feature.progress} /></div>)}</div></section><section className="panel"><PanelHeader title="Current risk posture" /><div className="risk-list">{state.risks.map((risk, index) => <div className="risk" key={risk.id}><span className={`risk-number ${risk.impact === "High" ? "red" : "amber"}`}>{index + 1}</span><div><strong>{risk.title}</strong><small>{risk.status} · {risk.owner}</small></div></div>)}</div></section><section className="panel"><PanelHeader title="Readiness coverage" /><div className="coverage-list"><div><span>Acceptance criteria</span><strong>{acceptanceCount}</strong></div><div><span>Delivery tasks</span><strong>{taskCount}</strong></div><div><span>QA scenarios</span><strong>{state.tests.length}</strong></div><div><span>Dependencies</span><strong>{state.workItems.reduce((total, item) => total + (item.dependencies?.length || 0), 0)}</strong></div></div></section></div></div>;
+  const charts = state.reportCharts || [];
+
+  const [builderOpen, setBuilderOpen] = useState(false);
+  const [editingChart, setEditingChart] = useState(null);
+  const [saving, setSaving] = useState(false);
+
+  const openBuilder = (chart = null) => { setEditingChart(chart); setBuilderOpen(true); };
+  const closeBuilder = () => setBuilderOpen(false);
+
+  const saveChart = async (form) => {
+    setSaving(true);
+    try {
+      if (editingChart) {
+        const chart = await api(`/api/report-charts/${encodeURIComponent(editingChart.id)}`, { method: "PUT", body: JSON.stringify(form) });
+        setState((current) => ({ ...current, reportCharts: current.reportCharts.map((item) => item.id === chart.id ? chart : item) }));
+        showToast("Chart updated");
+      } else {
+        const chart = await api("/api/report-charts", { method: "POST", body: JSON.stringify({ ...form, projectId: project.id }) });
+        setState((current) => ({ ...current, reportCharts: [...(current.reportCharts || []), chart] }));
+        showToast("Chart added");
+      }
+      setBuilderOpen(false);
+    } catch (err) { showToast(`Error: ${err.message}`); }
+    finally { setSaving(false); }
+  };
+
+  const deleteChart = async (chart) => {
+    if (!window.confirm(`Remove chart "${chart.title}"?`)) return;
+    try {
+      await api(`/api/report-charts/${encodeURIComponent(chart.id)}`, { method: "DELETE" });
+      setState((current) => ({ ...current, reportCharts: current.reportCharts.filter((item) => item.id !== chart.id) }));
+      showToast("Chart removed");
+    } catch (err) { showToast(`Error: ${err.message}`); }
+  };
+
+  return <div className="content reports-page"><div className="page-heading"><div><span className="eyebrow">REPORTING</span><h1>Project status report</h1><p>A client-ready summary with live delivery and QA data.</p></div><a className="primary-button" href="/api/export.csv"><DownloadSimple />Export work items</a></div><section className="report-cover"><div><span>DELIVERY STATUS</span><h2>{project.name}</h2><p>{project.phase} · Updated {new Date().toLocaleDateString()}</p></div><div className="report-mark">{project.name.slice(0, 1)}</div></section><div className="metrics-row"><Metric label="Epics" value={state.workItems.filter((item) => item.type === "Epic").length} icon={Briefcase} /><Metric label="Features" value={features.length} tone="purple" icon={Flag} /><Metric label="User stories" value={stories.length} tone="green" icon={BookOpenText} /><Metric label="Tasks" value={taskCount} tone="amber" icon={CheckCircle} /></div><div className="report-grid"><section className="panel"><PanelHeader title="Story status" /><div className="status-chart">{statuses.map((status) => <div key={status}><span>{status}</span><div><i className={`chart-${status.toLowerCase()}`} style={{ width: `${stories.length ? byStatus[status] / stories.length * 100 : 0}%` }} /></div><strong>{byStatus[status]}</strong></div>)}</div></section><section className="panel"><PanelHeader title="Feature delivery" /><div className="feature-progress-list">{features.map((feature) => <div key={feature.id}><div><strong>{feature.title}</strong><span>{feature.progress}%</span></div><ProgressBar value={feature.progress} /></div>)}</div></section><section className="panel"><PanelHeader title="Current risk posture" /><div className="risk-list">{state.risks.map((risk, index) => <div className="risk" key={risk.id}><span className={`risk-number ${risk.impact === "High" ? "red" : "amber"}`}>{index + 1}</span><div><strong>{risk.title}</strong><small>{risk.status} · {risk.owner}</small></div></div>)}</div></section><section className="panel"><PanelHeader title="Readiness coverage" /><div className="coverage-list"><div><span>Acceptance criteria</span><strong>{acceptanceCount}</strong></div><div><span>Delivery tasks</span><strong>{taskCount}</strong></div><div><span>QA scenarios</span><strong>{state.tests.length}</strong></div><div><span>Dependencies</span><strong>{state.workItems.reduce((total, item) => total + (item.dependencies?.length || 0), 0)}</strong></div></div></section></div>
+
+    <div className="report-charts-section">
+      <div className="report-charts-heading">
+        <div><span className="eyebrow">CUSTOM ANALYSIS</span><h2>Build your own charts</h2><p>Pick any field across work items, QA tests, or risks and visualize it live.</p></div>
+        <button className="primary-button" onClick={() => openBuilder()}><Plus size={15} />Add chart</button>
+      </div>
+      <div className="report-charts-grid">
+        {charts.map((chart) => <ReportChartCard key={chart.id} chart={chart} state={state} onEdit={openBuilder} onDelete={deleteChart} />)}
+        <button className="report-chart-add-tile" onClick={() => openBuilder()}>
+          <Plus size={20} />
+          <strong>Add a chart</strong>
+          <span>Group any field by status, priority, sprint, assignee, and more.</span>
+        </button>
+      </div>
+    </div>
+
+    {builderOpen && <ReportChartBuilderModal initial={editingChart} close={closeBuilder} save={saveChart} saving={saving} />}
+  </div>;
 }
 
 const settingsTabs = [

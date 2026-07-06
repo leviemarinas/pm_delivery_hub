@@ -70,6 +70,65 @@ function now() {
   return new Date().toISOString();
 }
 
+const reportChartFields = {
+  workItems: ["status", "type", "priority", "moscow", "phase", "assignee", "sprint", "complexity", "approvedByClient"],
+  tests: ["status", "priority", "sprint", "assignee"],
+  risks: ["impact", "likelihood", "status", "owner"],
+};
+const reportChartMetrics = {
+  workItems: ["count", "sumStoryPoints", "avgProgress"],
+  tests: ["count"],
+  risks: ["count"],
+};
+function validateReportChart(input, existing = {}) {
+  const source = input.source || existing.source;
+  if (!Object.hasOwn(reportChartFields, source)) return "Invalid data source.";
+  const groupBy = input.groupBy || existing.groupBy;
+  if (!reportChartFields[source].includes(groupBy)) return "Invalid grouping field for this data source.";
+  const metric = input.metric || existing.metric || "count";
+  if (!reportChartMetrics[source].includes(metric)) return "Invalid metric for this data source.";
+  if (!["bar", "donut", "column"].includes(input.chartType || existing.chartType)) return "Invalid chart type.";
+  return null;
+}
+
+function seedReportCharts(createdAt, projectId = "atlas-payroll") {
+  return [
+    {
+      id: `chart-${projectId}-sprint-points`,
+      projectId,
+      title: "Story points by sprint",
+      source: "workItems",
+      itemTypeFilter: "User Story",
+      groupBy: "sprint",
+      metric: "sumStoryPoints",
+      chartType: "column",
+      createdAt,
+    },
+    {
+      id: `chart-${projectId}-assignee-load`,
+      projectId,
+      title: "Stories by assignee",
+      source: "workItems",
+      itemTypeFilter: "User Story",
+      groupBy: "assignee",
+      metric: "count",
+      chartType: "bar",
+      createdAt,
+    },
+    {
+      id: `chart-${projectId}-test-status`,
+      projectId,
+      title: "QA tests by status",
+      source: "tests",
+      itemTypeFilter: "All",
+      groupBy: "status",
+      metric: "count",
+      chartType: "donut",
+      createdAt,
+    },
+  ];
+}
+
 function seedMomEntries(createdAt, projectId = "atlas-payroll") {
   if (projectId !== "atlas-payroll") return [];
   return [
@@ -288,6 +347,7 @@ function seedState(source) {
     ],
     presentations: [defaultSprintPresentation()],
     momEntries: seedMomEntries(createdAt),
+    reportCharts: seedReportCharts(createdAt),
     source,
     users: [
       { id: "user-1", name: "Project Team", email: "project.team@example.com" },
@@ -441,6 +501,16 @@ async function loadState() {
         migrated = true;
       }
     }
+    if (!Array.isArray(existing.reportCharts)) {
+      existing.reportCharts = [];
+      migrated = true;
+    }
+    for (const project of existing.projects) {
+      if (!existing.reportCharts.some((chart) => chart.projectId === project.id)) {
+        existing.reportCharts.push(...seedReportCharts(now(), project.id));
+        migrated = true;
+      }
+    }
     if (migrated) await saveState(existing);
     return existing;
   } catch {
@@ -568,6 +638,7 @@ async function handleApi(request, response, url) {
     if (!project.name) return json(response, 400, { error: "Project name is required." });
     state.projects.push(project);
     state.presentations.push(defaultSprintPresentation(project.id));
+    state.reportCharts.push(...seedReportCharts(now(), project.id));
     state.activeProjectId = project.id;
     activity(`Created project ${project.name}`, project.id);
     await saveState(state);
@@ -605,6 +676,7 @@ async function handleApi(request, response, url) {
     state.tests = state.tests.filter((test) => test.projectId !== id);
     state.risks = state.risks.filter((risk) => risk.projectId !== id);
     state.momEntries = state.momEntries.filter((entry) => entry.projectId !== id);
+    state.reportCharts = state.reportCharts.filter((chart) => chart.projectId !== id);
     state.presentations = state.presentations.filter((presentation) => presentation.projectId !== id);
     if (state.activeProjectId === id) state.activeProjectId = state.projects[0].id;
     activity(`Deleted project workspace ${deleted.name}`, id);
@@ -838,6 +910,53 @@ async function handleApi(request, response, url) {
     if (index < 0) return json(response, 404, { error: "Meeting minutes not found." });
     const [entry] = state.momEntries.splice(index, 1);
     activity(`Removed meeting minutes: ${entry.title}`, id);
+    await saveState(state);
+    return json(response, 200, { deleted: true });
+  }
+  if (url.pathname === "/api/report-charts" && request.method === "POST") {
+    const input = await body(request);
+    const title = input.title?.trim();
+    if (!title) return json(response, 400, { error: "Chart title is required." });
+    const validationError = validateReportChart(input);
+    if (validationError) return json(response, 400, { error: validationError });
+    const chart = {
+      id: `chart-${crypto.randomUUID().slice(0, 8)}`,
+      projectId: input.projectId || state.activeProjectId,
+      title,
+      source: input.source,
+      itemTypeFilter: input.source === "workItems" ? (input.itemTypeFilter || "All") : "All",
+      groupBy: input.groupBy,
+      metric: input.metric || "count",
+      chartType: input.chartType,
+      createdAt: now(),
+    };
+    state.reportCharts.push(chart);
+    activity(`Added report chart: ${chart.title}`, chart.id);
+    await saveState(state);
+    return json(response, 201, chart);
+  }
+  const reportChartMatch = url.pathname.match(/^\/api\/report-charts\/([^/]+)$/);
+  if (reportChartMatch && request.method === "PUT") {
+    const id = decodeURIComponent(reportChartMatch[1]);
+    const index = state.reportCharts.findIndex((chart) => chart.id === id);
+    if (index < 0) return json(response, 404, { error: "Report chart not found." });
+    const input = await body(request);
+    const validationError = validateReportChart(input, state.reportCharts[index]);
+    if (validationError) return json(response, 400, { error: validationError });
+    const allowed = ["title", "source", "itemTypeFilter", "groupBy", "metric", "chartType"];
+    const updates = Object.fromEntries(allowed.filter((key) => Object.hasOwn(input, key)).map((key) => [key, input[key]]));
+    if (Object.hasOwn(updates, "title") && !updates.title?.trim()) return json(response, 400, { error: "Chart title is required." });
+    state.reportCharts[index] = { ...state.reportCharts[index], ...updates, id };
+    activity(`Updated report chart: ${state.reportCharts[index].title}`, id);
+    await saveState(state);
+    return json(response, 200, state.reportCharts[index]);
+  }
+  if (reportChartMatch && request.method === "DELETE") {
+    const id = decodeURIComponent(reportChartMatch[1]);
+    const index = state.reportCharts.findIndex((chart) => chart.id === id);
+    if (index < 0) return json(response, 404, { error: "Report chart not found." });
+    const [chart] = state.reportCharts.splice(index, 1);
+    activity(`Removed report chart: ${chart.title}`, id);
     await saveState(state);
     return json(response, 200, { deleted: true });
   }
