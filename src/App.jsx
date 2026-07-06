@@ -32,12 +32,14 @@ import {
   FloppyDisk,
   Gear,
   House,
+  CalendarBlank,
   Kanban,
   Keyboard,
   LinkSimple,
   ListBullets,
   MagnifyingGlass,
   NotePencil,
+  Notebook,
   PencilSimple,
   Play,
   Plus,
@@ -59,6 +61,7 @@ import {
   Quotes,
   Table,
   TreeStructure,
+  VideoCamera,
   X,
 } from "@phosphor-icons/react";
 
@@ -201,6 +204,7 @@ function AppShell({ state, setState, onLogout }) {
     workItems: projectWorkItems,
     tests: state.tests.filter((test) => test.projectId === state.activeProjectId || (!test.projectId && projectStoryIds.has(test.storyId))),
     risks: state.risks.filter((risk) => risk.projectId === state.activeProjectId),
+    momEntries: (state.momEntries || []).filter((entry) => entry.projectId === state.activeProjectId),
     presentations: state.presentations.filter((presentation) => presentation.projectId === state.activeProjectId),
     activities: state.activities.filter((entry) => entry.itemId === state.activeProjectId || projectItemIds.has(entry.itemId)),
   };
@@ -1211,6 +1215,7 @@ function exportAllRequirements(documentBlocks) {
 }
 
 function Requirements({ state, setState, showToast, project }) {
+  const [activeTab, setActiveTab] = useState("document");
   const [query, setQuery] = useState("");
   const [section, setSection] = useState("All sections");
   const [typeFilter, setTypeFilter] = useState("all"); // all | text | table | list
@@ -1455,10 +1460,31 @@ function Requirements({ state, setState, showToast, project }) {
     showToast("Requirements exported as Markdown");
   };
 
-  if (project?.id !== "atlas-payroll") return <div className="content requirements-page"><div className="page-heading"><div><span className="eyebrow">SOURCE OF TRUTH</span><h1>{project.name} requirements</h1><p>Requirements are isolated by workspace.</p></div></div><div className="panel"><Empty title="No requirements imported" text="This workspace does not use the Atlas Payroll requirements library." /></div></div>;
+  const hasRequirementsLibrary = project?.id === "atlas-payroll";
+  const requirementsTabs = [
+    ["document", "Document", BookOpenText],
+    ["mom", "Minutes of Meeting", Notebook],
+  ];
 
   return (
     <div className="content requirements-page">
+      <div className="req-page-tabs" role="tablist" aria-label="Requirements sections">
+        {requirementsTabs.map(([key, label, Icon]) => (
+          <button key={key} role="tab" aria-selected={activeTab === key} className={activeTab === key ? "active" : ""} onClick={() => setActiveTab(key)}>
+            <Icon weight={activeTab === key ? "fill" : "regular"} />{label}
+          </button>
+        ))}
+      </div>
+
+      {activeTab === "mom" ? (
+        <MomSection state={state} setState={setState} showToast={showToast} project={project} />
+      ) : !hasRequirementsLibrary ? (
+        <>
+          <div className="page-heading"><div><span className="eyebrow">SOURCE OF TRUTH</span><h1>{project.name} requirements</h1><p>Requirements are isolated by workspace.</p></div></div>
+          <div className="panel"><Empty title="No requirements imported" text="This workspace does not use the Atlas Payroll requirements library." /></div>
+        </>
+      ) : (
+      <>
       {/* Hero banner */}
       <div className="req-hero">
         <div>
@@ -1713,7 +1739,175 @@ function Requirements({ state, setState, showToast, project }) {
           </section>
         </div>
       )}
+      </>
+      )}
     </div>
+  );
+}
+
+function MomSection({ state, setState, showToast, project }) {
+  const [query, setQuery] = useState("");
+  const [filterMode, setFilterMode] = useState("all"); // all | with-recording | no-recording
+  const [modalOpen, setModalOpen] = useState(false);
+  const [modalMode, setModalMode] = useState("add");
+  const [editingId, setEditingId] = useState("");
+  const [form, setForm] = useState({ title: "", when: new Date().toISOString().slice(0, 10), recordingUrl: "", notes: "" });
+  const [saving, setSaving] = useState(false);
+
+  const entries = state.momEntries || [];
+  const sorted = useMemo(() => [...entries].sort((a, b) => (b.when || "").localeCompare(a.when || "")), [entries]);
+  const withRecordingCount = entries.filter((entry) => entry.recordingUrl).length;
+  const thisMonthCount = entries.filter((entry) => entry.when?.slice(0, 7) === new Date().toISOString().slice(0, 7)).length;
+
+  const filtered = useMemo(() => sorted.filter((entry) => {
+    const text = `${entry.title} ${entry.notes}`.toLowerCase();
+    const matchesQuery = !query || text.includes(query.toLowerCase());
+    let matchesFilter = true;
+    if (filterMode === "with-recording") matchesFilter = Boolean(entry.recordingUrl);
+    else if (filterMode === "no-recording") matchesFilter = !entry.recordingUrl;
+    return matchesQuery && matchesFilter;
+  }), [sorted, query, filterMode]);
+
+  const openAddModal = () => {
+    setForm({ title: "", when: new Date().toISOString().slice(0, 10), recordingUrl: "", notes: "" });
+    setModalMode("add");
+    setModalOpen(true);
+  };
+
+  const openEditModal = (entry) => {
+    setForm({ title: entry.title, when: entry.when, recordingUrl: entry.recordingUrl || "", notes: entry.notes || "" });
+    setEditingId(entry.id);
+    setModalMode("edit");
+    setModalOpen(true);
+  };
+
+  const handleDelete = async (entry) => {
+    if (!window.confirm(`Delete meeting minutes "${entry.title}"?`)) return;
+    try {
+      await api(`/api/mom/${encodeURIComponent(entry.id)}`, { method: "DELETE" });
+      setState((current) => ({ ...current, momEntries: current.momEntries.filter((item) => item.id !== entry.id) }));
+      showToast("Meeting minutes deleted");
+    } catch (err) { showToast(`Error: ${err.message}`); }
+  };
+
+  const handleSave = async (event) => {
+    event.preventDefault();
+    const title = form.title.trim();
+    if (!title) { showToast("Meeting title is required."); return; }
+    setSaving(true);
+    try {
+      if (modalMode === "add") {
+        const entry = await api("/api/mom", { method: "POST", body: JSON.stringify({ ...form, title, projectId: project.id }) });
+        setState((current) => ({ ...current, momEntries: [...(current.momEntries || []), entry] }));
+        showToast("Meeting minutes added");
+      } else {
+        const entry = await api(`/api/mom/${encodeURIComponent(editingId)}`, { method: "PUT", body: JSON.stringify({ ...form, title }) });
+        setState((current) => ({ ...current, momEntries: current.momEntries.map((item) => item.id === entry.id ? entry : item) }));
+        showToast("Meeting minutes updated");
+      }
+      setModalOpen(false);
+    } catch (err) { showToast(`Error: ${err.message}`); }
+    finally { setSaving(false); }
+  };
+
+  const formatWhen = (value) => value ? new Date(`${value}T00:00:00`).toLocaleDateString(undefined, { month: "long", day: "numeric", year: "numeric" }) : "No date set";
+
+  return (
+    <>
+      <div className="req-hero mom-hero">
+        <div>
+          <span className="req-hero-eyebrow">TEAM RECORD</span>
+          <h1>Minutes of Meeting</h1>
+          <p className="req-hero-sub">Decisions, notes, and recordings from every {project?.name || "project"} meeting, in one searchable log.</p>
+          <div className="req-hero-stats">
+            <div className="req-hero-stat"><strong>{entries.length}</strong><span>Meetings logged</span></div>
+            <div className="req-hero-stat"><strong>{withRecordingCount}</strong><span>With recordings</span></div>
+            <div className="req-hero-stat"><strong>{thisMonthCount}</strong><span>Logged this month</span></div>
+          </div>
+        </div>
+        <div className="req-hero-actions">
+          <button className="primary-button" onClick={openAddModal}><Plus size={15} />Log meeting</button>
+        </div>
+      </div>
+
+      <div className="req-toolbar">
+        <div className="inline-search" style={{ position: "relative" }}>
+          <MagnifyingGlass />
+          <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search meeting titles and notes..." />
+        </div>
+        <div className="req-type-filters">
+          {[
+            ["all", "All", entries.length],
+            ["with-recording", "With recording", withRecordingCount],
+            ["no-recording", "No recording", entries.length - withRecordingCount],
+          ].map(([key, label, count]) => (
+            <button key={key} className={`req-type-pill${filterMode === key ? " active" : ""}`} onClick={() => setFilterMode(key)}>
+              {label}<span className="pill-count">{count}</span>
+            </button>
+          ))}
+        </div>
+        {query && <div className="req-match-count"><strong>{filtered.length}</strong> results</div>}
+      </div>
+
+      <div className="mom-list">
+        {filtered.length === 0 ? (
+          <Empty title="No meeting minutes found" text={entries.length === 0 ? "Log your first meeting to start building the record." : "Try a broader search or clear the filters."} />
+        ) : filtered.map((entry) => (
+          <div className="mom-card" key={entry.id}>
+            <div className="mom-card-head">
+              <div className="mom-card-heading">
+                <span className="mom-card-date"><CalendarBlank size={13} />{formatWhen(entry.when)}</span>
+                <h3>{entry.title}</h3>
+              </div>
+              <div className="mom-card-actions">
+                {entry.recordingUrl ? (
+                  <a className="mom-recording-link" href={entry.recordingUrl} target="_blank" rel="noreferrer"><VideoCamera size={13} weight="fill" />Watch recording</a>
+                ) : (
+                  <span className="mom-no-recording">No recording</span>
+                )}
+                <button className="icon-button" onClick={() => openEditModal(entry)} title="Edit meeting minutes"><PencilSimple size={13} /></button>
+                <button className="icon-button delete" onClick={() => handleDelete(entry)} title="Delete meeting minutes"><Trash size={13} /></button>
+              </div>
+            </div>
+            {entry.notes && <div className="mom-card-notes">{entry.notes.split("\n").filter(Boolean).map((line, index) => <p key={index}><HighlightedText text={line} query={query} /></p>)}</div>}
+          </div>
+        ))}
+      </div>
+
+      {modalOpen && (
+        <div className="modal-backdrop modal-backdrop-top" onMouseDown={() => setModalOpen(false)}>
+          <form className="modal mom-modal" onMouseDown={(e) => e.stopPropagation()} onSubmit={handleSave}>
+            <header>
+              <div>
+                <span className="eyebrow">TEAM RECORD</span>
+                <h2>{modalMode === "add" ? "Log a new meeting" : "Edit meeting minutes"}</h2>
+              </div>
+              <button type="button" className="icon-button" onClick={() => setModalOpen(false)}><X /></button>
+            </header>
+            <div className="modal-body mom-modal-body">
+              <label>Meeting title
+                <input value={form.title} onChange={(event) => setForm({ ...form, title: event.target.value })} placeholder="e.g. Sprint 3 Kickoff & Scope Walkthrough" required />
+              </label>
+              <div className="form-row">
+                <label>When
+                  <input type="date" value={form.when} onChange={(event) => setForm({ ...form, when: event.target.value })} required />
+                </label>
+                <label>Recording link <small>Optional</small>
+                  <input type="url" value={form.recordingUrl} onChange={(event) => setForm({ ...form, recordingUrl: event.target.value })} placeholder="https://..." />
+                </label>
+              </div>
+              <label>Minutes / notes
+                <textarea rows="8" value={form.notes} onChange={(event) => setForm({ ...form, notes: event.target.value })} placeholder="Decisions made, action items, and follow-ups — one per line." />
+              </label>
+            </div>
+            <footer>
+              <button type="button" className="secondary-button" onClick={() => setModalOpen(false)}>Cancel</button>
+              <button type="submit" className="primary-button" disabled={saving}>{saving ? <SpinnerGap className="spin" /> : <FloppyDisk />}{modalMode === "add" ? "Save meeting" : "Save changes"}</button>
+            </footer>
+          </form>
+        </div>
+      )}
+    </>
   );
 }
 

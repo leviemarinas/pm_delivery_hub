@@ -70,6 +70,32 @@ function now() {
   return new Date().toISOString();
 }
 
+function seedMomEntries(createdAt, projectId = "atlas-payroll") {
+  if (projectId !== "atlas-payroll") return [];
+  return [
+    {
+      id: "MOM-0001",
+      projectId,
+      title: "Sprint 3 Kickoff & Scope Walkthrough",
+      when: "2026-07-06",
+      recordingUrl: "https://drive.google.com/drive/folders/atlas-payroll-sprint-3-kickoff",
+      notes: "Walked through the Sprint 3 commitment across Basic Pay, Company Loan, Bonus, and De Minimis.\nBasic Pay and Company Loan confirmed as the priority modules for this sprint.\nClient asked for a clearer owner on the Bonus computation decision before next review.\nAction: BA team to circulate the Definition of Ready checklist by Wednesday.",
+      createdAt,
+      updatedAt: createdAt,
+    },
+    {
+      id: "MOM-0002",
+      projectId,
+      title: "Bonus Computation Business Rules Review",
+      when: "2026-07-01",
+      recordingUrl: "",
+      notes: "Reviewed open questions on Bonus eligibility and computation timing.\nNo recording was made for this working session.\nDecision pending from Finance on proration rules for mid-cycle joiners.\nAction: Tech Lead to draft two computation options for Finance to choose from.",
+      createdAt,
+      updatedAt: createdAt,
+    },
+  ];
+}
+
 function moscowFromPriority(priority) {
   if (priority === "Critical" || priority === "High") return "Must Have";
   if (priority === "Medium") return "Should Have";
@@ -259,6 +285,7 @@ function seedState(source) {
       { id: crypto.randomUUID(), action: "Atlas requirements imported", actor: "System", itemId: source.epic.id, at: createdAt },
     ],
     presentations: [defaultSprintPresentation()],
+    momEntries: seedMomEntries(createdAt),
     source,
     users: [
       { id: "user-1", name: "Project Team", email: "project.team@example.com" },
@@ -346,6 +373,10 @@ async function loadState() {
       migrated = true;
       return { ...risk, projectId: "atlas-payroll" };
     });
+    if (!Array.isArray(existing.momEntries)) {
+      existing.momEntries = seedMomEntries(now());
+      migrated = true;
+    }
     if (!existing.users) {
       existing.users = [
         { id: "user-1", name: "Project Team", email: "project.team@example.com" },
@@ -565,6 +596,7 @@ async function handleApi(request, response, url) {
     state.workItems = state.workItems.filter((item) => item.projectId !== id);
     state.tests = state.tests.filter((test) => test.projectId !== id);
     state.risks = state.risks.filter((risk) => risk.projectId !== id);
+    state.momEntries = state.momEntries.filter((entry) => entry.projectId !== id);
     state.presentations = state.presentations.filter((presentation) => presentation.projectId !== id);
     if (state.activeProjectId === id) state.activeProjectId = state.projects[0].id;
     activity(`Deleted project workspace ${deleted.name}`, id);
@@ -754,6 +786,48 @@ async function handleApi(request, response, url) {
     if (index < 0) return json(response, 404, { error: "Risk not found." });
     const [risk] = state.risks.splice(index, 1);
     activity(`Removed risk: ${risk.title}`, id);
+    await saveState(state);
+    return json(response, 200, { deleted: true });
+  }
+  if (url.pathname === "/api/mom" && request.method === "POST") {
+    const input = await body(request);
+    const title = input.title?.trim();
+    if (!title) return json(response, 400, { error: "Meeting title is required." });
+    const entry = {
+      id: `MOM-${crypto.randomUUID().slice(0, 8).toUpperCase()}`,
+      projectId: input.projectId || state.activeProjectId,
+      title,
+      when: input.when || now().slice(0, 10),
+      recordingUrl: input.recordingUrl?.trim() || "",
+      notes: input.notes || "",
+      createdAt: now(),
+      updatedAt: now(),
+    };
+    state.momEntries.push(entry);
+    activity(`Logged meeting minutes: ${entry.title}`, entry.id);
+    await saveState(state);
+    return json(response, 201, entry);
+  }
+  const momMatch = url.pathname.match(/^\/api\/mom\/([^/]+)$/);
+  if (momMatch && request.method === "PUT") {
+    const id = decodeURIComponent(momMatch[1]);
+    const index = state.momEntries.findIndex((entry) => entry.id === id);
+    if (index < 0) return json(response, 404, { error: "Meeting minutes not found." });
+    const input = await body(request);
+    const allowed = ["title", "when", "recordingUrl", "notes"];
+    const updates = Object.fromEntries(allowed.filter((key) => Object.hasOwn(input, key)).map((key) => [key, input[key]]));
+    if (Object.hasOwn(updates, "title") && !updates.title?.trim()) return json(response, 400, { error: "Meeting title is required." });
+    state.momEntries[index] = { ...state.momEntries[index], ...updates, id, updatedAt: now() };
+    activity(`Updated meeting minutes: ${state.momEntries[index].title}`, id);
+    await saveState(state);
+    return json(response, 200, state.momEntries[index]);
+  }
+  if (momMatch && request.method === "DELETE") {
+    const id = decodeURIComponent(momMatch[1]);
+    const index = state.momEntries.findIndex((entry) => entry.id === id);
+    if (index < 0) return json(response, 404, { error: "Meeting minutes not found." });
+    const [entry] = state.momEntries.splice(index, 1);
+    activity(`Removed meeting minutes: ${entry.title}`, id);
     await saveState(state);
     return json(response, 200, { deleted: true });
   }
