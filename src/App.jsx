@@ -1807,6 +1807,7 @@ function MomSection({ state, setState, showToast, project }) {
   const [editingId, setEditingId] = useState("");
   const [form, setForm] = useState({ title: "", when: new Date().toISOString().slice(0, 10), recordingUrl: "", notes: "", notesFormat: "text" });
   const [saving, setSaving] = useState(false);
+  const [activeEntryId, setActiveEntryId] = useState("");
 
   const entries = state.momEntries || [];
   const sorted = useMemo(() => [...entries].sort((a, b) => (b.when || "").localeCompare(a.when || "")), [entries]);
@@ -1865,6 +1866,16 @@ function MomSection({ state, setState, showToast, project }) {
   };
 
   const formatWhen = (value) => value ? new Date(`${value}T00:00:00`).toLocaleDateString(undefined, { month: "long", day: "numeric", year: "numeric" }) : "No date set";
+  const formatWhenShort = (value) => value ? new Date(`${value}T00:00:00`).toLocaleDateString(undefined, { month: "short", day: "numeric" }) : "No date";
+
+  const jumpToEntry = (entry) => {
+    setActiveEntryId(entry.id);
+    setQuery("");
+    setFilterMode("all");
+    window.setTimeout(() => {
+      document.getElementById(`mom-entry-${entry.id}`)?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }, 60);
+  };
 
   return (
     <>
@@ -1903,35 +1914,59 @@ function MomSection({ state, setState, showToast, project }) {
         {query && <div className="req-match-count"><strong>{filtered.length}</strong> results</div>}
       </div>
 
-      <div className="mom-list">
-        {filtered.length === 0 ? (
-          <Empty title="No meeting minutes found" text={entries.length === 0 ? "Log your first meeting to start building the record." : "Try a broader search or clear the filters."} />
-        ) : filtered.map((entry) => (
-          <div className="mom-card" key={entry.id}>
-            <div className="mom-card-head">
-              <div className="mom-card-heading">
-                <span className="mom-card-date"><CalendarBlank size={13} />{formatWhen(entry.when)}</span>
-                <h3>{entry.title}</h3>
-              </div>
-              <div className="mom-card-actions">
-                {entry.recordingUrl ? (
-                  <a className="mom-recording-link" href={entry.recordingUrl} target="_blank" rel="noreferrer"><VideoCamera size={13} weight="fill" />Watch recording</a>
-                ) : (
-                  <span className="mom-no-recording">No recording</span>
-                )}
-                <button className="icon-button" onClick={() => openEditModal(entry)} title="Edit meeting minutes"><PencilSimple size={13} /></button>
-                <button className="icon-button delete" onClick={() => handleDelete(entry)} title="Delete meeting minutes"><Trash size={13} /></button>
+      <div className="document-layout">
+        <aside className="document-toc">
+          <div className="document-toc-header">
+            <TreeStructure size={15} weight="bold" />
+            <strong>Meeting index</strong>
+          </div>
+          <button className={`toc-all-btn${!activeEntryId ? " active" : ""}`} onClick={() => { setActiveEntryId(""); setQuery(""); setFilterMode("all"); }}>
+            All meetings
+            <span className="toc-block-count">{sorted.length}</span>
+          </button>
+          {sorted.map((entry, index) => (
+            <div className="toc-section" key={entry.id}>
+              <div className={`toc-section-header${activeEntryId === entry.id ? " active" : ""}`}>
+                <span className="toc-section-number">{index + 1}</span>
+                <button className="toc-select-btn" title={entry.title} onClick={() => jumpToEntry(entry)}>
+                  {entry.title}
+                </button>
+                <span className="toc-block-count">{formatWhenShort(entry.when)}</span>
               </div>
             </div>
-            {entry.notes && (
-              <div className="mom-card-notes">
-                {momNotesToBlocks(entry.notes, entry.notesFormat).map((block, index) => (
-                  <MomNoteBlock key={index} block={block} query={query} />
-                ))}
+          ))}
+        </aside>
+
+        <div className="mom-list">
+          {filtered.length === 0 ? (
+            <Empty title="No meeting minutes found" text={entries.length === 0 ? "Log your first meeting to start building the record." : "Try a broader search or clear the filters."} />
+          ) : filtered.map((entry) => (
+            <div className={`mom-card${activeEntryId === entry.id ? " active" : ""}`} id={`mom-entry-${entry.id}`} key={entry.id}>
+              <div className="mom-card-head">
+                <div className="mom-card-heading">
+                  <span className="mom-card-date"><CalendarBlank size={13} />{formatWhen(entry.when)}</span>
+                  <h3>{entry.title}</h3>
+                </div>
+                <div className="mom-card-actions">
+                  {entry.recordingUrl ? (
+                    <a className="mom-recording-link" href={entry.recordingUrl} target="_blank" rel="noreferrer"><VideoCamera size={13} weight="fill" />Watch recording</a>
+                  ) : (
+                    <span className="mom-no-recording">No recording</span>
+                  )}
+                  <button className="icon-button" onClick={() => openEditModal(entry)} title="Edit meeting minutes"><PencilSimple size={13} /></button>
+                  <button className="icon-button delete" onClick={() => handleDelete(entry)} title="Delete meeting minutes"><Trash size={13} /></button>
+                </div>
               </div>
-            )}
-          </div>
-        ))}
+              {entry.notes && (
+                <div className="mom-card-notes">
+                  {momNotesToBlocks(entry.notes, entry.notesFormat).map((block, index) => (
+                    <MomNoteBlock key={index} block={block} query={query} />
+                  ))}
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
       </div>
 
       {modalOpen && (
