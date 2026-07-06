@@ -1607,7 +1607,7 @@ function Requirements({ state, setState, showToast, project }) {
       </button>
 
       {modalOpen && (
-        <div className="modal-backdrop" onMouseDown={() => setModalOpen(false)}>
+        <div className="modal-backdrop modal-backdrop-top" onMouseDown={() => setModalOpen(false)}>
           <section className="modal req-import-modal" onMouseDown={(e) => e.stopPropagation()} style={{ maxWidth: "600px" }}>
             <header>
               <div>
