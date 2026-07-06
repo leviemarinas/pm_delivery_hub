@@ -176,6 +176,7 @@ function seedState(source) {
         sprint: "Sprint 3",
         phase: story.featureId.includes("CROSS") ? "Phase 3" : "Phase 2",
         moscow: moscowFromPriority(story.priority),
+        approvedByClient: "No",
         storyPoints: [5, 8, 5, 3, 5, 8][storyIndex % 6],
         progress: status === "Closed" ? 100 : status === "Active" ? 50 : 0,
         createdAt,
@@ -292,6 +293,14 @@ async function loadState() {
       if ((next.type === "Feature" || next.type === "User Story") && !next.moscow) {
         migrated = true;
         next = { ...next, moscow: moscowFromPriority(next.priority) };
+      }
+      if (next.type === "User Story" && !next.complexity) {
+        migrated = true;
+        next = { ...next, complexity: "Medium" };
+      }
+      if (next.type === "User Story" && !Object.hasOwn(next, "approvedByClient")) {
+        migrated = true;
+        next = { ...next, approvedByClient: "No" };
       }
       return next;
     });
@@ -599,6 +608,7 @@ async function handleApi(request, response, url) {
       moscow: input.moscow || ((input.type === "Feature" || input.type === "User Story") ? moscowFromPriority(input.priority || "Medium") : ""),
       phase: input.phase || "Phase 1",
       complexity: input.complexity || "Medium",
+      approvedByClient: input.approvedByClient === "Yes" ? "Yes" : "No",
       assignee: input.assignee?.trim() || "Unassigned",
       sprint: input.sprint?.trim() || "Backlog",
       storyPoints: Number(input.storyPoints || 0),
@@ -629,6 +639,12 @@ async function handleApi(request, response, url) {
     const index = state.workItems.findIndex((item) => item.id === id);
     if (index < 0) return json(response, 404, { error: "Work item not found." });
     const input = await body(request);
+    if (Object.hasOwn(input, "approvedByClient") && !["Yes", "No"].includes(input.approvedByClient)) {
+      return json(response, 400, { error: "Approved by Client must be Yes or No." });
+    }
+    if (Object.hasOwn(input, "moscow") && !["Must Have", "Should Have", "Could Have", "Won't Have"].includes(input.moscow)) {
+      return json(response, 400, { error: "MoSCoW priority is invalid." });
+    }
     const oldAssignee = state.workItems[index].assignee;
     state.workItems[index] = { ...state.workItems[index], ...input, id, updatedAt: now() };
     const newAssignee = state.workItems[index].assignee;

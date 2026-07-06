@@ -1817,29 +1817,63 @@ const presentationSlides = [
   { chapter: "09", kicker: "Forward view", title: "Next sprint and actions" },
 ];
 
+const planningAudiences = [
+  { id: "client", label: "Client", chapter: "CLIENT", kicker: "Scope approval", title: "Confirm the sprint commitment", purpose: "Review planned scope, priority, and approval status before the team commits.", Icon: Users },
+  { id: "development", label: "Development", chapter: "DEV", kicker: "Delivery handoff", title: "Prepare stories for implementation", purpose: "Align ownership, dependencies, acceptance criteria, and delivery complexity.", Icon: Briefcase },
+  { id: "qa", label: "QA", chapter: "QA", kicker: "Quality planning", title: "Prepare coverage before execution", purpose: "Review dependencies, acceptance evidence, and the checks required for each story.", Icon: TestTube },
+];
+
+function buildPlanningSlides(stories) {
+  return planningAudiences.flatMap((audience) => [
+    { key: `${audience.id}-section`, kind: "section", audience, chapter: audience.chapter, kicker: audience.kicker, title: audience.title },
+    ...stories.map((story, index) => ({
+      key: `${audience.id}-${story.id}`,
+      kind: "story",
+      audience,
+      story,
+      chapter: `${audience.chapter.slice(0, 1)}${String(index + 1).padStart(2, "0")}`,
+      kicker: `${audience.label} view`,
+      title: story.title,
+    })),
+  ]);
+}
+
 function SprintPresentation({ state, setState, project, showToast }) {
   const presentation = state.presentations?.[0];
   const [slideIndex, setSlideIndex] = useState(0);
+  const [presentationType, setPresentationType] = useState("review");
+  const [planningAudience, setPlanningAudience] = useState("client");
   const [editing, setEditing] = useState(false);
   const [presenting, setPresenting] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [savingStoryField, setSavingStoryField] = useState("");
   const [error, setError] = useState("");
   const [draft, setDraft] = useState(presentation);
   const [showNotes, setShowNotes] = useState(false);
   const [presentedAt, setPresentedAt] = useState(null);
   const [elapsed, setElapsed] = useState(0);
 
+  const features = state.workItems.filter((item) => item.type === "Feature" && item.phase !== "Unplanned");
+  const allStories = state.workItems.filter((item) => item.type === "User Story" && item.phase !== "Unplanned");
+  const sprintNames = [...new Set(allStories.map((item) => item.sprint).filter((sprint) => /^Sprint\s+\d+/i.test(sprint)))].sort((a, b) => Number(a.match(/\d+/)?.[0] || 0) - Number(b.match(/\d+/)?.[0] || 0));
+  const sprintStories = allStories.filter((item) => item.sprint === draft?.sprintName);
+  const stories = sprintStories.length ? sprintStories : allStories;
+  const planningSlides = buildPlanningSlides(stories).filter((item) => item.audience.id === planningAudience);
+  const activeSlides = presentationType === "review" ? presentationSlides : planningSlides;
+  const activeSlide = activeSlides[slideIndex] || activeSlides[0];
+
   useEffect(() => { if (presentation) setDraft(presentation); }, [presentation?.updatedAt]);
+  useEffect(() => { setSlideIndex(0); setEditing(false); }, [presentationType, planningAudience, draft?.sprintName]);
   useEffect(() => {
     if (!presenting) return undefined;
     const onKeyDown = (event) => {
-      if (event.key === "ArrowRight" || event.key === " ") setSlideIndex((current) => Math.min(presentationSlides.length - 1, current + 1));
+      if (event.key === "ArrowRight" || event.key === " ") setSlideIndex((current) => Math.min(activeSlides.length - 1, current + 1));
       if (event.key === "ArrowLeft") setSlideIndex((current) => Math.max(0, current - 1));
       if (event.key === "Escape") setPresenting(false);
     };
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [presenting]);
+  }, [presenting, activeSlides.length]);
   useEffect(() => {
     if (!presenting || !presentedAt) return undefined;
     const timer = window.setInterval(() => setElapsed(Math.floor((Date.now() - presentedAt) / 1000)), 1000);
@@ -1848,11 +1882,6 @@ function SprintPresentation({ state, setState, project, showToast }) {
 
   if (!presentation || !draft) return <div className="content"><Empty title="No sprint presentation" text="Restart the server once to create the reusable sprint presentation." /></div>;
 
-  const features = state.workItems.filter((item) => item.type === "Feature" && item.phase !== "Unplanned");
-  const allStories = state.workItems.filter((item) => item.type === "User Story" && item.phase !== "Unplanned");
-  const sprintNames = [...new Set(allStories.map((item) => item.sprint).filter((sprint) => /^Sprint\s+\d+/i.test(sprint)))].sort((a, b) => Number(a.match(/\d+/)?.[0] || 0) - Number(b.match(/\d+/)?.[0] || 0));
-  const sprintStories = allStories.filter((item) => item.sprint === draft.sprintName);
-  const stories = sprintStories.length ? sprintStories : allStories;
   const tasks = state.workItems.filter((item) => item.type === "Task");
   const storyIds = new Set(stories.map((item) => item.id));
   const sprintTests = state.tests.filter((test) => storyIds.has(test.storyId));
@@ -1899,24 +1928,77 @@ function SprintPresentation({ state, setState, project, showToast }) {
   };
 
   const openPresentation = () => { setPresentedAt(Date.now()); setElapsed(0); setPresenting(true); };
+  const updateStoryField = async (storyId, field, value) => {
+    const savingKey = `${storyId}:${field}`;
+    setSavingStoryField(savingKey); setError("");
+    try {
+      const updated = await api(`/api/work-items/${encodeURIComponent(storyId)}`, { method: "PUT", body: JSON.stringify({ [field]: value }) });
+      setState((current) => ({ ...current, workItems: current.workItems.map((item) => item.id === storyId ? updated : item) }));
+      showToast(`${storyId} ${field === "moscow" ? "MoSCoW priority" : "client approval"} set to ${value}`);
+    } catch (requestError) { setError(requestError.message); }
+    finally { setSavingStoryField(""); }
+  };
+  const jumpToAudience = (audienceId) => {
+    setPlanningAudience(audienceId);
+    setSlideIndex(0);
+  };
   const timeLabel = `${String(Math.floor(elapsed / 60)).padStart(2, "0")}:${String(elapsed % 60).padStart(2, "0")}`;
-  const slide = <SprintSlide index={slideIndex} presentation={draft} metrics={metrics} state={state} project={project} />;
-  return <div className="content presentation-page">
-    <div className="page-heading presentation-heading"><div><div className="presentation-live"><span /><strong>LIVE CLIENT DECK</strong><i>Auto-built from delivery and QA data</i></div><h1>Sprint presentation</h1><p>A decision-led sprint narrative with live scope, delivery, quality, and risk evidence.</p></div><div className="presentation-actions"><select aria-label="Sprint shown in presentation" value={draft.sprintName} onChange={(event) => setDraft({ ...draft, sprintName: event.target.value })}>{sprintNames.map((sprint) => <option key={sprint}>{sprint}</option>)}</select><button className="secondary-button" onClick={refreshNarrative}><ArrowClockwise />Sync narrative</button><button className="secondary-button" onClick={() => setEditing(!editing)}><PencilSimple />{editing ? "Close editor" : "Edit story"}</button><button className="secondary-button" onClick={() => window.print()}><Printer />Export PDF</button><button className="primary-button" onClick={openPresentation}><Play weight="fill" />Present</button></div></div>
+  const approvedCount = stories.filter((story) => story.approvedByClient === "Yes").length;
+  const slide = presentationType === "review"
+    ? <SprintSlide index={slideIndex} presentation={draft} metrics={metrics} state={state} project={project} />
+    : <PlanningSlide slide={activeSlide} presentation={draft} stories={stories} tests={sprintTests} project={project} updateStoryField={updateStoryField} savingStoryField={savingStoryField} />;
+  const presenterNote = presentationType === "review" ? draft.presenterNotes : activeSlide.kind === "section" ? activeSlide.audience.purpose : activeSlide.audience.id === "client" ? "Confirm the story outcome, priority, planned status, and client approval before moving forward." : activeSlide.audience.id === "development" ? "Confirm ownership, dependencies, acceptance criteria, and complexity before commitment." : "Confirm the acceptance evidence and QA checks are complete enough to begin test design.";
+  return <div className={`content presentation-page ${presenting ? "is-presenting" : ""}`}>
+    <div className="page-heading presentation-heading"><div><div className="presentation-live"><span /><strong>{presentationType === "review" ? "LIVE CLIENT DECK" : "LIVE PLANNING DECK"}</strong><i>Auto-built from delivery and QA data</i></div><h1>{presentationType === "review" ? "Sprint presentation" : "Sprint planning"}</h1><p>{presentationType === "review" ? "A decision-led sprint narrative with live scope, delivery, quality, and risk evidence." : "Audience-specific planning views for client approval, delivery handoff, and QA preparation."}</p></div><div className="presentation-actions"><div className="presentation-mode-switch" role="group" aria-label="Presentation mode"><button className={presentationType === "review" ? "active" : ""} aria-pressed={presentationType === "review"} onClick={() => setPresentationType("review")}><PresentationChart />Presentation</button><button className={presentationType === "planning" ? "active" : ""} aria-pressed={presentationType === "planning"} onClick={() => setPresentationType("planning")}><ClipboardText />Planning</button></div><select aria-label="Sprint shown in presentation" value={draft.sprintName} onChange={(event) => setDraft({ ...draft, sprintName: event.target.value })}>{sprintNames.map((sprint) => <option key={sprint}>{sprint}</option>)}</select>{presentationType === "review" && <><button className="secondary-button" onClick={refreshNarrative}><ArrowClockwise />Sync narrative</button><button className="secondary-button" onClick={() => setEditing(!editing)}><PencilSimple />{editing ? "Close editor" : "Edit story"}</button></>}<button className="secondary-button" onClick={() => window.print()}><Printer />Export PDF</button><button className="primary-button" onClick={openPresentation}><Play weight="fill" />Present</button></div></div>
     {error && <div className="form-error"><Warning />{error}</div>}
+    {presentationType === "planning" && <AudienceSwitcher activeAudience={activeSlide.audience.id} onSelect={jumpToAudience} />}
     <div className={`presentation-workspace ${editing ? "editing" : ""}`}>
-      <aside className="slide-rail">{presentationSlides.map((item, index) => <button key={item.title} className={slideIndex === index ? "active" : ""} onClick={() => setSlideIndex(index)}><span>{item.chapter}</span><div className={`slide-thumb thumb-${index}`}><small>{item.kicker}</small><strong>{item.title}</strong><i>{String(index + 1).padStart(2, "0")}</i></div></button>)}</aside>
-      <section className="slide-stage"><div className="slide-toolbar"><div><button className="icon-button" disabled={slideIndex === 0} onClick={() => setSlideIndex((value) => Math.max(0, value - 1))}><ArrowLeft /></button><strong>{presentationSlides[slideIndex].chapter} · {presentationSlides[slideIndex].kicker}</strong><button className="icon-button" disabled={slideIndex === presentationSlides.length - 1} onClick={() => setSlideIndex((value) => Math.min(presentationSlides.length - 1, value + 1))}><ArrowRight /></button></div><span className="deck-freshness"><i />Live snapshot · {draft.sprintName}</span><button className="tertiary-button" onClick={openPresentation}><ArrowsOutSimple />Present view</button></div>{slide}<div className="presenter-note"><NotePencil size={18} /><div><strong>Talk track</strong><span>{draft.presenterNotes}</span></div><small>{slideIndex + 1} / {presentationSlides.length}</small></div></section>
+      <aside className="slide-rail">{activeSlides.map((item, index) => <button key={item.key || item.title} className={`${slideIndex === index ? "active" : ""} ${item.kind === "section" ? "section-slide" : ""}`} onClick={() => setSlideIndex(index)}><span>{item.chapter}</span><div className={`slide-thumb thumb-${index}`}><small>{item.kicker}</small><strong>{item.title}</strong><i>{String(index + 1).padStart(2, "0")}</i></div></button>)}</aside>
+      <section className="slide-stage"><div className="slide-toolbar"><div><button className="icon-button" disabled={slideIndex === 0} onClick={() => setSlideIndex((value) => Math.max(0, value - 1))}><ArrowLeft /></button><strong>{activeSlide.chapter} / {activeSlide.kicker}</strong><button className="icon-button" disabled={slideIndex === activeSlides.length - 1} onClick={() => setSlideIndex((value) => Math.min(activeSlides.length - 1, value + 1))}><ArrowRight /></button></div><span className="deck-freshness"><i />{presentationType === "review" ? `Live snapshot / ${draft.sprintName}` : `${approvedCount}/${stories.length} client approved`}</span><button className="tertiary-button" onClick={openPresentation}><ArrowsOutSimple />Present view</button></div>{slide}<div className="presenter-note"><NotePencil size={18} /><div><strong>Talk track</strong><span>{presenterNote}</span></div><small>{slideIndex + 1} / {activeSlides.length}</small></div></section>
       {editing && <PresentationEditor draft={draft} setDraft={setDraft} save={save} saving={saving} refreshNarrative={refreshNarrative} />}
     </div>
-    {presenting && <div className="present-overlay"><div className="present-topbar"><div><span className="present-live-dot" />{draft.sprintName}<strong>{timeLabel}</strong></div><div><button onClick={() => setShowNotes(!showNotes)} className={showNotes ? "active" : ""}><NotePencil />Speaker notes</button><button onClick={() => setPresenting(false)}><X />Exit</button></div></div><div className="present-canvas" onClick={() => setSlideIndex((value) => Math.min(presentationSlides.length - 1, value + 1))}>{slide}</div>{showNotes && <div className="present-note-popover"><strong>Presenter note</strong><p>{draft.presenterNotes}</p><small>Use ← and → to navigate · Esc to exit</small></div>}<div className="present-controls"><button disabled={slideIndex === 0} onClick={() => setSlideIndex((value) => Math.max(0, value - 1))}><ArrowLeft />Previous</button><div><span>{presentationSlides[slideIndex].kicker}</span><i style={{ "--deck-progress": `${(slideIndex + 1) / presentationSlides.length * 100}%` }} /></div><strong>{String(slideIndex + 1).padStart(2, "0")} / {presentationSlides.length}</strong><button disabled={slideIndex === presentationSlides.length - 1} onClick={() => setSlideIndex((value) => Math.min(presentationSlides.length - 1, value + 1))}>Next<ArrowRight /></button></div></div>}
-    <div className="print-deck">{presentationSlides.map((_, index) => <SprintSlide key={index} index={index} presentation={draft} metrics={metrics} state={state} project={project} />)}</div>
+    {presenting && <div className="present-overlay"><div className="present-topbar"><div><span className="present-live-dot" />{draft.sprintName}<strong>{timeLabel}</strong></div>{presentationType === "planning" && <AudienceSwitcher compact activeAudience={activeSlide.audience.id} onSelect={jumpToAudience} />}<div><button onClick={() => setShowNotes(!showNotes)} className={showNotes ? "active" : ""}><NotePencil />Speaker notes</button><button onClick={() => setPresenting(false)}><X />Exit</button></div></div><div className="present-canvas" onClick={() => setSlideIndex((value) => Math.min(activeSlides.length - 1, value + 1))}>{slide}</div>{showNotes && <div className="present-note-popover"><strong>Presenter note</strong><p>{presenterNote}</p><small>Use arrow keys to navigate / Esc to exit</small></div>}<div className="present-controls"><button disabled={slideIndex === 0} onClick={() => setSlideIndex((value) => Math.max(0, value - 1))}><ArrowLeft />Previous</button><div><span>{activeSlide.kicker}</span><i style={{ "--deck-progress": `${(slideIndex + 1) / activeSlides.length * 100}%` }} /></div><strong>{String(slideIndex + 1).padStart(2, "0")} / {activeSlides.length}</strong><button disabled={slideIndex === activeSlides.length - 1} onClick={() => setSlideIndex((value) => Math.min(activeSlides.length - 1, value + 1))}>Next<ArrowRight /></button></div></div>}
+    <div className="print-deck">{presentationType === "review" ? presentationSlides.map((_, index) => <SprintSlide key={index} index={index} presentation={draft} metrics={metrics} state={state} project={project} />) : planningSlides.map((item) => <PlanningSlide key={item.key} slide={item} presentation={draft} stories={stories} tests={sprintTests} project={project} updateStoryField={updateStoryField} savingStoryField={savingStoryField} />)}</div>
   </div>;
 }
 
 function PresentationEditor({ draft, setDraft, save, saving, refreshNarrative }) {
   const setList = (key, value) => setDraft({ ...draft, [key]: value.split("\n").map((item) => item.trim()).filter(Boolean) });
   return <aside className="presentation-editor"><header><div><span className="eyebrow">SPRINT UPDATE</span><h2>Edit client narrative</h2></div><button className="icon-button" onClick={refreshNarrative} title="Refresh narrative from project data"><TrendUp /></button></header><div className="editor-scroll"><div className="form-row"><label>Sprint name<input value={draft.sprintName} onChange={(event) => setDraft({ ...draft, sprintName: event.target.value })} /></label><label>Date range<input value={draft.dateRange} onChange={(event) => setDraft({ ...draft, dateRange: event.target.value })} /></label></div><label>Audience<input value={draft.audience} onChange={(event) => setDraft({ ...draft, audience: event.target.value })} /></label><label>Headline<textarea rows="3" value={draft.headline} onChange={(event) => setDraft({ ...draft, headline: event.target.value })} /></label><label>Executive summary<textarea rows="5" value={draft.executiveSummary} onChange={(event) => setDraft({ ...draft, executiveSummary: event.target.value })} /></label><label>Sprint goal<textarea rows="4" value={draft.sprintGoal} onChange={(event) => setDraft({ ...draft, sprintGoal: event.target.value })} /></label><label>Highlights <small>One item per line</small><textarea rows="6" value={draft.highlights.join("\n")} onChange={(event) => setList("highlights", event.target.value)} /></label><label>Decisions needed <small>One item per line</small><textarea rows="6" value={draft.decisionsNeeded.join("\n")} onChange={(event) => setList("decisionsNeeded", event.target.value)} /></label><label>Next sprint goals <small>One item per line</small><textarea rows="6" value={draft.nextSprintGoals.join("\n")} onChange={(event) => setList("nextSprintGoals", event.target.value)} /></label><label>Client asks <small>One item per line</small><textarea rows="6" value={draft.clientAsks.join("\n")} onChange={(event) => setList("clientAsks", event.target.value)} /></label><label>Confidence<select value={draft.confidence} onChange={(event) => setDraft({ ...draft, confidence: event.target.value })}><option>On Track</option><option>Watch</option><option>At Risk</option></select></label><label>Presenter note<textarea rows="4" value={draft.presenterNotes} onChange={(event) => setDraft({ ...draft, presenterNotes: event.target.value })} /></label></div><footer><button className="secondary-button" onClick={refreshNarrative}><TrendUp />Refresh from ADO</button><button className="primary-button" onClick={save} disabled={saving}>{saving ? <SpinnerGap className="spin" /> : <FloppyDisk />}Save update</button></footer></aside>;
+}
+
+function AudienceSwitcher({ activeAudience, onSelect, compact = false }) {
+  return <div className={`audience-switcher ${compact ? "compact" : ""}`} role="group" aria-label="Sprint planning audience">{planningAudiences.map((audience) => { const Icon = audience.Icon; return <button key={audience.id} className={activeAudience === audience.id ? "active" : ""} aria-pressed={activeAudience === audience.id} onClick={() => onSelect(audience.id)}><Icon weight={activeAudience === audience.id ? "fill" : "regular"} /><span>{audience.label}</span><small>{audience.kicker}</small></button>; })}</div>;
+}
+
+function PlanningSlide({ slide, presentation, stories, tests, project, updateStoryField, savingStoryField }) {
+  const { audience, story } = slide;
+  const approvedCount = stories.filter((item) => item.approvedByClient === "Yes").length;
+  const frame = (children, className = "") => <div className={`sprint-slide planning-slide planning-${audience.id} ${className}`}><div className="slide-accent" /><div className="slide-brand"><span><i>A</i> ATLAS DELIVERY HUB</span><strong>{presentation.sprintName} / SPRINT PLANNING</strong></div>{children}<div className="slide-footer"><span>{project.name} / {audience.label} view</span><strong>{slide.chapter}</strong></div></div>;
+
+  if (slide.kind === "section") {
+    const metrics = audience.id === "client"
+      ? [[stories.length, "stories to review"], [approvedCount, "approved by client"], [stories.length - approvedCount, "awaiting approval"]]
+      : audience.id === "development"
+        ? [[stories.length, "planned stories"], [stories.filter((item) => item.assignee && item.assignee !== "Unassigned").length, "stories assigned"], [new Set(stories.flatMap((item) => item.dependencies || [])).size, "dependencies"]]
+        : [[stories.length, "stories to cover"], [stories.reduce((total, item) => total + (item.qaFocus?.length || 0), 0), "planned QA checks"], [tests.length, "linked test cases"]];
+    return frame(<div className="planning-section-content"><span>{audience.label.toUpperCase()} VIEW</span><h2>{audience.title}</h2><p>{audience.purpose}</p><div className="planning-section-metrics">{metrics.map(([value, label]) => <div key={label}><strong>{value}</strong><span>{label}</span></div>)}</div><div className="planning-section-flow"><span>01</span><p>Review each user story</p><span>02</span><p>Resolve open planning details</p><span>03</span><p>{audience.id === "client" ? "Capture client approval" : audience.id === "development" ? "Confirm implementation readiness" : "Confirm test readiness"}</p></div></div>, "planning-section-slide");
+  }
+
+  const header = <><div className="planning-story-heading"><div><span>{story.id}</span><i>{audience.label} view</i></div><h2>{story.title}</h2><p>{story.description || "No description supplied."}</p></div></>;
+  const dependencies = <PlanningList title="Dependencies" items={story.dependencies} empty="No dependencies recorded." numbered={false} />;
+  const acceptance = <PlanningList title="Acceptance criteria" items={story.acceptanceCriteria} empty="No acceptance criteria recorded." />;
+
+  if (audience.id === "client") return frame(<>{header}<div className="client-planning-grid"><div className="planning-status-card"><span>PLANNED STATUS</span><strong className={`planning-status status-${story.status.toLowerCase().replaceAll(" ", "-")}`}>{story.status}</strong><small>Current state for {presentation.sprintName}</small></div><label className="planning-decision-card moscow-card" onClick={(event) => event.stopPropagation()} onMouseDown={(event) => event.stopPropagation()}><span>MOSCOW PRIORITY</span><select aria-label={`MoSCoW Priority for ${story.id}`} value={story.moscow || "Should Have"} disabled={savingStoryField === `${story.id}:moscow`} onChange={(event) => updateStoryField(story.id, "moscow", event.target.value)}><option>Must Have</option><option>Should Have</option><option>Could Have</option><option>Won't Have</option></select><small>{savingStoryField === `${story.id}:moscow` ? "Saving priority..." : "Change priority during planning"}</small></label><label className={`planning-decision-card client-approval-card approval-${(story.approvedByClient || "No").toLowerCase()}`} onClick={(event) => event.stopPropagation()} onMouseDown={(event) => event.stopPropagation()}><span>APPROVED BY CLIENT</span><select aria-label={`Approved by Client for ${story.id}`} value={story.approvedByClient || "No"} disabled={savingStoryField === `${story.id}:approvedByClient`} onChange={(event) => updateStoryField(story.id, "approvedByClient", event.target.value)}><option>Yes</option><option>No</option></select><small>{savingStoryField === `${story.id}:approvedByClient` ? "Saving decision..." : "Decision is saved immediately"}</small></label></div></>);
+
+  if (audience.id === "development") return frame(<>{header}<div className="planning-meta-row"><div><span>ASSIGNEE</span><strong>{story.assignee || "Unassigned"}</strong></div><div><span>COMPLEXITY</span><strong>{story.complexity || "Medium"}</strong></div></div><div className="planning-detail-grid"><div>{dependencies}</div><div>{acceptance}</div></div></>);
+
+  const storyTests = tests.filter((test) => test.storyId === story.id);
+  return frame(<>{header}<div className="qa-planning-summary"><div><span>DEPENDENCIES</span><strong>{story.dependencies?.length || 0}</strong><small>{story.dependencies?.slice(0, 3).join(" / ") || "None recorded"}</small></div><div><span>ACCEPTANCE CRITERIA</span><strong>{story.acceptanceCriteria?.length || 0}</strong><small>Expected outcomes to validate</small></div><div><span>LINKED TEST CASES</span><strong>{storyTests.length}</strong><small>Existing execution coverage</small></div></div><div className="planning-detail-grid qa-detail-grid"><div>{acceptance}</div><div><PlanningList title="QA checklist / checks" items={story.qaFocus} empty="No QA checks recorded." /></div></div></>);
+}
+
+function PlanningList({ title, items = [], empty, numbered = true }) {
+  return <section className="planning-list"><header><span>{title}</span><strong>{items?.length || 0}</strong></header>{items?.length ? <ol className={numbered ? "" : "plain"}>{items.map((item, index) => <li key={`${item}-${index}`}><i>{numbered ? String(index + 1).padStart(2, "0") : <LinkSimple />}</i><span>{item}</span></li>)}</ol> : <p>{empty}</p>}</section>;
 }
 
 function SprintSlide({ index, presentation, metrics, state, project }) {
@@ -2289,6 +2371,10 @@ function DetailPanel({ item, state, close, updateItem, refresh, openItem, openCr
           <label>Story points<input type="number" value={draft.storyPoints || 0} onChange={(event) => setDraft({ ...draft, storyPoints: Number(event.target.value) })} /></label>
           <label>Progress<input type="number" min="0" max="100" value={draft.progress || 0} onChange={(event) => setDraft({ ...draft, progress: Number(event.target.value) })} /></label>
         </div>
+        {item.type === "User Story" && <div className="form-row">
+          <label>Complexity<select value={draft.complexity || "Medium"} onChange={(event) => setDraft({ ...draft, complexity: event.target.value })}><option>Low</option><option>Medium</option><option>High</option></select></label>
+          <label>Approved by client<select value={draft.approvedByClient || "No"} onChange={(event) => setDraft({ ...draft, approvedByClient: event.target.value })}><option>Yes</option><option>No</option></select></label>
+        </div>}
         <label>Dependencies <small>One Work Item ID per line</small><textarea rows="4" value={(draft.dependencies || []).join("\n")} onChange={(event) => setDraft({ ...draft, dependencies: event.target.value.split("\n").map((value) => value.trim()).filter(Boolean) })} placeholder="US-BASIC-001" /></label>
         <label>Acceptance criteria <small>One criterion per line</small><textarea rows="6" value={(draft.acceptanceCriteria || []).join("\n")} onChange={(event) => setDraft({ ...draft, acceptanceCriteria: event.target.value.split("\n").map((value) => value.trim()).filter(Boolean) })} /></label>
         <label>QA focus <small>One test focus per line</small><textarea rows="6" value={(draft.qaFocus || []).join("\n")} onChange={(event) => setDraft({ ...draft, qaFocus: event.target.value.split("\n").map((value) => value.trim()).filter(Boolean) })} /></label>
@@ -2305,6 +2391,7 @@ function DetailPanel({ item, state, close, updateItem, refresh, openItem, openCr
             <div><dt>Sprint</dt><dd>{item.sprint || "Backlog"}</dd></div>
             <div><dt>Story points</dt><dd>{item.storyPoints || "—"}</dd></div>
             <div><dt>Complexity</dt><dd>{item.complexity || "—"}</dd></div>
+            {item.type === "User Story" && <div><dt>Approved by client</dt><dd>{item.approvedByClient || "No"}</dd></div>}
             <div><dt>Progress</dt><dd>{item.progress || 0}%</dd></div>
           </dl>
           <ProgressBar value={item.progress} />
@@ -2334,7 +2421,7 @@ function DetailPanel({ item, state, close, updateItem, refresh, openItem, openCr
 function Section({ title, children }) { return <section><h3>{title}</h3>{children}</section>; }
 
 function CreateModal({ state, defaults, close, onCreated }) {
-  const [form, setForm] = useState({ type: defaults.type || "User Story", parentId: defaults.parentId || "", title: "", description: "", status: defaults.status || "New", priority: "Medium", moscow: "Should Have", phase: defaults.phase || "Phase 1", assignee: "Unassigned", sprint: defaults.sprint || "Backlog", storyPoints: 0, dependenciesText: "", acceptanceText: "", qaFocusText: "" });
+  const [form, setForm] = useState({ type: defaults.type || "User Story", parentId: defaults.parentId || "", title: "", description: "", status: defaults.status || "New", priority: "Medium", moscow: "Should Have", phase: defaults.phase || "Phase 1", assignee: "Unassigned", sprint: defaults.sprint || "Backlog", storyPoints: 0, complexity: "Medium", approvedByClient: "No", dependenciesText: "", acceptanceText: "", qaFocusText: "" });
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
   const validParents = state.workItems.filter((item) => form.type === "Epic" ? false : form.type === "Feature" ? item.type === "Epic" : form.type === "User Story" || form.type === "Bug" ? item.type === "Feature" : item.type === "User Story");
@@ -2422,6 +2509,11 @@ function CreateModal({ state, defaults, close, onCreated }) {
           </label>
           <label>Sprint<input value={form.sprint} onChange={(event) => setForm({ ...form, sprint: event.target.value })} placeholder="Backlog for unplanned" /></label>
         </div>
+
+        {form.type === "User Story" && <div className="form-row">
+          <label>Complexity<select value={form.complexity} onChange={(event) => setForm({ ...form, complexity: event.target.value })}><option>Low</option><option>Medium</option><option>High</option></select></label>
+          <label>Approved by client<select value={form.approvedByClient} onChange={(event) => setForm({ ...form, approvedByClient: event.target.value })}><option>Yes</option><option>No</option></select></label>
+        </div>}
 
         <label>Dependencies <small>One Work Item ID per line</small><textarea rows="3" value={form.dependenciesText} onChange={(event) => setForm({ ...form, dependenciesText: event.target.value })} placeholder="US-BASIC-001" /></label>
 
