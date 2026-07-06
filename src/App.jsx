@@ -33,6 +33,7 @@ import {
   Gear,
   House,
   Kanban,
+  Keyboard,
   LinkSimple,
   ListBullets,
   MagnifyingGlass,
@@ -1817,6 +1818,17 @@ const presentationSlides = [
   { chapter: "09", kicker: "Forward view", title: "Next sprint and actions" },
 ];
 
+const presenterShortcuts = [
+  [["→", "Space", "PgDn"], "Next slide"],
+  [["←", "PgUp"], "Previous slide"],
+  [["Home", "End"], "First / last slide"],
+  [["G"], "Slide overview"],
+  [["N"], "Speaker notes"],
+  [["B"], "Blackout screen"],
+  [["T"], "Reset timer"],
+  [["Esc"], "Exit presentation"],
+];
+
 const planningAudiences = [
   { id: "client", label: "Client", chapter: "CLIENT", kicker: "Scope approval", title: "Confirm the sprint commitment", purpose: "Review planned scope, priority, and approval status before the team commits.", Icon: Users },
   { id: "development", label: "Development", chapter: "DEV", kicker: "Delivery handoff", title: "Prepare stories for implementation", purpose: "Align ownership, dependencies, acceptance criteria, and delivery complexity.", Icon: Briefcase },
@@ -1852,6 +1864,10 @@ function SprintPresentation({ state, setState, project, showToast }) {
   const [showNotes, setShowNotes] = useState(false);
   const [presentedAt, setPresentedAt] = useState(null);
   const [elapsed, setElapsed] = useState(0);
+  const [blackout, setBlackout] = useState(false);
+  const [showGrid, setShowGrid] = useState(false);
+  const [showHelp, setShowHelp] = useState(false);
+  const [chromeHidden, setChromeHidden] = useState(false);
 
   const features = state.workItems.filter((item) => item.type === "Feature" && item.phase !== "Unplanned");
   const allStories = state.workItems.filter((item) => item.type === "User Story" && item.phase !== "Unplanned");
@@ -1864,16 +1880,53 @@ function SprintPresentation({ state, setState, project, showToast }) {
 
   useEffect(() => { if (presentation) setDraft(presentation); }, [presentation?.updatedAt]);
   useEffect(() => { setSlideIndex(0); setEditing(false); }, [presentationType, planningAudience, draft?.sprintName]);
+  const closePresentation = () => {
+    setPresenting(false); setBlackout(false); setShowGrid(false); setShowHelp(false);
+    if (document.fullscreenElement) document.exitFullscreen().catch(() => {});
+  };
   useEffect(() => {
     if (!presenting) return undefined;
     const onKeyDown = (event) => {
-      if (event.key === "ArrowRight" || event.key === " ") setSlideIndex((current) => Math.min(activeSlides.length - 1, current + 1));
+      if (event.target.closest?.("input, textarea, select")) return;
+      const key = event.key;
+      if (key === "Escape") { if (showHelp) setShowHelp(false); else if (showGrid) setShowGrid(false); else if (blackout) setBlackout(false); else closePresentation(); return; }
+      if (key === "?") { setShowHelp((value) => !value); return; }
+      if (key === "b" || key === "B") { setBlackout((value) => !value); return; }
+      if (blackout) { setBlackout(false); return; }
+      if (key === "g" || key === "G") { setShowGrid((value) => !value); return; }
+      if (key === "n" || key === "N") { setShowNotes((value) => !value); return; }
+      if (key === "t" || key === "T") { setPresentedAt(Date.now()); setElapsed(0); return; }
+      if (key === "ArrowRight" || key === " " || key === "PageDown") { event.preventDefault(); setShowGrid(false); setSlideIndex((current) => Math.min(activeSlides.length - 1, current + 1)); }
+      if (key === "ArrowLeft" || key === "PageUp" || key === "Backspace") { event.preventDefault(); setShowGrid(false); setSlideIndex((current) => Math.max(0, current - 1)); }
+      if (key === "Home") { event.preventDefault(); setSlideIndex(0); }
+      if (key === "End") { event.preventDefault(); setSlideIndex(activeSlides.length - 1); }
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [presenting, activeSlides.length, showHelp, showGrid, blackout]);
+  useEffect(() => {
+    if (presenting) return undefined;
+    const onKeyDown = (event) => {
+      if (event.target.closest?.("input, textarea, select, [contenteditable]")) return;
+      if (event.key === "ArrowRight") setSlideIndex((current) => Math.min(activeSlides.length - 1, current + 1));
       if (event.key === "ArrowLeft") setSlideIndex((current) => Math.max(0, current - 1));
-      if (event.key === "Escape") setPresenting(false);
     };
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
   }, [presenting, activeSlides.length]);
+  useEffect(() => {
+    if (!presenting) return undefined;
+    const onFullscreenChange = () => { if (!document.fullscreenElement) closePresentation(); };
+    document.addEventListener("fullscreenchange", onFullscreenChange);
+    return () => document.removeEventListener("fullscreenchange", onFullscreenChange);
+  }, [presenting]);
+  useEffect(() => {
+    if (!presenting) return undefined;
+    let idleTimer = window.setTimeout(() => setChromeHidden(true), 2600);
+    const wake = () => { setChromeHidden(false); window.clearTimeout(idleTimer); idleTimer = window.setTimeout(() => setChromeHidden(true), 2600); };
+    window.addEventListener("mousemove", wake);
+    return () => { window.clearTimeout(idleTimer); window.removeEventListener("mousemove", wake); setChromeHidden(false); };
+  }, [presenting]);
   useEffect(() => {
     if (!presenting || !presentedAt) return undefined;
     const timer = window.setInterval(() => setElapsed(Math.floor((Date.now() - presentedAt) / 1000)), 1000);
@@ -1927,7 +1980,10 @@ function SprintPresentation({ state, setState, project, showToast }) {
     showToast("Narrative refreshed from current project data");
   };
 
-  const openPresentation = () => { setPresentedAt(Date.now()); setElapsed(0); setPresenting(true); };
+  const openPresentation = () => {
+    setPresentedAt(Date.now()); setElapsed(0); setBlackout(false); setShowGrid(false); setShowHelp(false); setPresenting(true);
+    try { document.documentElement.requestFullscreen?.()?.catch(() => {}); } catch { /* fullscreen unavailable — overlay still works */ }
+  };
   const updateStoryField = async (storyId, field, value) => {
     const savingKey = `${storyId}:${field}`;
     setSavingStoryField(savingKey); setError("");
@@ -1947,17 +2003,39 @@ function SprintPresentation({ state, setState, project, showToast }) {
   const slide = presentationType === "review"
     ? <SprintSlide index={slideIndex} presentation={draft} metrics={metrics} state={state} project={project} />
     : <PlanningSlide slide={activeSlide} presentation={draft} stories={stories} tests={sprintTests} project={project} updateStoryField={updateStoryField} savingStoryField={savingStoryField} />;
-  const presenterNote = presentationType === "review" ? draft.presenterNotes : activeSlide.kind === "section" ? activeSlide.audience.purpose : activeSlide.audience.id === "client" ? "Confirm the story outcome, priority, planned status, and client approval before moving forward." : activeSlide.audience.id === "development" ? "Confirm ownership, dependencies, acceptance criteria, and complexity before commitment." : "Confirm the acceptance evidence and QA checks are complete enough to begin test design.";
+  const reviewTalkTracks = [
+    draft.presenterNotes || `Set the scene in one line: ${draft.headline}`,
+    `Tell the 60-second story, then land the confidence call — delivery is ${draft.confidence}. Pause for reactions before moving on.`,
+    `Anchor on the sprint goal and the size of the commitment: ${metrics.stories.length} stories, ${metrics.storyPoints} points. Say what was deliberately protected or deferred.`,
+    `Walk the modules left to right. Celebrate the leader, then name the module that needs a decision — don't let it hide.`,
+    `Keep this factual: ${metrics.newStories.length} ready, ${metrics.activeStories.length} active, ${metrics.closedStories.length} closed. Explain what moved since the last review.`,
+    `Prove value, not activity — every closed story traces to acceptance criteria and QA. Pick one story and tell its journey.`,
+    `Show ownership: every active story has an owner and measurable progress. Invite questions on any row before leaving the slide.`,
+    `Read the quality signal out loud: ${metrics.qaStarted}% executed, ${metrics.passRate}% passing. State what QA tackles next and any blockers.`,
+    `Slow down — this slide earns the meeting. Ask for an owner and a date on each decision before advancing.`,
+    `Close forward: three outcomes, three client asks. Confirm the next review date, then thank the room.`,
+  ];
+  const presenterNote = presentationType === "review" ? (reviewTalkTracks[slideIndex] || draft.presenterNotes) : activeSlide.kind === "section" ? activeSlide.audience.purpose : activeSlide.audience.id === "client" ? "Confirm the story outcome, priority, planned status, and client approval before moving forward." : activeSlide.audience.id === "development" ? "Confirm ownership, dependencies, acceptance criteria, and complexity before commitment." : "Confirm the acceptance evidence and QA checks are complete enough to begin test design.";
+  const nextSlide = activeSlides[slideIndex + 1];
+  const slideView = <div className="slide-anim" key={`${presentationType}-${planningAudience}-${slideIndex}`}>{slide}</div>;
   return <div className={`content presentation-page ${presenting ? "is-presenting" : ""}`}>
     <div className="page-heading presentation-heading"><div><div className="presentation-live"><span /><strong>{presentationType === "review" ? "LIVE CLIENT DECK" : "LIVE PLANNING DECK"}</strong><i>Auto-built from delivery and QA data</i></div><h1>{presentationType === "review" ? "Sprint presentation" : "Sprint planning"}</h1><p>{presentationType === "review" ? "A decision-led sprint narrative with live scope, delivery, quality, and risk evidence." : "Audience-specific planning views for client approval, delivery handoff, and QA preparation."}</p></div><div className="presentation-actions"><div className="presentation-mode-switch" role="group" aria-label="Presentation mode"><button className={presentationType === "review" ? "active" : ""} aria-pressed={presentationType === "review"} onClick={() => setPresentationType("review")}><PresentationChart />Presentation</button><button className={presentationType === "planning" ? "active" : ""} aria-pressed={presentationType === "planning"} onClick={() => setPresentationType("planning")}><ClipboardText />Planning</button></div><select aria-label="Sprint shown in presentation" value={draft.sprintName} onChange={(event) => setDraft({ ...draft, sprintName: event.target.value })}>{sprintNames.map((sprint) => <option key={sprint}>{sprint}</option>)}</select>{presentationType === "review" && <><button className="secondary-button" onClick={refreshNarrative}><ArrowClockwise />Sync narrative</button><button className="secondary-button" onClick={() => setEditing(!editing)}><PencilSimple />{editing ? "Close editor" : "Edit story"}</button></>}<button className="secondary-button" onClick={() => window.print()}><Printer />Export PDF</button><button className="primary-button" onClick={openPresentation}><Play weight="fill" />Present</button></div></div>
     {error && <div className="form-error"><Warning />{error}</div>}
     {presentationType === "planning" && <AudienceSwitcher activeAudience={activeSlide.audience.id} onSelect={jumpToAudience} />}
     <div className={`presentation-workspace ${editing ? "editing" : ""}`}>
       <aside className="slide-rail">{activeSlides.map((item, index) => <button key={item.key || item.title} className={`${slideIndex === index ? "active" : ""} ${item.kind === "section" ? "section-slide" : ""}`} onClick={() => setSlideIndex(index)}><span>{item.chapter}</span><div className={`slide-thumb thumb-${index}`}><small>{item.kicker}</small><strong>{item.title}</strong><i>{String(index + 1).padStart(2, "0")}</i></div></button>)}</aside>
-      <section className="slide-stage"><div className="slide-toolbar"><div><button className="icon-button" disabled={slideIndex === 0} onClick={() => setSlideIndex((value) => Math.max(0, value - 1))}><ArrowLeft /></button><strong>{activeSlide.chapter} / {activeSlide.kicker}</strong><button className="icon-button" disabled={slideIndex === activeSlides.length - 1} onClick={() => setSlideIndex((value) => Math.min(activeSlides.length - 1, value + 1))}><ArrowRight /></button></div><span className="deck-freshness"><i />{presentationType === "review" ? `Live snapshot / ${draft.sprintName}` : `${approvedCount}/${stories.length} client approved`}</span><button className="tertiary-button" onClick={openPresentation}><ArrowsOutSimple />Present view</button></div>{slide}<div className="presenter-note"><NotePencil size={18} /><div><strong>Talk track</strong><span>{presenterNote}</span></div><small>{slideIndex + 1} / {activeSlides.length}</small></div></section>
+      <section className="slide-stage"><div className="slide-toolbar"><div><button className="icon-button" title="Previous slide (←)" disabled={slideIndex === 0} onClick={() => setSlideIndex((value) => Math.max(0, value - 1))}><ArrowLeft /></button><strong>{activeSlide.chapter} / {activeSlide.kicker}</strong><button className="icon-button" title="Next slide (→)" disabled={slideIndex === activeSlides.length - 1} onClick={() => setSlideIndex((value) => Math.min(activeSlides.length - 1, value + 1))}><ArrowRight /></button></div><span className="deck-freshness"><i />{presentationType === "review" ? `Live snapshot / ${draft.sprintName}` : `${approvedCount}/${stories.length} client approved`}</span><button className="tertiary-button" onClick={openPresentation}><ArrowsOutSimple />Present view</button></div>{slideView}<div className="presenter-note"><NotePencil size={18} /><div><strong>Talk track</strong><span>{presenterNote}</span></div><small>{slideIndex + 1} / {activeSlides.length} · ← → to navigate</small></div></section>
       {editing && <PresentationEditor draft={draft} setDraft={setDraft} save={save} saving={saving} refreshNarrative={refreshNarrative} />}
     </div>
-    {presenting && <div className="present-overlay"><div className="present-topbar"><div><span className="present-live-dot" />{draft.sprintName}<strong>{timeLabel}</strong></div>{presentationType === "planning" && <AudienceSwitcher compact activeAudience={activeSlide.audience.id} onSelect={jumpToAudience} />}<div><button onClick={() => setShowNotes(!showNotes)} className={showNotes ? "active" : ""}><NotePencil />Speaker notes</button><button onClick={() => setPresenting(false)}><X />Exit</button></div></div><div className="present-canvas" onClick={() => setSlideIndex((value) => Math.min(activeSlides.length - 1, value + 1))}>{slide}</div>{showNotes && <div className="present-note-popover"><strong>Presenter note</strong><p>{presenterNote}</p><small>Use arrow keys to navigate / Esc to exit</small></div>}<div className="present-controls"><button disabled={slideIndex === 0} onClick={() => setSlideIndex((value) => Math.max(0, value - 1))}><ArrowLeft />Previous</button><div><span>{activeSlide.kicker}</span><i style={{ "--deck-progress": `${(slideIndex + 1) / activeSlides.length * 100}%` }} /></div><strong>{String(slideIndex + 1).padStart(2, "0")} / {activeSlides.length}</strong><button disabled={slideIndex === activeSlides.length - 1} onClick={() => setSlideIndex((value) => Math.min(activeSlides.length - 1, value + 1))}>Next<ArrowRight /></button></div></div>}
+    {presenting && <div className={`present-overlay ${chromeHidden ? "chrome-hidden" : ""}`} role="dialog" aria-modal="true" aria-label="Presentation mode">
+      <div className="present-topbar"><div><span className="present-live-dot" />{draft.sprintName}<strong title="Elapsed time — click or press T to reset" onClick={() => { setPresentedAt(Date.now()); setElapsed(0); }}>{timeLabel}</strong></div>{presentationType === "planning" && <AudienceSwitcher compact activeAudience={activeSlide.audience.id} onSelect={jumpToAudience} />}<div><button onClick={() => setShowGrid(!showGrid)} className={showGrid ? "active" : ""} title="Slide overview (G)"><SquaresFour />Overview</button><button onClick={() => setShowNotes(!showNotes)} className={showNotes ? "active" : ""} title="Speaker notes (N)"><NotePencil />Notes</button><button onClick={() => setShowHelp(!showHelp)} className={showHelp ? "active" : ""} title="Keyboard shortcuts (?)"><Keyboard />Shortcuts</button><button onClick={closePresentation} title="Exit (Esc)"><X />Exit</button></div></div>
+      <div className="present-canvas" onClick={(event) => { const { left, width } = event.currentTarget.getBoundingClientRect(); if ((event.clientX - left) / width < 0.22) setSlideIndex((value) => Math.max(0, value - 1)); else setSlideIndex((value) => Math.min(activeSlides.length - 1, value + 1)); }}>{slideView}</div>
+      {showNotes && <div className="present-note-popover"><strong>Talk track</strong><p>{presenterNote}</p><small>{nextSlide ? `Next up · ${nextSlide.title}` : "Last slide — bring it home"}</small></div>}
+      {showGrid && <div className="present-grid" onClick={() => setShowGrid(false)}>{activeSlides.map((item, index) => <button key={item.key || `${item.chapter}-${index}`} className={slideIndex === index ? "active" : ""} onClick={(event) => { event.stopPropagation(); setSlideIndex(index); setShowGrid(false); }}><span>{item.chapter}</span><small>{item.kicker}</small><strong>{item.title}</strong><i>{String(index + 1).padStart(2, "0")}</i></button>)}</div>}
+      {showHelp && <div className="present-help" onClick={() => setShowHelp(false)}><div onClick={(event) => event.stopPropagation()}><strong>Presenter shortcuts</strong>{presenterShortcuts.map(([keys, action]) => <div key={action}><span>{keys.map((keyLabel) => <kbd key={keyLabel}>{keyLabel}</kbd>)}</span><p>{action}</p></div>)}<small>Presentation clickers work too — they send Page Up / Page Down.</small></div></div>}
+      {blackout && <div className="present-blackout" onClick={() => setBlackout(false)} title="Click or press any key to resume" />}
+      <div className="present-controls"><button disabled={slideIndex === 0} onClick={() => setSlideIndex((value) => Math.max(0, value - 1))}><ArrowLeft />Previous</button><div><span>{nextSlide ? `Next · ${nextSlide.title}` : "Closing slide"}</span><i style={{ "--deck-progress": `${(slideIndex + 1) / activeSlides.length * 100}%` }} /></div><strong>{String(slideIndex + 1).padStart(2, "0")} / {activeSlides.length}</strong><button disabled={slideIndex === activeSlides.length - 1} onClick={() => setSlideIndex((value) => Math.min(activeSlides.length - 1, value + 1))}>Next<ArrowRight /></button></div>
+    </div>}
     <div className="print-deck">{presentationType === "review" ? presentationSlides.map((_, index) => <SprintSlide key={index} index={index} presentation={draft} metrics={metrics} state={state} project={project} />) : planningSlides.map((item) => <PlanningSlide key={item.key} slide={item} presentation={draft} stories={stories} tests={sprintTests} project={project} updateStoryField={updateStoryField} savingStoryField={savingStoryField} />)}</div>
   </div>;
 }

@@ -828,7 +828,9 @@ tbody tr:last-child td { border-bottom: 0; }
 .slide-toolbar > div { display: flex; align-items: center; gap: 5px; font-variant-numeric: tabular-nums; }
 .slide-toolbar .icon-button { width: 29px; height: 29px; }
 .slide-toolbar button:disabled, .present-controls button:disabled { opacity: .35; cursor: default; }
-.slide-stage > .sprint-slide { box-shadow: var(--shadow-md); }
+.slide-stage .sprint-slide { box-shadow: var(--shadow-md); }
+.slide-anim { width: 100%; min-width: 0; animation: slide-in .32s var(--ease) both; }
+@keyframes slide-in { from { opacity: 0; transform: translateY(9px) scale(.992); } }
 
 .sprint-slide {
   --ppt-purple: #7938ef; --ppt-purple-deep: #5f24cc; --ppt-lilac: #f0ebff; --ppt-ink: #262437;
@@ -1246,6 +1248,31 @@ tbody tr:last-child td { border-bottom: 0; }
 .present-controls > div span { color: #aeb8c9; font-size: 9px; text-transform: uppercase; letter-spacing: .08em; }
 .present-controls > div i { width: 100%; height: 3px; border-radius: 99px; background: linear-gradient(90deg, #6d4aff var(--deck-progress), rgba(255,255,255,.14) 0); }
 .present-controls > strong { color: #d2d9e5; font-size: 10px; font-variant-numeric: tabular-nums; }
+
+/* Present mode: auto-hiding chrome, overview grid, shortcuts, blackout */
+.present-topbar, .present-controls { transition: opacity .3s var(--ease); }
+.present-overlay.chrome-hidden .present-topbar, .present-overlay.chrome-hidden .present-controls { opacity: 0; pointer-events: none; }
+.present-overlay.chrome-hidden .present-canvas { cursor: none; }
+.present-topbar > div > strong { cursor: pointer; }
+.present-controls > div span { max-width: 420px; margin: 0 auto; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.present-grid { position: absolute; inset: 58px 46px 64px; z-index: 3; overflow: auto; display: grid; grid-template-columns: repeat(auto-fill, minmax(212px, 1fr)); gap: 11px; align-content: start; padding: 14px; border-radius: 14px; background: rgba(14, 16, 26, .96); box-shadow: 0 24px 70px rgba(0, 0, 0, .5); animation: pop .25s var(--ease) both; }
+.present-grid button { position: relative; aspect-ratio: 16/9; padding: 12px 13px; display: flex; flex-direction: column; align-items: flex-start; gap: 5px; text-align: left; border: 1px solid rgba(255,255,255,.13); border-radius: 9px; background: rgba(255,255,255,.05); color: #aeb8c9; transition: border-color .15s, background .15s, transform .15s; }
+.present-grid button:hover { background: rgba(255,255,255,.1); border-color: rgba(255,255,255,.3); transform: translateY(-2px); }
+.present-grid button.active { border-color: #6d4aff; background: rgba(109,74,255,.18); box-shadow: 0 0 0 3px rgba(109,74,255,.22); }
+.present-grid button > span { color: #8f9ab0; font-size: 8px; letter-spacing: .1em; font-weight: 800; }
+.present-grid button > small { color: #53d3e1; font-size: 7.5px; letter-spacing: .07em; text-transform: uppercase; font-weight: 700; }
+.present-grid button > strong { color: white; font-size: 11px; line-height: 1.25; }
+.present-grid button > i { position: absolute; right: 10px; bottom: 8px; color: rgba(255,255,255,.22); font-size: 14px; font-style: normal; font-weight: 800; font-variant-numeric: tabular-nums; }
+.present-help { position: fixed; inset: 0; z-index: 4; display: grid; place-items: center; background: rgba(10,12,22,.6); animation: fade-in .15s both; }
+.present-help > div { width: 340px; padding: 18px 20px; display: flex; flex-direction: column; gap: 9px; border: 1px solid rgba(255,255,255,.16); border-radius: 11px; background: rgba(17,23,43,.97); color: white; box-shadow: 0 22px 60px rgba(0,0,0,.45); }
+.present-help > div > strong { margin-bottom: 3px; font-size: 12px; }
+.present-help > div > div { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.present-help > div > div > span { display: flex; gap: 4px; }
+.present-help kbd { min-width: 24px; padding: 3px 6px; border: 1px solid rgba(255,255,255,.22); border-bottom-width: 2px; border-radius: 5px; background: rgba(255,255,255,.08); color: #dbe2ee; font-family: inherit; font-size: 9px; text-align: center; }
+.present-help p { margin: 0; color: #aeb8c9; font-size: 10.5px; }
+.present-help > div > small { margin-top: 4px; color: #7f8ba0; font-size: 9px; line-height: 1.4; }
+.present-blackout { position: fixed; inset: 0; z-index: 5; background: #000; cursor: pointer; animation: fade-in .2s both; }
+@keyframes fade-in { from { opacity: 0; } }
 
 @media print {
   body { background: white; }
