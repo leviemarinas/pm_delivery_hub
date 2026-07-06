@@ -1059,6 +1059,20 @@ function parseMarkdownToBlocks(markdown, sectionName) {
       }
     }
     
+    // Check for Blockquote
+    if (raw.startsWith("> ") || raw.startsWith(">")) {
+      const text = raw.split("\n").map((line) => line.replace(/^>\s?/, "").trim()).filter(Boolean).join(" ");
+      if (text) {
+        blocks.push({
+          kind: "paragraph",
+          style: "Intense Quote",
+          text,
+          path: [sectionName]
+        });
+        continue;
+      }
+    }
+
     // Default Paragraph
     blocks.push({
       kind: "paragraph",
@@ -1073,8 +1087,9 @@ function parseMarkdownToBlocks(markdown, sectionName) {
 function parseHtmlToBlocks(html, sectionName) {
   const parser = new DOMParser();
   const doc = parser.parseFromString(html, "text/html");
+  doc.querySelectorAll("script, style").forEach((el) => el.remove());
   const blocks = [];
-  
+
   const children = doc.body.childNodes;
   for (const node of children) {
     if (node.nodeType === Node.TEXT_NODE && node.textContent.trim()) {
@@ -1745,13 +1760,52 @@ function Requirements({ state, setState, showToast, project }) {
   );
 }
 
+const momNoteFormats = [["text", "Plain text"], ["markdown", "Markdown"], ["html", "HTML"]];
+const momNotesPlaceholder = {
+  text: "Decisions made, action items, and follow-ups — one per line.",
+  markdown: "Use markdown — ## headings, - bullet lists, | table | cells |, > quotes...",
+  html: "Paste HTML content — <p>, <ul><li>, <table>, and <blockquote> are supported.",
+};
+const momNotesHint = {
+  text: "Each line becomes its own note.",
+  markdown: "Headings, bullet lists, tables, and quotes are rendered.",
+  html: "Structure (headings, lists, tables) is kept; scripts and styling are stripped.",
+};
+
+function momNotesToBlocks(notes, format) {
+  if (!notes) return [];
+  if (format === "markdown") return parseMarkdownToBlocks(notes, "mom-notes");
+  if (format === "html") return parseHtmlToBlocks(notes, "mom-notes");
+  return notes.split("\n").filter((line) => line.trim()).map((text) => ({ kind: "paragraph", style: "Normal", text: text.trim() }));
+}
+
+function MomNoteBlock({ block, query }) {
+  if (block.kind === "heading") {
+    const Tag = `h${Math.min(block.level + 3, 6)}`;
+    return <Tag><HighlightedText text={block.text} query={query} /></Tag>;
+  }
+  if (block.kind === "table") {
+    return (
+      <div className="source-table table-scroll">
+        <table>
+          <thead>{block.rows.length > 0 && <tr>{block.rows[0].map((cell, index) => <th key={index}><HighlightedText text={cell} query={query} /></th>)}</tr>}</thead>
+          <tbody>{block.rows.slice(1).map((row, rowIndex) => <tr key={rowIndex}>{row.map((cell, cellIndex) => <td key={cellIndex}><HighlightedText text={cell} query={query} /></td>)}</tr>)}</tbody>
+        </table>
+      </div>
+    );
+  }
+  if (block.style === "List Bullet") return <div className="source-bullet"><span /><HighlightedText text={block.text} query={query} /></div>;
+  if (block.style === "Intense Quote") return <blockquote><HighlightedText text={block.text} query={query} /></blockquote>;
+  return <p><HighlightedText text={block.text} query={query} /></p>;
+}
+
 function MomSection({ state, setState, showToast, project }) {
   const [query, setQuery] = useState("");
   const [filterMode, setFilterMode] = useState("all"); // all | with-recording | no-recording
   const [modalOpen, setModalOpen] = useState(false);
   const [modalMode, setModalMode] = useState("add");
   const [editingId, setEditingId] = useState("");
-  const [form, setForm] = useState({ title: "", when: new Date().toISOString().slice(0, 10), recordingUrl: "", notes: "" });
+  const [form, setForm] = useState({ title: "", when: new Date().toISOString().slice(0, 10), recordingUrl: "", notes: "", notesFormat: "text" });
   const [saving, setSaving] = useState(false);
 
   const entries = state.momEntries || [];
@@ -1769,13 +1823,13 @@ function MomSection({ state, setState, showToast, project }) {
   }), [sorted, query, filterMode]);
 
   const openAddModal = () => {
-    setForm({ title: "", when: new Date().toISOString().slice(0, 10), recordingUrl: "", notes: "" });
+    setForm({ title: "", when: new Date().toISOString().slice(0, 10), recordingUrl: "", notes: "", notesFormat: "text" });
     setModalMode("add");
     setModalOpen(true);
   };
 
   const openEditModal = (entry) => {
-    setForm({ title: entry.title, when: entry.when, recordingUrl: entry.recordingUrl || "", notes: entry.notes || "" });
+    setForm({ title: entry.title, when: entry.when, recordingUrl: entry.recordingUrl || "", notes: entry.notes || "", notesFormat: entry.notesFormat || "text" });
     setEditingId(entry.id);
     setModalMode("edit");
     setModalOpen(true);
@@ -1869,7 +1923,13 @@ function MomSection({ state, setState, showToast, project }) {
                 <button className="icon-button delete" onClick={() => handleDelete(entry)} title="Delete meeting minutes"><Trash size={13} /></button>
               </div>
             </div>
-            {entry.notes && <div className="mom-card-notes">{entry.notes.split("\n").filter(Boolean).map((line, index) => <p key={index}><HighlightedText text={line} query={query} /></p>)}</div>}
+            {entry.notes && (
+              <div className="mom-card-notes">
+                {momNotesToBlocks(entry.notes, entry.notesFormat).map((block, index) => (
+                  <MomNoteBlock key={index} block={block} query={query} />
+                ))}
+              </div>
+            )}
           </div>
         ))}
       </div>
@@ -1897,7 +1957,13 @@ function MomSection({ state, setState, showToast, project }) {
                 </label>
               </div>
               <label>Minutes / notes
-                <textarea rows="8" value={form.notes} onChange={(event) => setForm({ ...form, notes: event.target.value })} placeholder="Decisions made, action items, and follow-ups — one per line." />
+                <div className="mom-format-tabs" role="group" aria-label="Notes format">
+                  {momNoteFormats.map(([key, label]) => (
+                    <button key={key} type="button" className={`req-type-pill${form.notesFormat === key ? " active" : ""}`} onClick={() => setForm({ ...form, notesFormat: key })}>{label}</button>
+                  ))}
+                </div>
+                <textarea rows="8" value={form.notes} onChange={(event) => setForm({ ...form, notes: event.target.value })} placeholder={momNotesPlaceholder[form.notesFormat]} />
+                <small className="mom-format-hint">{momNotesHint[form.notesFormat]}</small>
               </label>
             </div>
             <footer>

@@ -80,6 +80,7 @@ function seedMomEntries(createdAt, projectId = "atlas-payroll") {
       when: "2026-07-06",
       recordingUrl: "https://drive.google.com/drive/folders/atlas-payroll-sprint-3-kickoff",
       notes: "Walked through the Sprint 3 commitment across Basic Pay, Company Loan, Bonus, and De Minimis.\nBasic Pay and Company Loan confirmed as the priority modules for this sprint.\nClient asked for a clearer owner on the Bonus computation decision before next review.\nAction: BA team to circulate the Definition of Ready checklist by Wednesday.",
+      notesFormat: "text",
       createdAt,
       updatedAt: createdAt,
     },
@@ -90,6 +91,7 @@ function seedMomEntries(createdAt, projectId = "atlas-payroll") {
       when: "2026-07-01",
       recordingUrl: "",
       notes: "Reviewed open questions on Bonus eligibility and computation timing.\nNo recording was made for this working session.\nDecision pending from Finance on proration rules for mid-cycle joiners.\nAction: Tech Lead to draft two computation options for Finance to choose from.",
+      notesFormat: "text",
       createdAt,
       updatedAt: createdAt,
     },
@@ -376,6 +378,12 @@ async function loadState() {
     if (!Array.isArray(existing.momEntries)) {
       existing.momEntries = seedMomEntries(now());
       migrated = true;
+    } else {
+      existing.momEntries = existing.momEntries.map((entry) => {
+        if (entry.notesFormat) return entry;
+        migrated = true;
+        return { ...entry, notesFormat: "text" };
+      });
     }
     if (!existing.users) {
       existing.users = [
@@ -800,6 +808,7 @@ async function handleApi(request, response, url) {
       when: input.when || now().slice(0, 10),
       recordingUrl: input.recordingUrl?.trim() || "",
       notes: input.notes || "",
+      notesFormat: ["text", "markdown", "html"].includes(input.notesFormat) ? input.notesFormat : "text",
       createdAt: now(),
       updatedAt: now(),
     };
@@ -814,9 +823,10 @@ async function handleApi(request, response, url) {
     const index = state.momEntries.findIndex((entry) => entry.id === id);
     if (index < 0) return json(response, 404, { error: "Meeting minutes not found." });
     const input = await body(request);
-    const allowed = ["title", "when", "recordingUrl", "notes"];
+    const allowed = ["title", "when", "recordingUrl", "notes", "notesFormat"];
     const updates = Object.fromEntries(allowed.filter((key) => Object.hasOwn(input, key)).map((key) => [key, input[key]]));
     if (Object.hasOwn(updates, "title") && !updates.title?.trim()) return json(response, 400, { error: "Meeting title is required." });
+    if (Object.hasOwn(updates, "notesFormat") && !["text", "markdown", "html"].includes(updates.notesFormat)) updates.notesFormat = "text";
     state.momEntries[index] = { ...state.momEntries[index], ...updates, id, updatedAt: now() };
     activity(`Updated meeting minutes: ${state.momEntries[index].title}`, id);
     await saveState(state);

@@ -791,6 +791,14 @@ tbody tr:last-child td { border-bottom: 0; }
 .mom-modal-body label small { font-weight: 400; color: var(--faint); margin-left: 4px; }
 .mom-modal-body input, .mom-modal-body textarea { padding: 9px 11px; border: 1px solid var(--line-strong); border-radius: var(--r-sm); background: var(--surface); font-size: 13px; font-family: inherit; }
 .mom-modal-body textarea { resize: vertical; line-height: 1.5; }
+.mom-format-tabs { display: flex; gap: 6px; margin-bottom: 8px; }
+.mom-format-hint { display: block; margin-top: 6px; color: var(--faint); font-size: 10.5px; font-weight: 400; }
+.mom-card-notes h4, .mom-card-notes h5, .mom-card-notes h6 { margin: 10px 0 4px; font-size: 12.5px; font-weight: 700; color: #1c2536; }
+.mom-card-notes h4:first-child, .mom-card-notes h5:first-child, .mom-card-notes h6:first-child { margin-top: 0; }
+.mom-card-notes blockquote { margin: 6px 0; padding: 6px 0 6px 11px; border-left: 3px solid var(--blue-soft); color: #55627a; font-size: 12.5px; font-style: italic; }
+.mom-card-notes .source-bullet { margin: 3px 0; font-size: 12.5px; color: #43506a; }
+.mom-card-notes .source-table { margin: 8px 0; }
+.mom-card-notes .source-table th, .mom-card-notes .source-table td { font-size: 11px; }
 
 /* ================================================================
    Reports
